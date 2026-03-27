@@ -16,7 +16,8 @@ interface PersonaRow {
   participacion_en_grupo?: string | null;
   estado: string;
   ultimo_contacto: string | null;
-  grupos: { nombre: string } | null;
+  /** Supabase puede devolver objeto o array según el join */
+  grupos: { nombre: string } | { nombre: string }[] | null;
 }
 
 const estadoStyles: Record<Estado, string> = {
@@ -37,6 +38,12 @@ const FILTER_ESTADOS: { value: Estado | "Todos"; label: string }[] = [
 ];
 
 /** Si tiene grupo asignado no es visitante ni en seguimiento, se considera Activo (salvo Inactivo / En servicio). */
+function nombreGrupoLabel(p: PersonaRow): string {
+  const g = p.grupos;
+  if (g == null) return "Sin asignar";
+  return (Array.isArray(g) ? g[0]?.nombre : g.nombre) ?? "Sin asignar";
+}
+
 function displayEstado(p: PersonaRow): Estado {
   if (p.grupo_id) {
     if (p.estado === "En servicio" || p.estado === "Inactivo") return p.estado as Estado;
@@ -63,7 +70,7 @@ export default function Page() {
           console.error(error);
           setPersonas([]);
         } else {
-          setPersonas((data as PersonaRow[]) ?? []);
+          setPersonas((data ?? []) as PersonaRow[]);
         }
         setLoading(false);
       });
@@ -202,7 +209,7 @@ export default function Page() {
                       )}
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-300">
-                          {persona.grupos?.nombre ?? "Sin asignar"}
+                          {nombreGrupoLabel(persona)}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${estadoStyles[displayEstado(persona)] ?? "bg-gray-400"}`} />
@@ -289,7 +296,7 @@ export default function Page() {
                             </div>
                           </Link>
                         </td>
-                        <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{persona.grupos?.nombre ?? "Sin asignar"}</td>
+                        <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{nombreGrupoLabel(persona)}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span

@@ -600,7 +600,7 @@ export default function Page() {
                   <Link href={`/grupos/${grupo.id}#miembros-del-grupo`} className="block p-4 hover:bg-gray-50 dark:hover:bg-[#252525] transition">
                     <div className="relative h-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-[#252525] mb-3">
                       {grupo.imagen ? (
-                        <Image src={grupo.imagen} alt={grupo.nombre} fill className="object-cover" sizes="320px" />
+                        <Image src={grupo.imagen} alt={grupo.nombre} fill className="object-cover object-top" sizes="320px" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

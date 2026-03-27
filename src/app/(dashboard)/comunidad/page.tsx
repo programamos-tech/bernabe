@@ -416,7 +416,7 @@ export default function Page() {
                               src={evento.imagen}
                               alt=""
                               fill
-                              className="object-cover"
+                              className="object-cover object-top"
                               sizes="48px"
                               unoptimized
                             />

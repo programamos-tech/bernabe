@@ -152,7 +152,7 @@ export default function Page() {
           src={imagenSeleccionada}
           alt="Imagen del evento"
           fill
-          className="object-cover"
+          className="object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
         <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6">
@@ -327,7 +327,7 @@ export default function Page() {
                           : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
                       }`}
                     >
-                      <Image src={img.src} alt={img.label} fill className="object-cover" />
+                      <Image src={img.src} alt={img.label} fill className="object-cover object-top" />
                       {imagenSeleccionada === img.src && (
                         <div className="absolute inset-0 bg-[#0ca6b2]/20 flex items-center justify-center">
                           <svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

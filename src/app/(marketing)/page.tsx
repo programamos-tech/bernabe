@@ -238,7 +238,7 @@ function HowItWorksSection() {
                   alt={step.title}
                   width={400}
                   height={300}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-48 object-cover object-top group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#18301d] dark:from-[#0a1a0f] to-transparent"></div>
                 <span className="absolute bottom-4 left-4 text-5xl font-bold text-[#f9c70c]/30">

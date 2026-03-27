@@ -136,7 +136,7 @@ export default function Page() {
           src={imageSrc}
           alt={evento.titulo}
           fill
-          className="object-cover"
+          className="object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 

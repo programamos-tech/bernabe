@@ -887,7 +887,7 @@ function getMondayKey(dateStr: string): string {
 /** Racha = semanas consecutivas con al menos una asistencia (desde la más reciente hacia atrás) */
 function calcularRacha(fechas: string[]): number {
   if (fechas.length === 0) return 0;
-  const weeks = [...new Set(fechas.map(getMondayKey))].sort().reverse();
+  const weeks = Array.from(new Set(fechas.map(getMondayKey))).sort().reverse();
   let racha = 1;
   for (let i = 1; i < weeks.length; i++) {
     const prev = new Date(weeks[i - 1] + "T12:00:00");
@@ -972,9 +972,14 @@ export default function Page() {
         return;
       }
 
-      const r = row as Record<string, unknown> & { grupos?: { nombre: string; imagen: string | null } | null };
-      const grupoNombre = r.grupos?.nombre ?? null;
-      const grupoImagen = r.grupos?.imagen ?? null;
+      const r = row as unknown as Record<string, unknown> & {
+        grupos?: { nombre: string; imagen: string | null } | { nombre: string; imagen: string | null }[] | null;
+      };
+      const gJoin = r.grupos;
+      const grupoJoined =
+        gJoin == null ? null : Array.isArray(gJoin) ? gJoin[0] ?? null : gJoin;
+      const grupoNombre = grupoJoined?.nombre ?? null;
+      const grupoImagen = grupoJoined?.imagen ?? null;
       const grupoIdVal = (r.grupo_id as string) ?? null;
       const participacionRaw = r.participacion_en_grupo as string | null | undefined;
       const participacionEnGrupo: ParticipacionEnGrupo | null = grupoIdVal
@@ -1513,7 +1518,7 @@ export default function Page() {
                             src={persona.grupoImagen}
                             alt={persona.grupo}
                             fill
-                            className="object-cover"
+                            className="object-cover object-top"
                             sizes="(max-width: 1024px) 100vw, 320px"
                             unoptimized
                           />

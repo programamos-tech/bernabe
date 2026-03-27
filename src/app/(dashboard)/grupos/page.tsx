@@ -22,7 +22,8 @@ interface GrupoRow {
   ubicacion: string | null;
   imagen: string | null;
   activo: boolean;
-  lideres: { nombre: string } | null;
+  /** Supabase puede devolver objeto o array según el join */
+  lideres: { nombre: string } | { nombre: string }[] | null;
 }
 
 const tipoColors: Record<TipoGrupo, string> = {
@@ -47,7 +48,12 @@ const FILTER_TIPOS: { value: TipoGrupo | "Todos"; label: string }[] = [
 function GrupoCard({ grupo }: { grupo: GrupoRow }) {
   const tipo = (grupo.tipo as TipoGrupo) || "general";
   const colorClass = tipoColors[tipo] ?? tipoColors.general;
-  const liderNombre = grupo.lideres?.nombre ?? null;
+  const liderNombre =
+    grupo.lideres == null
+      ? null
+      : Array.isArray(grupo.lideres)
+        ? grupo.lideres[0]?.nombre ?? null
+        : grupo.lideres.nombre;
 
   return (
     <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden hover:shadow-xl dark:hover:shadow-[#0ca6b2]/10 transition-shadow group">
@@ -58,7 +64,7 @@ function GrupoCard({ grupo }: { grupo: GrupoRow }) {
             src={grupo.imagen}
             alt={grupo.nombre}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className={`absolute inset-0 ${colorClass} opacity-80`} />
@@ -163,7 +169,7 @@ export default function Page() {
         setLoading(false);
         return;
       }
-      const lista = (gruposRes.data as GrupoRow[]) ?? [];
+      const lista = (gruposRes.data ?? []) as GrupoRow[];
       const personas = (personasRes.data ?? []) as { grupo_id: string }[];
       const conteoPorGrupo: Record<string, number> = {};
       for (const p of personas) {

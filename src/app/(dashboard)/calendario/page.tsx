@@ -168,57 +168,64 @@ function EventoBadge({ evento, compact = false }: { evento: Evento; compact?: bo
   }
 
   const isGroup = !!evento.grupoId;
-  const isEventFromDb = evento.id && !evento.id.startsWith("grupo-");
-  const CardWrapper = isGroup || isEventFromDb ? Link : "div";
-  const cardProps =
-    isGroup
-      ? { href: `/grupos/${evento.grupoId}`, className: "block" as const }
-      : isEventFromDb
-        ? { href: `/eventos/${evento.id}`, className: "block" as const }
-        : { className: "" };
+  const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
 
-  return (
-    <CardWrapper {...cardProps}>
-      <div className={`rounded-xl overflow-hidden hover:shadow-md dark:hover:shadow-[#0ca6b2]/10 transition cursor-pointer ${style.bg}`}>
-        {evento.imagen ? (
-          <div className="relative h-28 w-full bg-gray-200 dark:bg-[#252525]">
-            <Image
-              src={evento.imagen}
-              alt={evento.titulo}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 320px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            <div className="absolute top-2 left-2 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-              <span className={`text-xs font-medium text-white drop-shadow`}>{style.label}</span>
-            </div>
+  const cardInner = (
+    <div className={`rounded-xl overflow-hidden hover:shadow-md dark:hover:shadow-[#0ca6b2]/10 transition cursor-pointer ${style.bg}`}>
+      {evento.imagen ? (
+        <div className="relative h-28 w-full bg-gray-200 dark:bg-[#252525]">
+          <Image
+            src={evento.imagen}
+            alt={evento.titulo}
+            fill
+            className="object-cover object-top"
+            sizes="(max-width: 768px) 100vw, 320px"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute top-2 left-2 flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+            <span className={`text-xs font-medium text-white drop-shadow`}>{style.label}</span>
           </div>
-        ) : (
-          <div className="pt-3 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-              <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
-            </div>
-          </div>
-        )}
-        <div className="p-3">
-          <p className={`font-medium text-sm ${style.text}`}>{evento.titulo}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {evento.horaInicio}{evento.horaInicio !== evento.horaFin ? ` - ${evento.horaFin}` : ""}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5 truncate" title={evento.ubicacion}>{evento.ubicacion}</p>
-          {evento.grupoId && (
-            <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver grupo →</p>
-          )}
-          {isEventFromDb && !evento.grupoId && (
-            <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver evento →</p>
-          )}
         </div>
+      ) : (
+        <div className="pt-3 px-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+            <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
+          </div>
+        </div>
+      )}
+      <div className="p-3">
+        <p className={`font-medium text-sm ${style.text}`}>{evento.titulo}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {evento.horaInicio}{evento.horaInicio !== evento.horaFin ? ` - ${evento.horaFin}` : ""}
+        </p>
+        <p className="text-xs text-gray-400 mt-0.5 truncate" title={evento.ubicacion}>{evento.ubicacion}</p>
+        {evento.grupoId && (
+          <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver grupo →</p>
+        )}
+        {isEventFromDb && !evento.grupoId && (
+          <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver evento →</p>
+        )}
       </div>
-    </CardWrapper>
+    </div>
   );
+
+  if (isGroup && evento.grupoId) {
+    return (
+      <Link href={`/grupos/${evento.grupoId}`} className="block">
+        {cardInner}
+      </Link>
+    );
+  }
+  if (isEventFromDb) {
+    return (
+      <Link href={`/eventos/${evento.id}`} className="block">
+        {cardInner}
+      </Link>
+    );
+  }
+  return cardInner;
 }
 
 export default function Page() {
@@ -746,26 +753,20 @@ export default function Page() {
                   upcomingEvents.map((evento) => {
                     const style = tipoEventoStyles[evento.tipo];
                     const isGroup = !!evento.grupoId;
-                    const isEventFromDb = evento.id && !evento.id.startsWith("grupo-");
-                    const Wrapper = isGroup || isEventFromDb ? Link : "div";
-                    const wrapperProps = isGroup
-                      ? { href: `/grupos/${evento.grupoId}` }
-                      : isEventFromDb
-                        ? { href: `/eventos/${evento.id}` }
-                        : {};
-                    return (
-                      <Wrapper
-                        key={`${evento.id}-${evento.fecha.toISOString()}`}
-                        {...wrapperProps}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-[#333]"
-                      >
+                    const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
+                    const rowClass =
+                      "flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-[#333]";
+                    const key = `${evento.id}-${evento.fecha.toISOString()}`;
+
+                    const rowInner = (
+                      <>
                         {evento.imagen ? (
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-[#333]">
                             <Image
                               src={evento.imagen}
                               alt=""
                               fill
-                              className="object-cover"
+                              className="object-cover object-top"
                               sizes="48px"
                             />
                             <div className="absolute bottom-0 left-0 right-0 py-0.5 bg-black/60 flex items-center justify-center">
@@ -788,7 +789,27 @@ export default function Page() {
                           <p className="text-xs text-gray-500 dark:text-gray-400">{evento.horaInicio}</p>
                         </div>
                         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.dot}`} title={style.label} />
-                      </Wrapper>
+                      </>
+                    );
+
+                    if (isGroup && evento.grupoId) {
+                      return (
+                        <Link key={key} href={`/grupos/${evento.grupoId}`} className={rowClass}>
+                          {rowInner}
+                        </Link>
+                      );
+                    }
+                    if (isEventFromDb) {
+                      return (
+                        <Link key={key} href={`/eventos/${evento.id}`} className={rowClass}>
+                          {rowInner}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <div key={key} className={rowClass}>
+                        {rowInner}
+                      </div>
                     );
                   })
                 )}

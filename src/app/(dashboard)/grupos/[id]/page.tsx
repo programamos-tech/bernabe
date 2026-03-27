@@ -945,7 +945,7 @@ export default function Page() {
             src={grupo.imagen}
             alt={grupo.nombre}
             fill
-            className="object-cover"
+            className="object-cover object-top"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#0ca6b2] to-[#18301d] opacity-90" />
