@@ -9,6 +9,8 @@ const SUPABASE_AUTH_ES: Record<string, string> = {
     "No hay sesión activa. Si acabas de registrarte, confirma el enlace del correo e inicia sesión.",
   "Email signups are disabled":
     "Los registros por correo están desactivados en tu proyecto Supabase. Ve a Authentication → User Signups y activa «Allow new users to sign up», guarda, y vuelve a intentar.",
+  "Anonymous sign-ins are disabled":
+    "Los accesos anónimos están desactivados. En Supabase: Authentication → User Signups → activa «Allow anonymous sign-ins» y guarda.",
 };
 
 export function translateSupabaseAuthMessage(message: string): string {

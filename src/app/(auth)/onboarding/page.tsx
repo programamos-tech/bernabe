@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
@@ -139,6 +139,14 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsAnonymous(Boolean(user?.is_anonymous));
+    });
+  }, []);
 
   // Step 1: Church info
   const [nombreIglesia, setNombreIglesia] = useState(() => {
@@ -258,14 +266,15 @@ export default function OnboardingPage() {
 
       const { error: liderErr } = await supabase.from("lideres").insert({
         organization_id: org.id,
-        nombre: nombrePastor.trim(),
-        email: emailPastor.trim(),
+        nombre: nombrePastor.trim() || "Administrador",
+        email: emailPastor.trim() || null,
         telefono: telefonoPastor?.trim() || null,
         rol: mapCargoToRolLider(cargo),
         estado: "Activo",
         grupo_asignado: null,
         miembros_a_cargo: 0,
         notas: "Cuenta principal (onboarding)",
+        auth_user_id: user.id,
       });
       if (liderErr) throw liderErr;
 
@@ -292,7 +301,8 @@ export default function OnboardingPage() {
       case 1:
         return nombreIglesia && denominacion && pais && ciudad;
       case 2:
-        return nombrePastor && emailPastor;
+        if (!nombrePastor?.trim()) return false;
+        return isAnonymous || Boolean(emailPastor?.trim());
       case 3:
         return tamano && tieneGrupos !== null;
       case 4:
@@ -531,7 +541,12 @@ export default function OnboardingPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
-                      Correo electrónico *
+                      Correo electrónico
+                      {isAnonymous ? (
+                        <span className="text-gray-400 font-normal"> (opcional en prueba sin correo)</span>
+                      ) : (
+                        " *"
+                      )}
                     </label>
                     <input
                       type="email"
