@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { translateSupabaseAuthMessage } from "@/lib/supabase-auth-messages";
 
 function Logo() {
   return (
@@ -45,12 +46,12 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(translateSupabaseAuthMessage(error.message));
       setIsLoading(false);
       return;
     }
 
-    // Pasamos la info de la iglesia al onboarding (hasta que conectemos prefill completo).
+    // Pasamos la info al onboarding cuando ya haya sesión (o tras confirmar correo + login).
     try {
       window.localStorage.setItem("bermabe_pending_church_name", churchName);
       window.localStorage.setItem("bermabe_pending_pastor_full_name", fullName);
@@ -59,9 +60,12 @@ export default function RegisterPage() {
       // Ignorado (por ejemplo, si el navegador bloquea localStorage)
     }
 
-    // Puede que aún no haya sesión si está activa la verificación de email,
-    // pero para local normalmente queda creada la cuenta y se redirige a onboarding.
-    router.push("/onboarding");
+    if (data.session) {
+      router.push("/onboarding");
+    } else {
+      router.push("/login?verifyEmail=1");
+    }
+    setIsLoading(false);
   };
 
   return (

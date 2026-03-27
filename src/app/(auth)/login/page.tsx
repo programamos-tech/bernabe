@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,16 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVerifyEmailHint, setShowVerifyEmailHint] = useState(false);
+
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      setShowVerifyEmailHint(p.get("verifyEmail") === "1");
+    } catch {
+      setShowVerifyEmailHint(false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +45,21 @@ export default function LoginPage() {
         setIsLoading(false);
         return;
       }
-      router.push("/home");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setError("No se pudo obtener la sesión. Intenta de nuevo.");
+        setIsLoading(false);
+        return;
+      }
+      const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+      if (!prof?.organization_id) {
+        router.push("/onboarding");
+      } else {
+        router.push("/home");
+      }
+      setIsLoading(false);
       router.refresh();
     } catch {
       setError("Error al iniciar sesión. Intenta de nuevo.");
@@ -59,6 +83,11 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {showVerifyEmailHint && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-sm">
+                Te enviamos un correo de verificación. Ábrelo y confirma tu cuenta; luego inicia sesión aquí para continuar con el registro de tu iglesia.
+              </div>
+            )}
             {error && (
               <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
                 {error}

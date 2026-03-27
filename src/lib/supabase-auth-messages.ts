@@ -5,6 +5,10 @@ const SUPABASE_AUTH_ES: Record<string, string> = {
   "Invalid login credentials": "Correo o contraseña incorrectos.",
   "New password should be different from the old password.":
     "La nueva contraseña debe ser distinta a la anterior.",
+  "Auth session missing!":
+    "No hay sesión activa. Si acabas de registrarte, confirma el enlace del correo e inicia sesión.",
+  "Email signups are disabled":
+    "Los registros por correo están desactivados en tu proyecto Supabase. Ve a Authentication → User Signups y activa «Allow new users to sign up», guarda, y vuelve a intentar.",
 };
 
 export function translateSupabaseAuthMessage(message: string): string {
