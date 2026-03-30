@@ -245,6 +245,7 @@ export default function OnboardingPage() {
           tiene_grupos: tieneGrupos ?? null,
           cantidad_grupos_aprox: cantidadGrupos ? parseInt(cantidadGrupos, 10) : null,
           objetivo_principal: objetivoPrincipal || null,
+          onboarding_user_id: user.id,
         })
         .select("id")
         .single();

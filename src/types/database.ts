@@ -27,6 +27,8 @@ export interface Database {
           tiene_grupos: boolean | null;
           cantidad_grupos_aprox: number | null;
           objetivo_principal: string | null;
+          /** RLS onboarding: quién creó la fila antes de enlazar profiles.organization_id */
+          onboarding_user_id: string | null;
           created_at: string;
           updated_at: string;
         };
