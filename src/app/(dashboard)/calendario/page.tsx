@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { EventoAvatarCluster } from "@/components/EventoAvatarCluster";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
 import { createClient } from "@/lib/supabase/client";
 
 type TipoEvento = "reunion" | "grupo" | "clase" | "servicio" | "especial";
@@ -52,12 +53,45 @@ const MESES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-const tipoEventoStyles: Record<TipoEvento, { bg: string; text: string; dot: string; label: string }> = {
-  reunion: { bg: "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20", text: "text-[#0ca6b2]", dot: "bg-[#0ca6b2]", label: "Reunión" },
-  grupo: { bg: "bg-[#18301d]/10 dark:bg-[#0ca6b2]/20", text: "text-[#18301d] dark:text-[#0ca6b2]", dot: "bg-[#18301d] dark:bg-[#0ca6b2]", label: "Grupo" },
-  clase: { bg: "bg-purple-100 dark:bg-purple-500/20", text: "text-purple-600 dark:text-purple-400", dot: "bg-purple-500", label: "Clase" },
-  servicio: { bg: "bg-[#e64b27]/10 dark:bg-[#e64b27]/20", text: "text-[#e64b27]", dot: "bg-[#e64b27]", label: "Servicio" },
-  especial: { bg: "bg-[#f9c70c]/20", text: "text-[#b8860b] dark:text-[#f9c70c]", dot: "bg-[#f9c70c]", label: "Especial" },
+const tipoEventoStyles: Record<
+  TipoEvento,
+  { compactBg: string; text: string; dot: string; label: string; pill: string }
+> = {
+  reunion: {
+    compactBg: "bg-sky-500/12 dark:bg-sky-500/15",
+    text: "text-sky-900 dark:text-sky-200",
+    dot: "bg-sky-400/90 dark:bg-sky-300/75",
+    label: "Reunión",
+    pill: "bg-sky-500/10 text-sky-900 dark:text-sky-200",
+  },
+  grupo: {
+    compactBg: "bg-emerald-500/12 dark:bg-emerald-500/15",
+    text: "text-emerald-900 dark:text-emerald-200",
+    dot: "bg-emerald-400/90 dark:bg-emerald-300/75",
+    label: "Grupo",
+    pill: "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200",
+  },
+  clase: {
+    compactBg: "bg-violet-500/12 dark:bg-violet-500/15",
+    text: "text-violet-900 dark:text-violet-200",
+    dot: "bg-violet-400/90 dark:bg-violet-300/75",
+    label: "Clase",
+    pill: "bg-violet-500/12 text-violet-900 dark:text-violet-200",
+  },
+  servicio: {
+    compactBg: "bg-orange-500/12 dark:bg-orange-500/15",
+    text: "text-orange-900 dark:text-orange-200",
+    dot: "bg-orange-400/90 dark:bg-orange-300/75",
+    label: "Servicio",
+    pill: "bg-orange-500/10 text-orange-900 dark:text-orange-200",
+  },
+  especial: {
+    compactBg: "bg-amber-400/18 dark:bg-amber-500/15",
+    text: "text-amber-900 dark:text-amber-100",
+    dot: "bg-amber-400/90 dark:bg-amber-300/75",
+    label: "Especial",
+    pill: "bg-amber-400/15 text-amber-900 dark:text-amber-100",
+  },
 };
 
 /** Normaliza nombre del día para comparar (Sábados -> Sábado, Domingos -> Domingo) */
@@ -154,12 +188,12 @@ function EventoBadge({ evento, compact = false }: { evento: Evento; compact?: bo
 
   if (compact) {
     return (
-      <div className={`rounded-lg px-2 py-1.5 ${style.bg} ${style.text}`}>
+      <div className={`rounded-lg px-2 py-1.5 ${style.compactBg}`}>
         <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
-          <span className="text-xs font-medium truncate">{evento.titulo}</span>
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+          <span className={`truncate text-xs font-medium ${style.text}`}>{evento.titulo}</span>
         </div>
-        <p className="text-[10px] mt-0.5 opacity-90 truncate" title={evento.ubicacion}>
+        <p className="mt-0.5 truncate text-[10px] text-gray-600 dark:text-gray-400" title={evento.ubicacion}>
           {evento.horaInicio}
           {evento.ubicacion && evento.ubicacion !== "—" ? ` · ${evento.ubicacion}` : ""}
         </p>
@@ -169,44 +203,38 @@ function EventoBadge({ evento, compact = false }: { evento: Evento; compact?: bo
 
   const isGroup = !!evento.grupoId;
   const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
+  const eventoIdForAvatar = isEventFromDb && !evento.grupoId ? evento.id : `${evento.titulo}|${evento.grupoId ?? evento.id}`;
 
   const cardInner = (
-    <div className={`rounded-xl overflow-hidden hover:shadow-md dark:hover:shadow-[#0ca6b2]/10 transition cursor-pointer ${style.bg}`}>
-      {evento.imagen ? (
-        <div className="relative h-28 w-full bg-gray-200 dark:bg-[#252525]">
-          <Image
-            src={evento.imagen}
-            alt={evento.titulo}
-            fill
-            className="object-cover object-top"
-            sizes="(max-width: 768px) 100vw, 320px"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <div className="absolute top-2 left-2 flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-            <span className={`text-xs font-medium text-white drop-shadow`}>{style.label}</span>
-          </div>
+    <div className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200/50 bg-gray-100/40 transition hover:bg-gray-100/60 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
+      <div className="relative flex h-28 items-center justify-center bg-gradient-to-b from-gray-100/90 to-gray-100/45 dark:from-white/[0.08] dark:to-white/[0.03]">
+        <div
+          className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium shadow-sm shadow-black/[0.04] dark:shadow-none ${style.pill}`}
+        >
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+          {style.label}
         </div>
-      ) : (
-        <div className="pt-3 px-3">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-            <span className={`text-xs font-medium ${style.text}`}>{style.label}</span>
-          </div>
-        </div>
-      )}
+        {evento.grupoId ? (
+          <GrupoAvatarCluster nombreGrupo={evento.titulo} sizeCenter={56} sizeSide={36} />
+        ) : (
+          <EventoAvatarCluster titulo={evento.titulo} eventoId={eventoIdForAvatar} sizeCenter={56} sizeSide={36} />
+        )}
+      </div>
       <div className="p-3">
-        <p className={`font-medium text-sm ${style.text}`}>{evento.titulo}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {evento.horaInicio}{evento.horaInicio !== evento.horaFin ? ` - ${evento.horaFin}` : ""}
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{evento.titulo}</p>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {evento.horaInicio}
+          {evento.horaInicio !== evento.horaFin ? ` - ${evento.horaFin}` : ""}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5 truncate" title={evento.ubicacion}>{evento.ubicacion}</p>
-        {evento.grupoId && (
-          <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver grupo →</p>
-        )}
-        {isEventFromDb && !evento.grupoId && (
-          <p className="text-xs font-medium text-[#0ca6b2] mt-2 hover:underline">Ver evento →</p>
-        )}
+        <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400" title={evento.ubicacion}>
+          {evento.ubicacion}
+        </p>
+        {evento.grupoId ? (
+          <p className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-400">Ver grupo →</p>
+        ) : null}
+        {isEventFromDb && !evento.grupoId ? (
+          <p className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-400">Ver evento →</p>
+        ) : null}
       </div>
     </div>
   );
@@ -423,8 +451,8 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="px-4 py-8 md:px-6 min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <svg className="w-10 h-10 animate-spin text-[#0ca6b2]" fill="none" viewBox="0 0 24 24">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 md:px-6">
+        <svg className="h-8 w-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -432,91 +460,92 @@ export default function Page() {
     );
   }
 
+  const selectedDayClass = "bg-gray-900 text-white dark:bg-white dark:text-gray-900";
+  const todayMutedClass = "bg-gray-200/70 dark:bg-white/10";
+
   return (
-    <div className="px-4 py-8 md:px-6 min-h-[calc(100vh-4rem)]">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[#18301d] dark:text-white">Calendario</h1>
-            <p className="mt-1 text-gray-600 dark:text-gray-400">
-              Eventos, reuniones y actividades de la iglesia.
-            </p>
-          </div>
-          <Link
-            href="/eventos/nuevo"
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#e64b27] text-white font-semibold rounded-full hover:bg-[#d4421f] transition shadow-lg shadow-[#e64b27]/25 w-fit"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo evento
-          </Link>
+    <div className="min-h-[calc(100vh-4rem)] w-full max-w-none px-4 py-8 md:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Calendario</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Eventos, reuniones y actividades de la iglesia.</p>
         </div>
+        <Link
+          href="/eventos/nuevo"
+          className="flex w-fit items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo evento
+        </Link>
+      </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Calendar */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-            {/* Calendar header */}
-            <div className="p-4 border-b border-gray-100 dark:border-[#2a2a2a]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={prevPeriod}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#333] text-gray-500 hover:text-[#18301d] dark:hover:text-white transition"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <h2 className="text-lg font-semibold text-[#18301d] dark:text-white">
-                    {vista === "mes"
-                      ? `${MESES[currentMonth]} ${currentYear}`
-                      : `${weekDates[0].getDate()} - ${weekDates[6].getDate()} ${MESES[weekDates[6].getMonth()]} ${weekDates[6].getFullYear()}`
-                    }
-                  </h2>
-                  <button
-                    onClick={nextPeriod}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#333] text-gray-500 hover:text-[#18301d] dark:hover:text-white transition"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] lg:col-span-2">
+          <div className="border-b border-gray-200/60 p-4 dark:border-white/10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={prevPeriod}
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
+                  {vista === "mes"
+                    ? `${MESES[currentMonth]} ${currentYear}`
+                    : `${weekDates[0].getDate()} - ${weekDates[6].getDate()} ${MESES[weekDates[6].getMonth()]} ${weekDates[6].getFullYear()}`}
+                </h2>
+                <button
+                  type="button"
+                  onClick={nextPeriod}
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
 
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={goToToday}
+                  className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200/60 dark:text-gray-300 dark:hover:bg-white/[0.08]"
+                >
+                  Hoy
+                </button>
+                <div className="flex rounded-full bg-gray-200/50 p-1 dark:bg-white/[0.08]">
                   <button
-                    onClick={goToToday}
-                    className="px-3 py-1.5 text-sm font-medium text-[#0ca6b2] hover:bg-[#0ca6b2]/10 rounded-lg transition"
+                    type="button"
+                    onClick={() => setVista("mes")}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      vista === "mes"
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-white/15 dark:text-white"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
                   >
-                    Hoy
+                    Mes
                   </button>
-                  <div className="flex bg-gray-100 dark:bg-[#252525] rounded-lg p-1">
-                    <button
-                      onClick={() => setVista("mes")}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
-                        vista === "mes"
-                          ? "bg-white dark:bg-[#333] text-[#18301d] dark:text-white shadow-sm"
-                          : "text-gray-500 dark:text-gray-400 hover:text-[#18301d] dark:hover:text-white"
-                      }`}
-                    >
-                      Mes
-                    </button>
-                    <button
-                      onClick={() => setVista("semana")}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${
-                        vista === "semana"
-                          ? "bg-white dark:bg-[#333] text-[#18301d] dark:text-white shadow-sm"
-                          : "text-gray-500 dark:text-gray-400 hover:text-[#18301d] dark:hover:text-white"
-                      }`}
-                    >
-                      Semana
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVista("semana")}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      vista === "semana"
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-white/15 dark:text-white"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
+                  >
+                    Semana
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Month View */}
             {vista === "mes" && (
@@ -546,21 +575,21 @@ export default function Page() {
                       <button
                         key={day}
                         onClick={() => setSelectedDate(date)}
-                        className={`aspect-square p-1 rounded-xl transition relative group ${
+                        className={`relative aspect-square rounded-xl p-1 transition group ${
                           isSelectedDay
-                            ? "bg-[#0ca6b2] text-white"
+                            ? selectedDayClass
                             : isTodayDay
-                            ? "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20"
-                            : "hover:bg-gray-50 dark:hover:bg-[#252525]"
+                              ? todayMutedClass
+                              : "hover:bg-gray-200/50 dark:hover:bg-white/[0.06]"
                         }`}
                       >
                         <span
                           className={`text-sm font-medium ${
                             isSelectedDay
-                              ? "text-white"
+                              ? "text-white dark:text-gray-900"
                               : isTodayDay
-                              ? "text-[#0ca6b2]"
-                              : "text-[#18301d] dark:text-white"
+                                ? "text-gray-900 dark:text-white"
+                                : "text-gray-900 dark:text-white"
                           }`}
                         >
                           {day}
@@ -589,7 +618,7 @@ export default function Page() {
               <div className="p-4 pb-6">
                 <div
                   ref={semanaScrollRef}
-                  className="scrollbar-hide overflow-y-auto overflow-x-auto max-h-[70vh] rounded-lg border border-gray-100 dark:border-[#2a2a2a]"
+                  className="scrollbar-brand max-h-[70vh] overflow-y-auto overflow-x-auto rounded-2xl border border-gray-200/60 dark:border-white/10"
                 >
                   <div className="flex gap-2 min-w-0">
                     {/* Columna de horas */}
@@ -601,7 +630,7 @@ export default function Page() {
                     {Array.from({ length: SEMANA_HORA_FIN - SEMANA_HORA_INICIO + 1 }, (_, i) => (
                       <div
                         key={i}
-                        className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-[#2a2a2a] pt-0.5"
+                        className="flex-shrink-0 border-t border-gray-200/50 pt-0.5 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"
                         style={{ height: SEMANA_PIXELS_POR_HORA }}
                       >
                         {String(SEMANA_HORA_INICIO + i).padStart(2, "0")}:00
@@ -619,32 +648,39 @@ export default function Page() {
                         <div key={i} className="flex flex-col min-w-0">
                           <button
                             onClick={() => setSelectedDate(date)}
-                            className={`w-full py-2 px-1 rounded-xl mb-2 transition flex-shrink-0 ${
+                            className={`mb-2 w-full flex-shrink-0 rounded-xl px-1 py-2 transition ${
                               isSelectedDay
-                                ? "bg-[#0ca6b2] text-white"
+                                ? selectedDayClass
                                 : isTodayDay
-                                ? "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20"
-                                : "hover:bg-gray-50 dark:hover:bg-[#252525]"
+                                  ? todayMutedClass
+                                  : "hover:bg-gray-200/50 dark:hover:bg-white/[0.06]"
                             }`}
                           >
-                            <p className={`text-xs truncate ${isSelectedDay ? "text-white/80" : "text-gray-500 dark:text-gray-400"}`}>
+                            <p
+                              className={`truncate text-xs ${
+                                isSelectedDay ? "text-white/85 dark:text-gray-600" : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            >
                               {DIAS_SEMANA_COMPLETO[i]}
                             </p>
-                            <p className={`text-base font-semibold truncate ${
-                              isSelectedDay ? "text-white" : isTodayDay ? "text-[#0ca6b2]" : "text-[#18301d] dark:text-white"
-                            }`}>
+                            <p
+                              className={`truncate text-base font-semibold ${
+                                isSelectedDay
+                                  ? "text-white dark:text-gray-900"
+                                  : "text-gray-900 dark:text-white"
+                              }`}
+                            >
                               {date.getDate()}
                             </p>
                           </button>
                           <div
-                            className="relative flex-1 border border-gray-100 dark:border-[#2a2a2a] rounded-lg overflow-hidden bg-gray-50/50 dark:bg-[#252525]/30"
+                            className="relative flex-1 overflow-hidden rounded-xl border border-gray-200/60 bg-gray-100/30 dark:border-white/10 dark:bg-white/[0.03]"
                             style={{ height: SEMANA_ALTURA_TOTAL }}
                           >
-                            {/* Líneas horizontales de hora */}
                             {Array.from({ length: SEMANA_HORA_FIN - SEMANA_HORA_INICIO }, (_, j) => (
                               <div
                                 key={j}
-                                className="absolute left-0 right-0 border-t border-gray-100 dark:border-[#2a2a2a]"
+                                className="absolute left-0 right-0 border-t border-gray-200/50 dark:border-white/10"
                                 style={{ top: (j + 1) * SEMANA_PIXELS_POR_HORA }}
                               />
                             ))}
@@ -686,8 +722,7 @@ export default function Page() {
               </div>
             )}
 
-            {/* Legend */}
-            <div className="px-4 py-3 border-t border-gray-100 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#252525]">
+            <div className="border-t border-gray-200/60 bg-gray-100/30 px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]">
               <div className="flex flex-wrap gap-4">
                 {Object.entries(tipoEventoStyles).map(([tipo, style]) => (
                   <div key={tipo} className="flex items-center gap-2">
@@ -699,10 +734,9 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Sidebar - Selected day events */}
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden h-fit">
-            <div className="p-4 border-b border-gray-100 dark:border-[#2a2a2a] bg-gradient-to-r from-[#faddbf]/50 to-[#f9c70c]/20 dark:from-[#0ca6b2]/20 dark:to-[#0ca6b2]/10">
-              <h3 className="font-semibold text-[#18301d] dark:text-white">
+          <div className="h-fit overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+            <div className="border-b border-gray-200/60 p-4 dark:border-white/10">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
                 {selectedDate
                   ? `${DIAS_SEMANA_COMPLETO[selectedDate.getDay()]} ${selectedDate.getDate()}`
                   : "Selecciona un día"
@@ -726,7 +760,7 @@ export default function Page() {
                   <p className="text-gray-500 dark:text-gray-400 text-sm">No hay eventos este día</p>
                   <Link
                     href="/eventos/nuevo"
-                    className="inline-flex items-center gap-1 text-sm font-medium text-[#0ca6b2] hover:underline mt-2"
+                    className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
                   >
                     Crear evento
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -744,8 +778,10 @@ export default function Page() {
             </div>
 
             {/* Upcoming events */}
-            <div className="p-4 border-t border-gray-100 dark:border-[#2a2a2a]">
-              <h4 className="text-sm font-semibold text-[#18301d] dark:text-white mb-3">Próximos eventos</h4>
+            <div className="border-t border-gray-200/60 p-4 dark:border-white/10">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
+                Próximos eventos
+              </h4>
               <div className="space-y-2">
                 {upcomingEvents.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No hay eventos próximos.</p>
@@ -755,40 +791,34 @@ export default function Page() {
                     const isGroup = !!evento.grupoId;
                     const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
                     const rowClass =
-                      "flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-[#333]";
+                      "flex cursor-pointer items-center gap-3 rounded-xl border border-transparent p-2 transition hover:bg-gray-200/40 dark:hover:bg-white/[0.06]";
                     const key = `${evento.id}-${evento.fecha.toISOString()}`;
+
+                    const upcomingEvId =
+                      evento.id && !evento.id.startsWith("grupo-")
+                        ? evento.id
+                        : `${evento.titulo}|${evento.grupoId ?? evento.id}`;
 
                     const rowInner = (
                       <>
-                        {evento.imagen ? (
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-[#333]">
-                            <Image
-                              src={evento.imagen}
-                              alt=""
-                              fill
-                              className="object-cover object-top"
-                              sizes="48px"
-                            />
-                            <div className="absolute bottom-0 left-0 right-0 py-0.5 bg-black/60 flex items-center justify-center">
-                              <span className="text-[10px] font-bold text-white">{evento.fecha.getDate()}</span>
-                            </div>
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-gray-100/90 to-gray-100/45 dark:from-white/[0.08] dark:to-white/[0.03]">
+                          <div className="absolute inset-0 flex items-center justify-center scale-[0.38]">
+                            {evento.grupoId ? (
+                              <GrupoAvatarCluster nombreGrupo={evento.titulo} sizeCenter={72} sizeSide={44} />
+                            ) : (
+                              <EventoAvatarCluster titulo={evento.titulo} eventoId={upcomingEvId} sizeCenter={72} sizeSide={44} />
+                            )}
                           </div>
-                        ) : (
-                          <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${style.bg}`}>
-                            <span className={`text-lg font-bold leading-none ${style.text}`}>{evento.fecha.getDate()}</span>
-                            <span className={`text-[9px] font-medium uppercase mt-0.5 ${style.text} opacity-80`}>
-                              {MESES[evento.fecha.getMonth()].slice(0, 3)}
-                            </span>
+                          <div className="absolute bottom-0 left-0 right-0 flex justify-center bg-black/45 py-0.5 dark:bg-black/50">
+                            <span className="text-[10px] font-bold text-white">{evento.fecha.getDate()}</span>
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wide ${style.text}`}>
-                            {style.label}
-                          </span>
-                          <p className="text-sm font-medium text-[#18301d] dark:text-white truncate mt-0.5">{evento.titulo}</p>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide ${style.text}`}>{style.label}</span>
+                          <p className="mt-0.5 truncate text-sm font-medium text-gray-900 dark:text-white">{evento.titulo}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{evento.horaInicio}</p>
                         </div>
-                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.dot}`} title={style.label} />
+                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} title={style.label} />
                       </>
                     );
 
@@ -816,7 +846,6 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

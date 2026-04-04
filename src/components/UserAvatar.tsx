@@ -1,24 +1,30 @@
 "use client";
 
-import Avatar from "boring-avatars";
-
-const AVATAR_COLORS = ["#0ca6b2", "#18301d", "#e64b27", "#f9c70c", "#faddbf"] as const;
+import { useMemo } from "react";
+import Avatar, { genConfig } from "react-nice-avatar";
 
 interface UserAvatarProps {
-  /** Estable (ej. email) para que el mismo usuario tenga siempre el mismo avatar */
+  /** Estable (ej. email o nombre): mismo seed = mismo retrato ilustrado. */
   seed: string;
   size?: number;
   className?: string;
 }
 
-export function UserAvatar({ seed, size = 40, className }: UserAvatarProps) {
+/**
+ * Ilustraciones de persona (sistema Micah / Figma) vía [react-nice-avatar](https://github.com/dapi-labs/react-nice-avatar):
+ * hombre/mujer, tonos de piel, pelo, ropa, etc.; diverso y determinista por `seed`.
+ */
+export function UserAvatar({ seed, size = 40, className = "" }: UserAvatarProps) {
+  const name = seed?.trim() || "Usuario";
+
+  const config = useMemo(() => genConfig(name), [name]);
+
   return (
     <Avatar
-      size={size}
-      name={seed || "Usuario"}
-      variant="beam"
-      colors={[...AVATAR_COLORS]}
-      className={className}
+      className={`shrink-0 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:shadow-none dark:ring-white/[0.08] ${className}`}
+      style={{ width: size, height: size }}
+      shape="circle"
+      {...config}
     />
   );
 }

@@ -82,6 +82,10 @@ export interface Database {
           fecha_registro: string | null;
           ultimo_contacto: string | null;
           notas: string | null;
+          bautizado: boolean | null;
+          viene_de_otra_iglesia: boolean | null;
+          nombre_iglesia_anterior: string | null;
+          situacion_acercamiento: string | null;
           created_at: string;
           updated_at: string;
         };

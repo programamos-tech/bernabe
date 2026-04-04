@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import Avatar from "boring-avatars";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { soloDigitosDocumentoId } from "@/lib/documento-id";
 import { createClient } from "@/lib/supabase/client";
 import { ROLES_LIDERAZGO_DEFAULT, ROLES_LIDERAZGO_LEGACY } from "@/lib/lideres-roles";
 
@@ -132,7 +133,7 @@ export default function Page() {
 
       const L = liderRes.data as Record<string, unknown>;
       setNombre((L.nombre as string) ?? "");
-      setCedula((L.cedula as string) ?? "");
+      setCedula(soloDigitosDocumentoId((L.cedula as string) ?? ""));
       setTelefono((L.telefono as string) ?? "");
       setEmail((L.email as string) ?? "");
       setFechaNacimiento(L.fecha_nacimiento ? new Date((L.fecha_nacimiento as string) + "T12:00:00") : null);
@@ -170,7 +171,7 @@ export default function Page() {
       .from("lideres")
       .update({
         nombre: nombre.trim(),
-        cedula: cedula.trim() || null,
+        cedula: soloDigitosDocumentoId(cedula).trim() || null,
         telefono: telefono.trim() || null,
         email: email.trim() || null,
         fecha_nacimiento: fechaNacStr,
@@ -256,8 +257,18 @@ export default function Page() {
                   <FormField icon="user" label="Nombre completo" required>
                     <input type="text" name="nombre" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none" />
                   </FormField>
-                  <FormField icon="id" label="Cédula">
-                    <input type="text" name="cedula" value={cedula} onChange={(e) => setCedula(e.target.value)} className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none" />
+                  <FormField icon="id" label="Documento ID">
+                    <input
+                      type="text"
+                      name="cedula"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      value={cedula}
+                      onChange={(e) => setCedula(soloDigitosDocumentoId(e.target.value))}
+                      placeholder="Solo números"
+                      className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                    />
                   </FormField>
                   <FormField icon="phone" label="Teléfono" required>
                     <input type="tel" name="telefono" required value={telefono} onChange={(e) => setTelefono(e.target.value)} className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none" />

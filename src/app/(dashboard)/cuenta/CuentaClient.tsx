@@ -6,6 +6,23 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/UserAvatar";
 
+const inputClass =
+  "w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-300/60 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20";
+
+const inputReadonlyClass =
+  "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-900 focus:outline-none dark:border-white/10 dark:bg-white/[0.04] dark:text-white";
+
+const btnPrimaryClass =
+  "rounded-xl bg-gray-900 px-6 py-2.5 font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100";
+
+function rolChipClass(rol: string) {
+  const r = rol.toLowerCase();
+  if (r.includes("pastor")) return "bg-violet-500/12 text-violet-900 dark:text-violet-200";
+  if (r.includes("admin")) return "bg-sky-500/10 text-sky-900 dark:text-sky-200";
+  if (r.includes("líder") || r.includes("lider")) return "bg-orange-500/10 text-orange-900 dark:text-orange-200";
+  return "bg-gray-500/10 text-gray-800 dark:text-gray-300";
+}
+
 export type UsuarioCuenta = {
   nombre: string;
   email: string;
@@ -105,24 +122,23 @@ export default function CuentaClient({
   ] as const;
 
   return (
-    <div className="px-4 py-8 md:px-6 min-h-[calc(100vh-4rem)]">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
+      <div className="w-full max-w-none">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#18301d] dark:text-white">Mi cuenta</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Administra tu perfil y la configuración de tu iglesia.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">Mi cuenta</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">Administra tu perfil y la configuración de tu iglesia.</p>
         </div>
 
-        {/* Profile Card */}
-        <div className="bg-gradient-to-br from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] rounded-2xl p-6 mb-6">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="relative">
-              <UserAvatar
-                seed={usuario?.email ?? usuario?.nombre ?? "Usuario"}
-                size={80}
-              />
-              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white dark:bg-[#333] rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 dark:hover:bg-[#444] transition">
-                <svg className="w-4 h-4 text-[#18301d] dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="mb-6 rounded-3xl bg-gray-100/50 p-6 dark:bg-white/[0.04]">
+          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+            <div className="relative shrink-0">
+              <UserAvatar seed={usuario?.email ?? usuario?.nombre ?? "Usuario"} size={80} className="ring-2 ring-white/90 dark:ring-white/10" />
+              <button
+                type="button"
+                className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md shadow-black/[0.08] transition hover:bg-gray-50 dark:bg-white/10 dark:shadow-none dark:hover:bg-white/[0.14]"
+                aria-label="Cambiar foto"
+              >
+                <svg className="h-4 w-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -133,30 +149,33 @@ export default function CuentaClient({
               </button>
             </div>
 
-            <div className="text-center sm:text-left">
-              <h2 className="text-xl font-bold text-white">{usuario?.nombre ?? "—"}</h2>
-              <p className="text-white/70">{usuario?.email ?? ""}</p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
-                <span className="px-3 py-1 bg-[#e64b27] text-white text-xs font-semibold rounded-full">{usuario?.rolLabel ?? ""}</span>
-                <span className="text-white/60 text-sm">{usuario?.miembroDesde ? `Miembro desde ${usuario.miembroDesde}` : ""}</span>
+            <div className="min-w-0 text-center sm:text-left">
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{usuario?.nombre ?? "—"}</h2>
+              <p className="mt-0.5 text-gray-500 dark:text-gray-400">{usuario?.email ?? ""}</p>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                {usuario?.rolLabel ? (
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${rolChipClass(usuario.rolLabel)}`}>{usuario.rolLabel}</span>
+                ) : null}
+                {usuario?.miembroDesde ? (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Miembro desde {usuario.miembroDesde}</span>
+                ) : null}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-100 dark:border-[#2a2a2a] overflow-x-auto scrollbar-hide">
+        <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+          <div className="scrollbar-brand overflow-x-auto border-b border-gray-200/60 dark:border-white/[0.08]">
             <div className="flex min-w-max">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                  className={`flex items-center gap-2 px-5 py-4 text-sm font-medium transition-colors border-b-2 ${
+                  className={`flex items-center gap-2 border-b-2 px-5 py-4 text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? "border-[#0ca6b2] text-[#0ca6b2]"
-                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-[#18301d] dark:hover:text-white"
+                      ? "border-gray-900 text-gray-900 dark:border-white dark:text-white"
+                      : "border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -168,43 +187,27 @@ export default function CuentaClient({
             </div>
           </div>
 
-          {/* Tab Content */}
           <div className="p-6">
             {activeTab === "perfil" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Información personal</h3>
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Información personal</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre completo</label>
-                      <input
-                        type="text"
-                        defaultValue={usuario?.nombre ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre completo</label>
+                      <input type="text" defaultValue={usuario?.nombre ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico</label>
-                      <input
-                        type="email"
-                        defaultValue={usuario?.email ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico</label>
+                      <input type="email" defaultValue={usuario?.email ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                      <input
-                        type="tel"
-                        defaultValue={usuario?.telefono ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono</label>
+                      <input type="tel" defaultValue={usuario?.telefono ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol en la iglesia</label>
-                      <select
-                        defaultValue={usuario?.rolLabel ?? "Miembro"}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      >
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Rol en la iglesia</label>
+                      <select defaultValue={usuario?.rolLabel ?? "Miembro"} className={inputClass}>
                         <option value="Pastor principal">Pastor principal</option>
                         <option value="Co-pastor">Co-pastor</option>
                         <option value="Administrador">Administrador</option>
@@ -215,8 +218,8 @@ export default function CuentaClient({
                     </div>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-gray-100 dark:border-[#2a2a2a] flex justify-end">
-                  <button className="px-6 py-2.5 bg-[#0ca6b2] text-white font-semibold rounded-full hover:bg-[#0a8f9a] transition">
+                <div className="flex justify-end border-t border-gray-200/60 pt-4 dark:border-white/[0.08]">
+                  <button type="button" className={btnPrimaryClass}>
                     Guardar cambios
                   </button>
                 </div>
@@ -226,110 +229,68 @@ export default function CuentaClient({
             {activeTab === "iglesia" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Información de la iglesia</h3>
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Información de la iglesia</h3>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-[#faddbf]/30 dark:bg-[#faddbf]/10 rounded-xl p-4 text-center">
-                      <p className="text-2xl font-bold text-[#18301d] dark:text-white">{iglesia?.miembros ?? 0}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Miembros</p>
+                  <div className="mb-6 grid grid-cols-3 gap-3 sm:gap-4">
+                    <div className="rounded-3xl bg-white/60 p-4 text-center dark:bg-white/[0.06]">
+                      <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{iglesia?.miembros ?? 0}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Miembros</p>
                     </div>
-                    <div className="bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20 rounded-xl p-4 text-center">
-                      <p className="text-2xl font-bold text-[#18301d] dark:text-white">{iglesia?.grupos ?? 0}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Grupos</p>
+                    <div className="rounded-3xl bg-white/60 p-4 text-center dark:bg-white/[0.06]">
+                      <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{iglesia?.grupos ?? 0}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Grupos</p>
                     </div>
-                    <div className="bg-[#e64b27]/10 dark:bg-[#e64b27]/20 rounded-xl p-4 text-center">
-                      <p className="text-2xl font-bold text-[#18301d] dark:text-white">{iglesia?.lideres ?? 0}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Líderes</p>
+                    <div className="rounded-3xl bg-white/60 p-4 text-center dark:bg-white/[0.06]">
+                      <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{iglesia?.lideres ?? 0}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Líderes</p>
                     </div>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de la iglesia</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.nombre ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de la iglesia</label>
+                      <input type="text" defaultValue={iglesia?.nombre ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">País</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.pais ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">País</label>
+                      <input type="text" defaultValue={iglesia?.pais ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.ciudad ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Ciudad</label>
+                      <input type="text" defaultValue={iglesia?.ciudad ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Denominación</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.denominacion ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Denominación</label>
+                      <input type="text" defaultValue={iglesia?.denominacion ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tamaño congregación</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.tamano ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tamaño congregación</label>
+                      <input type="text" defaultValue={iglesia?.tamano ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pastor principal</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.pastorNombre ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pastor principal</label>
+                      <input type="text" defaultValue={iglesia?.pastorNombre ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.pastorCargo ?? ""}
-                        readOnly
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-gray-50 dark:bg-[#1a1a1a] focus:outline-none"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Cargo</label>
+                      <input type="text" defaultValue={iglesia?.pastorCargo ?? ""} readOnly className={inputReadonlyClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email del pastor</label>
-                      <input
-                        type="email"
-                        defaultValue={iglesia?.pastorEmail ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email del pastor</label>
+                      <input type="email" defaultValue={iglesia?.pastorEmail ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono / WhatsApp</label>
-                      <input
-                        type="tel"
-                        defaultValue={iglesia?.pastorTelefono ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono / WhatsApp</label>
+                      <input type="tel" defaultValue={iglesia?.pastorTelefono ?? ""} className={inputClass} />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Días de servicio</label>
-                      <input
-                        type="text"
-                        defaultValue={iglesia?.diasServicio ?? ""}
-                        className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent"
-                      />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Días de servicio</label>
+                      <input type="text" defaultValue={iglesia?.diasServicio ?? ""} className={inputClass} />
                     </div>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-gray-100 dark:border-[#2a2a2a] flex justify-end">
-                  <button className="px-6 py-2.5 bg-[#0ca6b2] text-white font-semibold rounded-full hover:bg-[#0a8f9a] transition">
+                <div className="flex justify-end border-t border-gray-200/60 pt-4 dark:border-white/[0.08]">
+                  <button type="button" className={btnPrimaryClass}>
                     Guardar cambios
                   </button>
                 </div>
@@ -339,8 +300,8 @@ export default function CuentaClient({
             {activeTab === "notificaciones" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Preferencias de notificaciones</h3>
-                  <div className="space-y-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Preferencias de notificaciones</h3>
+                  <div className="space-y-3">
                     {[
                       { id: "nuevos_miembros", label: "Nuevos miembros", desc: "Recibir notificación cuando se registre un nuevo miembro" },
                       { id: "cumpleanos", label: "Cumpleaños", desc: "Recordatorios de cumpleaños de los miembros" },
@@ -348,14 +309,17 @@ export default function CuentaClient({
                       { id: "seguimientos", label: "Seguimientos pendientes", desc: "Alertas de seguimientos que necesitan atención" },
                       { id: "reportes", label: "Reportes semanales", desc: "Resumen semanal de actividad de la iglesia" },
                     ].map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#252525] rounded-xl">
-                        <div>
-                          <p className="font-medium text-[#18301d] dark:text-white">{item.label}</p>
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-4 rounded-2xl bg-white/60 p-4 dark:bg-white/[0.06]"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white">{item.label}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" defaultChecked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 dark:bg-[#333] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0ca6b2]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0ca6b2]"></div>
+                        <label className="relative inline-flex cursor-pointer items-center shrink-0">
+                          <input type="checkbox" defaultChecked className="peer sr-only" />
+                          <div className="relative h-6 w-11 shrink-0 rounded-full bg-gray-200 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform after:content-[''] peer-checked:bg-gray-900 peer-checked:after:translate-x-5 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300/50 dark:bg-white/10 dark:peer-checked:bg-white dark:peer-focus:ring-white/20 dark:peer-checked:after:bg-gray-900" />
                         </label>
                       </div>
                     ))}
@@ -367,21 +331,35 @@ export default function CuentaClient({
             {activeTab === "seguridad" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Cambiar contraseña</h3>
-                  <div className="space-y-4 max-w-md">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Cambiar contraseña</h3>
+                  <div className="max-w-md space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña actual</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent" />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña actual</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        className={`${inputClass} placeholder:text-gray-400`}
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva contraseña</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent" />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nueva contraseña</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        className={`${inputClass} placeholder:text-gray-400`}
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirmar nueva contraseña</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-[#18301d] dark:text-white bg-white dark:bg-[#252525] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent" />
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Confirmar nueva contraseña</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        className={`${inputClass} placeholder:text-gray-400`}
+                      />
                     </div>
-                    <button className="px-6 py-2.5 bg-[#0ca6b2] text-white font-semibold rounded-full hover:bg-[#0a8f9a] transition">Actualizar contraseña</button>
+                    <button type="button" className={btnPrimaryClass}>
+                      Actualizar contraseña
+                    </button>
                   </div>
                 </div>
               </div>
@@ -389,11 +367,13 @@ export default function CuentaClient({
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mt-6 grid sm:grid-cols-2 gap-4">
-          <Link href="/lideres" className="flex items-center gap-4 p-4 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:shadow-[#0ca6b2]/5 transition group">
-            <div className="w-12 h-12 flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#0ca6b2] dark:text-[#0ca6b2] transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/lideres"
+            className="flex items-center gap-4 rounded-3xl bg-gray-100/40 p-5 transition-colors hover:bg-gray-100/60 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-gray-500 shadow-sm shadow-black/[0.04] dark:bg-white/[0.08] dark:text-gray-400 dark:shadow-none">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -401,8 +381,8 @@ export default function CuentaClient({
                 />
               </svg>
             </div>
-            <div>
-              <p className="font-semibold text-[#18301d] dark:text-white">Gestionar líderes</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white">Gestionar líderes</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Administra tu equipo de liderazgo</p>
             </div>
           </Link>
@@ -411,10 +391,10 @@ export default function CuentaClient({
             type="button"
             onClick={handleCerrarSesion}
             disabled={loggingOut}
-            className="flex items-center gap-4 p-4 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:shadow-red-500/5 transition group text-left w-full disabled:opacity-50"
+            className="flex w-full items-center gap-4 rounded-3xl bg-gray-100/40 p-5 text-left transition-colors hover:bg-red-500/5 dark:bg-white/[0.04] dark:hover:bg-red-500/10 disabled:opacity-50"
           >
-            <div className="w-12 h-12 flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600 dark:text-red-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-red-600/90 shadow-sm shadow-black/[0.04] dark:bg-white/[0.08] dark:text-red-400/90 dark:shadow-none">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -422,8 +402,8 @@ export default function CuentaClient({
                 />
               </svg>
             </div>
-            <div>
-              <p className="font-semibold text-[#18301d] dark:text-white">Cerrar sesión</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white">Cerrar sesión</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">{loggingOut ? "Saliendo..." : "Salir de tu cuenta"}</p>
             </div>
           </button>

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import Avatar from "boring-avatars";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
+import { UserAvatar } from "@/components/UserAvatar";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -34,7 +34,6 @@ interface Grupo {
   id: string;
   nombre: string;
   descripcion: string | null;
-  imagen: string | null;
   miembros_count: number;
   dia: string | null;
   hora: string | null;
@@ -49,30 +48,49 @@ interface HistorialItem {
   persona_nombre?: string;
 }
 
-const rolStyles: Record<string, string> = {
-  Pastor: "bg-[#18301d] dark:bg-[#0ca6b2] text-white",
-  "Líder de grupo": "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20 text-[#0ca6b2]",
-  Coordinador: "bg-[#e64b27]/10 dark:bg-[#e64b27]/20 text-[#e64b27]",
-  Mentor: "bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400",
-  Diácono: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
+const rolStyles: Record<RolLider, string> = {
+  Pastor: "rounded-full bg-gray-500/10 px-2.5 py-1 text-xs font-medium text-gray-800 dark:text-gray-200",
+  "Líder de grupo": "rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-900 dark:text-sky-200",
+  Coordinador: "rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-medium text-orange-900 dark:text-orange-200",
+  Mentor: "rounded-full bg-violet-500/12 px-2.5 py-1 text-xs font-medium text-violet-900 dark:text-violet-200",
+  Diácono: "rounded-full bg-gray-500/10 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300",
 };
 
-const estadoStyles: Record<EstadoLider, { bg: string; dot: string }> = {
-  Activo: { bg: "bg-green-50 dark:bg-green-500/20 text-green-700 dark:text-green-400", dot: "bg-green-500" },
-  "En formación": { bg: "bg-[#f9c70c]/20 text-[#b8860b] dark:text-[#f9c70c]", dot: "bg-[#f9c70c]" },
-  Descanso: { bg: "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400", dot: "bg-gray-300 dark:bg-gray-500" },
+const estadoStyles: Record<EstadoLider, { dot: string; badge: string }> = {
+  Activo: {
+    dot: "bg-emerald-400/75 dark:bg-emerald-400/55",
+    badge: "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200",
+  },
+  "En formación": {
+    dot: "bg-amber-300/90 dark:bg-amber-300/65",
+    badge: "bg-amber-400/15 text-amber-900 dark:text-amber-100",
+  },
+  Descanso: {
+    dot: "bg-gray-400/85 dark:bg-gray-500/65",
+    badge: "bg-gray-500/10 text-gray-700 dark:text-gray-300",
+  },
 };
+
+function EstadoPill({ estado }: { estado: EstadoLider }) {
+  const s = estadoStyles[estado];
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${s.badge}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+      {estado}
+    </span>
+  );
+}
 
 const tipoHistorialStyles: Record<string, string> = {
-  reunion: "bg-[#0ca6b2]",
-  capacitacion: "bg-purple-500",
-  seguimiento: "bg-[#f9c70c]",
-  mensaje: "bg-[#25D366]",
-  llamada: "bg-[#0ca6b2]",
-  visita: "bg-[#e64b27]",
-  encuentro: "bg-amber-500",
-  asistencia: "bg-emerald-500",
-  default: "bg-gray-400",
+  reunion: "bg-sky-400/80 dark:bg-sky-400/50",
+  capacitacion: "bg-violet-400/80 dark:bg-violet-400/50",
+  seguimiento: "bg-amber-400/85 dark:bg-amber-400/55",
+  mensaje: "bg-emerald-400/80 dark:bg-emerald-400/50",
+  llamada: "bg-sky-400/70 dark:bg-sky-400/45",
+  visita: "bg-orange-400/80 dark:bg-orange-400/50",
+  encuentro: "bg-amber-400/75 dark:bg-amber-400/50",
+  asistencia: "bg-emerald-400/75 dark:bg-emerald-400/50",
+  default: "bg-gray-400/70 dark:bg-gray-500/50",
 };
 
 function formatFechaCorta(fechaStr: string): string {
@@ -239,7 +257,7 @@ export default function Page() {
 
       const { data: grupoRow } = await supabase
         .from("grupos")
-        .select("id, nombre, descripcion, imagen, miembros_count, dia, hora, ubicacion")
+        .select("id, nombre, descripcion, miembros_count, dia, hora, ubicacion")
         .eq("lider_id", id)
         .maybeSingle();
 
@@ -248,7 +266,6 @@ export default function Page() {
           id: grupoRow.id,
           nombre: grupoRow.nombre ?? "",
           descripcion: grupoRow.descripcion ?? null,
-          imagen: grupoRow.imagen ?? null,
           miembros_count: grupoRow.miembros_count ?? 0,
           dia: grupoRow.dia ?? null,
           hora: grupoRow.hora ?? null,
@@ -313,7 +330,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <svg className="w-10 h-10 animate-spin text-[#0ca6b2]" fill="none" viewBox="0 0 24 24">
+        <svg className="h-10 w-10 animate-spin text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -325,7 +342,9 @@ export default function Page() {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center gap-4 px-4">
         <p className="text-gray-600 dark:text-gray-400">Líder no encontrado.</p>
-        <Link href="/lideres" className="text-[#0ca6b2] font-medium hover:underline">Volver a líderes</Link>
+        <Link href="/lideres" className="font-medium text-gray-700 underline-offset-4 hover:underline dark:text-gray-300">
+          Volver a líderes
+        </Link>
       </div>
     );
   }
@@ -408,140 +427,146 @@ export default function Page() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="w-28 h-28 rounded-2xl bg-white dark:bg-[#2a2a2a] p-1.5 shadow-xl overflow-hidden">
-              <Avatar size={100} name={lider.nombre} variant="beam" colors={["#0ca6b2", "#18301d", "#e64b27", "#f9c70c", "#faddbf"]} />
+      <div className="w-full max-w-none px-4 pt-8 md:px-6 lg:px-8">
+        <div className="relative mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
+          <Link
+            href="/lideres"
+            className="absolute left-4 top-4 z-10 rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white md:left-5 md:top-5"
+            title="Volver a líderes"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </Link>
+
+          <div className="flex flex-col items-center gap-6 pt-10 md:flex-row md:items-center md:gap-8 md:pt-4 md:pl-4">
+            <div className="flex min-h-[7.5rem] shrink-0 items-center justify-center">
+              <UserAvatar seed={lider.nombre || lider.id} size={96} className="ring-2 ring-white/90 dark:ring-white/10" />
             </div>
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-white">{lider.nombre}</h1>
+            <div className="min-w-0 flex-1 text-center md:text-left">
+              <div className="mb-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
                 {rolVista && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${rolStyles[rolVista.claseKey] ?? rolStyles["Líder de grupo"]}`}>
-                    {rolVista.texto}
-                  </span>
+                  <span className={rolStyles[rolVista.claseKey] ?? rolStyles["Líder de grupo"]}>{rolVista.texto}</span>
                 )}
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${estadoStyles[lider.estado].bg}`}>
-                  <span className={`w-2 h-2 rounded-full ${estadoStyles[lider.estado].dot}`} />
-                  {lider.estado}
-                </span>
+                <EstadoPill estado={lider.estado} />
               </div>
-              <p className="text-white/80">
+              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">{lider.nombre}</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">
                 {esPastorIglesia ? (
                   <>
-                    <span className="text-white/90">Pastoría</span>
-                    <span className="mx-2">•</span>
-                    Grupo celular: <span className="font-medium">{grupoNombre}</span>
-                    <span className="mx-2">•</span>
+                    Pastoría · Grupo celular: <span className="font-medium text-gray-700 dark:text-gray-300">{grupoNombre}</span> ·{" "}
                     {miembrosCount} {miembrosCount === 1 ? "persona" : "personas"} en el grupo
                   </>
                 ) : (
                   <>
-                    Lidera: <span className="font-medium">{grupoNombre}</span>
-                    <span className="mx-2">•</span>
-                    {miembrosCount} miembros a cargo
+                    Lidera: <span className="font-medium text-gray-700 dark:text-gray-300">{grupoNombre}</span> · {miembrosCount}{" "}
+                    miembros a cargo
                   </>
                 )}
                 {lider.fechaInicioLiderazgo && (
                   <>
-                    <span className="mx-2">•</span>
-                    Desde {lider.fechaInicioLiderazgo}
+                    {" "}
+                    · Desde {lider.fechaInicioLiderazgo}
                   </>
                 )}
               </p>
-            </div>
-            <div className="flex gap-3 items-center">
-              {whatsappLink && (
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="text-[#0ca6b2] hover:text-[#0ca6b2]/80 transition" title="WhatsApp">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654z" />
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 md:justify-start">
+                {whatsappLink && (
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full p-2.5 text-emerald-600/90 transition hover:bg-white/70 hover:text-emerald-700 dark:text-emerald-400/90 dark:hover:bg-white/[0.08] dark:hover:text-emerald-300"
+                    title="WhatsApp"
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654z" />
+                    </svg>
+                  </a>
+                )}
+                {lider.telefono && (
+                  <a
+                    href={`tel:${lider.telefono}`}
+                    className="rounded-full p-2.5 text-gray-500 transition hover:bg-white/70 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                    title="Llamar"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                    </svg>
+                  </a>
+                )}
+                <Link
+                  href={`/lideres/${id}/editar`}
+                  className="rounded-full p-2.5 text-gray-500 transition hover:bg-white/70 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                  title="Editar"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                   </svg>
-                </a>
-              )}
-              {lider.telefono && (
-                <a href={`tel:${lider.telefono}`} className="text-white/70 hover:text-white transition" title="Llamar">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="rounded-full p-2.5 text-gray-500 transition hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+                  title="Eliminar líder"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                   </svg>
-                </a>
-              )}
-              <Link href={`/lideres/${id}/editar`} className="text-white/70 hover:text-white transition" title="Editar">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                </svg>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-white/70 hover:text-red-300 transition"
-                title="Eliminar líder"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                </svg>
-              </button>
-              <Link href="/lideres" className="text-white/70 hover:text-white transition" title="Volver">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </Link>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Metrics */}
-          <div className="grid sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-5">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-[#0ca6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <div className="px-4 py-6 md:px-6 lg:px-8">
+        <div className="w-full">
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-3xl bg-gray-100/40 p-5 text-center dark:bg-white/[0.04] sm:text-left">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                <svg className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
                 <div>
-                  <p className="text-2xl font-bold text-[#18301d] dark:text-white">
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
                     {asistenciaGrupo != null ? `${asistenciaGrupo}%` : "—"}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Asistencia del grupo</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-5">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-[#e64b27]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="rounded-3xl bg-gray-100/40 p-5 text-center dark:bg-white/[0.04] sm:text-left">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                <svg className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                 </svg>
                 <div>
-                  <p className="text-2xl font-bold text-[#18301d] dark:text-white">{reunionesLideradas}</p>
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{reunionesLideradas}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Reuniones lideradas</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-5">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-[#f9c70c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="rounded-3xl bg-gray-100/40 p-5 text-center dark:bg-white/[0.04] sm:text-left">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                <svg className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
                 </svg>
                 <div>
-                  <p className="text-2xl font-bold text-[#18301d] dark:text-white">{seguimientosRealizados}</p>
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{seguimientosRealizados}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Seguimientos realizados</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 lg:grid-cols-3">
             {/* Main Column */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Información personal (misma que persona) */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Información personal</h2>
+            <div className="space-y-6 lg:col-span-2">
+              <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Información personal</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {lider.cedula && <InfoItem icon="id" color="blue" label="Cédula" value={lider.cedula} />}
+                  {lider.cedula && <InfoItem icon="id" color="blue" label="Documento ID" value={lider.cedula} />}
                   {lider.telefono && <InfoItem icon="phone" color="teal" label="Teléfono" value={lider.telefono} />}
                   {lider.email && <InfoItem icon="email" color="coral" label="Email" value={lider.email} />}
                   {(lider.fechaNacimiento || lider.edad != null) && (
@@ -559,20 +584,22 @@ export default function Page() {
               </div>
 
               {/* Actividad reciente */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Actividad reciente</h2>
+              <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Actividad reciente</h2>
                 {actividadReciente.length === 0 ? (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Aún no hay actividad registrada.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Aún no hay actividad registrada.</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="scrollbar-brand max-h-[min(28rem,55dvh)] space-y-4 overflow-y-auto pr-1">
                     {actividadReciente.map((item, i) => (
                       <div key={item.id} className="flex gap-4">
                         <div className="flex flex-col items-center">
                           <div className={`w-3 h-3 rounded-full flex-shrink-0 ${tipoHistorialStyles[item.tipo_seguimiento ?? "default"] ?? tipoHistorialStyles.default}`} />
-                          {i < actividadReciente.length - 1 && <div className="flex-1 w-0.5 bg-gray-200 dark:bg-[#333] mt-1 min-h-[8px]" />}
+                          {i < actividadReciente.length - 1 && (
+                            <div className="mt-1 min-h-[8px] w-0.5 flex-1 bg-gray-200/80 dark:bg-white/10" />
+                          )}
                         </div>
                         <div className="flex-1 pb-4">
-                          <p className="text-sm font-medium text-[#18301d] dark:text-white">{item.accion}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{item.accion}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatFechaCorta(item.fecha)}</p>
                         </div>
                       </div>
@@ -582,75 +609,86 @@ export default function Page() {
               </div>
 
               {/* Notas */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-[#18301d] dark:text-white">Notas</h2>
-                  <Link href={`/lideres/${id}/editar`} className="text-sm text-[#0ca6b2] font-medium hover:underline">Editar</Link>
+              <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notas</h2>
+                  <Link
+                    href={`/lideres/${id}/editar`}
+                    className="text-sm font-medium text-gray-600 underline-offset-4 hover:underline dark:text-gray-400"
+                  >
+                    Editar
+                  </Link>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{lider.notas || "Sin notas."}</p>
+                <p className="leading-relaxed text-gray-600 dark:text-gray-400">{lider.notas || "Sin notas."}</p>
               </div>
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-6">
-              {/* Grupo asignado */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 pt-6 pb-2">Grupo asignado</h3>
+              <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                <h3 className="px-6 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Grupo asignado
+                </h3>
                 {grupo ? (
-                  <Link href={`/grupos/${grupo.id}#miembros-del-grupo`} className="block p-4 hover:bg-gray-50 dark:hover:bg-[#252525] transition">
-                    <div className="relative h-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-[#252525] mb-3">
-                      {grupo.imagen ? (
-                        <Image src={grupo.imagen} alt={grupo.nombre} fill className="object-cover object-top" sizes="320px" />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                          </svg>
-                        </div>
+                  <Link
+                    href={`/grupos/${grupo.id}#miembros-del-grupo`}
+                    className="flex items-center gap-4 p-4 transition hover:bg-white/40 dark:hover:bg-white/[0.06]"
+                  >
+                    <div className="shrink-0 rounded-2xl bg-gradient-to-b from-gray-100/80 to-gray-100/30 px-2 py-3 dark:from-white/[0.06] dark:to-white/[0.02]">
+                      <GrupoAvatarCluster nombreGrupo={grupo.nombre} sizeCenter={56} sizeSide={36} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold tracking-tight text-gray-900 dark:text-white">{grupo.nombre}</p>
+                      <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                        {miembrosCount} {miembrosCount === 1 ? "miembro" : "miembros"}
+                      </p>
+                      {(grupo.dia || grupo.hora) && (
+                        <p className="mt-1 truncate text-xs text-gray-400 dark:text-gray-500">
+                          {[grupo.dia, grupo.hora].filter(Boolean).join(" · ") || "—"}
+                        </p>
                       )}
                     </div>
-                    <p className="font-semibold text-[#18301d] dark:text-white">{grupo.nombre}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{miembrosCount} miembros</p>
                   </Link>
                 ) : (
                   <div className="px-6 pb-6">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">{grupoNombre}</p>
-                    <p className="text-xs text-gray-400 mt-1">{miembrosCount} miembros a cargo</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{grupoNombre}</p>
+                    <p className="mt-1 text-xs text-gray-400">{miembrosCount} miembros a cargo</p>
                   </div>
                 )}
               </div>
 
-              {/* Acciones rápidas */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Acciones rápidas</h3>
+              <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Acciones rápidas</h3>
                 <div className="space-y-2">
                   {grupo && (
                     <Link
                       href={`/grupos/${grupo.id}#miembros-del-grupo`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition text-left w-full"
+                      className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/50 dark:hover:bg-white/[0.06]"
                     >
-                      <svg className="w-5 h-5 text-[#0ca6b2] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0z" />
                       </svg>
-                      <span className="text-sm font-medium text-[#18301d] dark:text-white">Ver miembros del grupo</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Ver miembros del grupo</span>
                     </Link>
                   )}
-                  <Link href="/eventos/nuevo" className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition text-left w-full">
-                    <svg className="w-5 h-5 text-[#e64b27] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <Link
+                    href="/eventos/nuevo"
+                    className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/50 dark:hover:bg-white/[0.06]"
+                  >
+                    <svg className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
-                    <span className="text-sm font-medium text-[#18301d] dark:text-white">Agendar reunión</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Agendar reunión</span>
                   </Link>
                   <Link
                     href={grupo ? `/grupos/${grupo.id}#miembros-del-grupo` : "/personas"}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition text-left w-full"
+                    className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/50 dark:hover:bg-white/[0.06]"
                   >
-                    <svg className="w-5 h-5 text-[#f9c70c] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
                     </svg>
-                    <span className="text-sm font-medium text-[#18301d] dark:text-white">Hacer seguimiento a personas</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Hacer seguimiento a personas</span>
                   </Link>
-                  <div className="border-t border-gray-100 dark:border-[#2a2a2a] pt-3 mt-3 space-y-2">
+                  <div className="mt-3 space-y-2 border-t border-gray-200/60 pt-3 dark:border-white/[0.08]">
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Dar acceso a la plataforma</p>
                     {puedeDarAccesoLider ? (
                       <>
@@ -664,7 +702,7 @@ export default function Page() {
                               type="button"
                               onClick={() => void nuevaContrasenaTemporal()}
                               disabled={accesoLoading}
-                              className="w-full text-sm py-2.5 px-3 rounded-xl border border-[#0ca6b2] text-[#0ca6b2] hover:bg-[#0ca6b2]/10 disabled:opacity-50 transition"
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-white/60 disabled:opacity-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/[0.06]"
                             >
                               {accesoLoading ? "Generando…" : "Nueva contraseña temporal"}
                             </button>
@@ -674,7 +712,7 @@ export default function Page() {
                             type="button"
                             onClick={() => void generarAccesoPlataforma()}
                             disabled={accesoLoading || !lider.email?.trim()}
-                            className="w-full text-sm py-2.5 px-3 rounded-xl bg-[#0ca6b2] text-white font-medium hover:bg-[#0a8f99] disabled:opacity-50 transition"
+                            className="w-full rounded-xl bg-gray-900 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                           >
                             {accesoLoading ? "Creando…" : "Generar acceso (correo + contraseña)"}
                           </button>
@@ -695,29 +733,34 @@ export default function Page() {
                 </div>
               </div>
 
-              {/* Contacto */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Contacto</h3>
+              <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Contacto</h3>
                 <div className="space-y-3">
                   {lider.telefono && (
-                    <a href={`tel:${lider.telefono}`} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition">
-                      <svg className="w-5 h-5 text-[#0ca6b2] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <a
+                      href={`tel:${lider.telefono}`}
+                      className="flex items-center gap-3 rounded-2xl p-3 transition hover:bg-white/50 dark:hover:bg-white/[0.06]"
+                    >
+                      <svg className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                       </svg>
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Teléfono</p>
-                        <p className="font-medium text-[#18301d] dark:text-white">{lider.telefono}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{lider.telefono}</p>
                       </div>
                     </a>
                   )}
                   {lider.email && (
-                    <a href={`mailto:${lider.email}`} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition">
-                      <svg className="w-5 h-5 text-[#e64b27] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <a
+                      href={`mailto:${lider.email}`}
+                      className="flex items-center gap-3 rounded-2xl p-3 transition hover:bg-white/50 dark:hover:bg-white/[0.06]"
+                    >
+                      <svg className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
-                        <p className="font-medium text-[#18301d] dark:text-white">{lider.email}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{lider.email}</p>
                       </div>
                     </a>
                   )}
@@ -737,13 +780,13 @@ export default function Page() {
           role="presentation"
         >
           <div
-            className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl max-w-md w-full p-6 border border-gray-100 dark:border-[#2a2a2a]"
+            className="relative w-full max-w-md rounded-3xl border border-gray-200/60 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="acceso-titulo"
           >
-            <h3 id="acceso-titulo" className="text-lg font-semibold text-[#18301d] dark:text-white mb-2">
+            <h3 id="acceso-titulo" className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
               Credenciales (solo esta vez)
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -752,11 +795,11 @@ export default function Page() {
             <div className="space-y-2 rounded-xl bg-gray-50 dark:bg-[#252525] p-3 text-sm break-all">
               <p>
                 <span className="text-gray-500">Correo:</span>{" "}
-                <strong className="text-[#18301d] dark:text-white">{accesoModal.email}</strong>
+                <strong className="text-gray-900 dark:text-white">{accesoModal.email}</strong>
               </p>
               <p>
                 <span className="text-gray-500">Contraseña temporal:</span>{" "}
-                <strong className="text-[#18301d] dark:text-white">{accesoModal.password}</strong>
+                <strong className="text-gray-900 dark:text-white">{accesoModal.password}</strong>
               </p>
             </div>
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-4">
@@ -787,8 +830,11 @@ export default function Page() {
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !deleting && setShowDeleteConfirm(false)}>
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl max-w-md w-full p-6 border border-gray-100 dark:border-[#2a2a2a]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-[#18301d] dark:text-white mb-2">Eliminar líder</h3>
+          <div
+            className="relative w-full max-w-md rounded-3xl border border-gray-200/60 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Eliminar líder</h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
               ¿Estás seguro de que quieres eliminar a <strong>{lider.nombre}</strong>? Se desvinculará del grupo asignado. Esta acción no se puede deshacer.
             </p>
@@ -829,13 +875,13 @@ export default function Page() {
 
 function InfoItem({ icon, color, label, value }: { icon: string; color: string; label: string; value: string }) {
   const colors: Record<string, string> = {
-    teal: "text-[#0ca6b2]",
-    coral: "text-[#e64b27]",
-    yellow: "text-[#f9c70c]",
-    blue: "text-blue-500",
-    pink: "text-pink-500",
-    purple: "text-purple-500",
-    green: "text-[#18301d] dark:text-[#0ca6b2]",
+    teal: "text-sky-600/90 dark:text-sky-400/90",
+    coral: "text-orange-600/85 dark:text-orange-400/85",
+    yellow: "text-amber-600/85 dark:text-amber-400/85",
+    blue: "text-sky-600/90 dark:text-sky-400/90",
+    pink: "text-rose-500/90 dark:text-rose-400/90",
+    purple: "text-violet-600/90 dark:text-violet-400/90",
+    green: "text-emerald-600/90 dark:text-emerald-400/90",
   };
 
   const icons: Record<string, JSX.Element> = {
@@ -849,13 +895,13 @@ function InfoItem({ icon, color, label, value }: { icon: string; color: string; 
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-[#252525]">
+    <div className="flex items-center gap-3 rounded-2xl bg-white/60 p-3 dark:bg-white/[0.06]">
       <svg className={`w-5 h-5 ${colors[color]} flex-shrink-0`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         {icons[icon]}
       </svg>
       <div>
         <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="font-medium text-[#18301d] dark:text-white">{value}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>
   );

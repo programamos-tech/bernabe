@@ -10,6 +10,8 @@ interface DatePickerProps {
   name?: string;
   minYear?: number;
   maxYear?: number;
+  /** `soft`: acento neutro (gris / blanco), alineado con listas y fichas minimalistas. */
+  variant?: "default" | "soft";
 }
 
 const DAYS = ["D", "L", "M", "M", "J", "V", "S"];
@@ -38,7 +40,21 @@ export function DatePicker({
   name,
   minYear = 1920,
   maxYear = new Date().getFullYear(),
+  variant = "default",
 }: DatePickerProps) {
+  const isSoft = variant === "soft";
+  const clsSelected = isSoft
+    ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+    : "bg-[#0ca6b2] text-white";
+  const clsToday = isSoft
+    ? "bg-gray-200/90 text-gray-900 dark:bg-white/15 dark:text-white"
+    : "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20 text-[#0ca6b2]";
+  const clsHoy = isSoft
+    ? "text-sm font-medium text-gray-700 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+    : "text-sm font-medium text-[#0ca6b2] transition hover:text-[#0a8f99]";
+  const clsTrigger = isSoft
+    ? "w-full rounded-2xl bg-gray-100/80 px-4 py-3 text-left text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/15 flex items-center justify-between"
+    : "w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] text-left text-[#18301d] dark:text-white focus:outline-none transition bg-white dark:bg-[#252525] flex items-center justify-between";
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<"calendar" | "year" | "month">("calendar");
   const [currentMonth, setCurrentMonth] = useState(
@@ -147,12 +163,8 @@ export function DatePicker({
   return (
     <div ref={containerRef} className="relative">
       <input type="hidden" id={id} name={name} value={value?.toISOString() || ""} />
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] text-left text-[#18301d] dark:text-white focus:outline-none transition bg-white dark:bg-[#252525] flex items-center justify-between"
-      >
-        <span className={value ? "text-[#18301d] dark:text-white" : "text-gray-400"}>
+      <button type="button" onClick={() => setIsOpen(!isOpen)} className={clsTrigger}>
+        <span className={value ? "text-gray-900 dark:text-white" : "text-gray-400"}>
           {value ? formatDate(value) : placeholder}
         </span>
         <svg
@@ -171,7 +183,11 @@ export function DatePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] shadow-xl p-4 w-80">
+        <div
+          className={`absolute z-50 mt-2 w-80 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl dark:border-[#2a2a2a] dark:bg-[#1a1a1a] ${
+            isSoft ? "dark:border-white/10" : ""
+          }`}
+        >
           {view === "calendar" && (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -226,12 +242,12 @@ export function DatePicker({
                       <button
                         type="button"
                         onClick={() => selectDate(day)}
-                        className={`w-full h-full rounded-lg text-sm font-medium transition flex items-center justify-center
+                        className={`flex h-full w-full items-center justify-center rounded-lg text-sm font-medium transition
                           ${isSelected(day)
-                            ? "bg-[#0ca6b2] text-white"
+                            ? clsSelected
                             : isToday(day)
-                            ? "bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20 text-[#0ca6b2]"
-                            : "text-[#18301d] dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525]"
+                              ? clsToday
+                              : "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-[#252525]"
                           }
                         `}
                       >
@@ -258,7 +274,7 @@ export function DatePicker({
                     setCurrentYear(today.getFullYear());
                     selectDate(today.getDate());
                   }}
-                  className="text-sm font-medium text-[#0ca6b2] hover:text-[#0a8f99] transition"
+                  className={clsHoy}
                 >
                   Hoy
                 </button>
@@ -291,11 +307,8 @@ export function DatePicker({
                       setCurrentYear(year);
                       setView("calendar");
                     }}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium transition
-                      ${year === currentYear
-                        ? "bg-[#0ca6b2] text-white"
-                        : "text-[#18301d] dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525]"
-                      }
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition
+                      ${year === currentYear ? clsSelected : "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-[#252525]"}
                     `}
                   >
                     {year}
@@ -329,11 +342,8 @@ export function DatePicker({
                       setCurrentMonth(i);
                       setView("calendar");
                     }}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium transition
-                      ${i === currentMonth
-                        ? "bg-[#0ca6b2] text-white"
-                        : "text-[#18301d] dark:text-white hover:bg-gray-100 dark:hover:bg-[#252525]"
-                      }
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition
+                      ${i === currentMonth ? clsSelected : "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-[#252525]"}
                     `}
                   >
                     {month}

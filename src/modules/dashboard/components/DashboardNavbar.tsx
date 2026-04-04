@@ -83,25 +83,25 @@ export function DashboardNavbar() {
   return (
     <>
       {/* Top Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-[#1a1a1a] border-b border-gray-100 dark:border-[#2a2a2a]">
-        <div className="flex items-center justify-between h-16 px-4 md:px-6">
+      <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95">
+        <div className="flex items-center justify-between h-14 px-4 md:px-6">
           <Link href="/home" className="inline-block group">
-            <span className="font-logo text-2xl text-[#18301d] dark:text-white tracking-tight block">
+            <span className="font-logo text-xl text-gray-900 dark:text-white tracking-tight block">
               Bernabé
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-0.5">
             {navItems.map(({ href, label }) => {
               const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                  className={`px-3 py-2 text-sm transition-colors rounded-md ${
                     isActive
-                      ? "bg-[#0ca6b2] text-white"
-                      : "text-gray-600 dark:text-gray-300 hover:text-[#18301d] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a2a2a]"
+                      ? "font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-white/[0.06]"
+                      : "font-normal text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                   }`}
                 >
                   {label}
@@ -110,16 +110,16 @@ export function DashboardNavbar() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <ThemeToggle />
-            <button className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:text-[#18301d] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors">
+            <button className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
               </svg>
             </button>
             <Link
               href="/cuenta"
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
             >
               <UserAvatar seed={userSeed} size={36} />
             </Link>
@@ -128,23 +128,23 @@ export function DashboardNavbar() {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#1a1a1a] border-t border-gray-200 dark:border-[#2a2a2a] pb-safe">
-        <div className="flex items-center h-16 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center px-2 gap-1 min-w-max">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95 pb-safe">
+        <div className="flex items-center h-14 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center px-2 gap-0.5 min-w-max">
             {mobileNavItems.map(({ href, label, icon }) => {
               const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-colors flex-shrink-0 ${
+                  className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ${
                     isActive
-                      ? "text-[#0ca6b2]"
+                      ? "text-gray-900 dark:text-white"
                       : "text-gray-400 dark:text-gray-500"
                   }`}
                 >
                   <svg
-                    className={`w-6 h-6 ${isActive ? "stroke-[2]" : "stroke-[1.5]"}`}
+                    className={`w-5 h-5 ${isActive ? "stroke-[1.75]" : "stroke-[1.5]"}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

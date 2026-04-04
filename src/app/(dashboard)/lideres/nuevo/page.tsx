@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Avatar from "boring-avatars";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { soloDigitosDocumentoId } from "@/lib/documento-id";
 import { createClient } from "@/lib/supabase/client";
 import { ROLES_LIDERAZGO_DEFAULT } from "@/lib/lideres-roles";
 
@@ -131,7 +132,7 @@ export default function Page() {
       .insert({
         organization_id: organizationId,
         nombre: nombre.trim(),
-        cedula: cedula.trim() || null,
+        cedula: soloDigitosDocumentoId(cedula).trim() || null,
         telefono: telefono.trim() || null,
         email: email.trim() || null,
         fecha_nacimiento: fechaNacStr,
@@ -212,13 +213,16 @@ export default function Page() {
                     />
                   </FormField>
 
-                  <FormField icon="id" label="Cédula">
+                  <FormField icon="id" label="Documento ID">
                     <input
                       type="text"
                       name="cedula"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
                       value={cedula}
-                      onChange={(e) => setCedula(e.target.value)}
-                      placeholder="Ej: 79.123.456"
+                      onChange={(e) => setCedula(soloDigitosDocumentoId(e.target.value))}
+                      placeholder="Ej: 79123456"
                       className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
                     />
                   </FormField>

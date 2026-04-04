@@ -6,7 +6,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#111111]">
+    <div className="min-h-screen flex flex-col bg-gray-50/80 dark:bg-[#0a0a0a]">
       <DashboardNavbar />
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
     </div>

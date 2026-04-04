@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
 import { UserAvatar } from "@/components/UserAvatar";
+import { soloDigitosDocumentoId } from "@/lib/documento-id";
 import { createClient } from "@/lib/supabase/client";
 
 type TipoGrupo = "parejas" | "jovenes" | "teens" | "hombres" | "mujeres" | "general";
@@ -56,13 +57,38 @@ const tipoLabels: Record<string, string> = {
   general: "General",
 };
 
-const estadoMiembroStyles: Record<string, string> = {
-  Activo: "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400",
-  Visitante: "bg-[#f9c70c]/20 text-[#b8860b] dark:text-[#f9c70c]",
-  Inactivo: "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400",
-  "En seguimiento": "bg-[#0ca6b2]/15 text-[#0ca6b2] dark:bg-[#0ca6b2]/25 dark:text-[#0ca6b2]",
-  "En servicio": "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-300",
+/** Misma lógica visual que la lista de Personas (punto pastel + chip suave). */
+const estadoMiembroPill: Record<string, { dot: string; badge: string }> = {
+  Activo: {
+    dot: "bg-emerald-400/75 dark:bg-emerald-400/55",
+    badge: "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200",
+  },
+  Visitante: {
+    dot: "bg-amber-300/90 dark:bg-amber-300/65",
+    badge: "bg-amber-400/15 text-amber-900 dark:text-amber-100",
+  },
+  Inactivo: {
+    dot: "bg-gray-400/85 dark:bg-gray-500/65",
+    badge: "bg-gray-500/10 text-gray-700 dark:text-gray-300",
+  },
+  "En seguimiento": {
+    dot: "bg-sky-400/80 dark:bg-sky-400/55",
+    badge: "bg-sky-500/10 text-sky-900 dark:text-sky-200",
+  },
+  "En servicio": {
+    dot: "bg-violet-400/80 dark:bg-violet-400/55",
+    badge: "bg-violet-500/12 text-violet-900 dark:text-violet-200",
+  },
 };
+
+function estadoMiembroPillFor(estado: string) {
+  return (
+    estadoMiembroPill[estado] ?? {
+      dot: "bg-gray-400/85 dark:bg-gray-500/65",
+      badge: "bg-gray-500/10 text-gray-700 dark:text-gray-300",
+    }
+  );
+}
 
 /**
  * Misma regla que en la lista de Personas: quien ya está en un grupo no se muestra
@@ -75,18 +101,18 @@ function estadoVisibleEnGrupo(estado: string): string {
 }
 
 const rolMiembroStyles: Record<string, string> = {
-  Líder: "text-[#0ca6b2] font-medium",
+  Líder: "text-gray-600 dark:text-gray-300 font-medium",
   Miembro: "text-gray-500 dark:text-gray-400",
   Visitante: "text-gray-500 dark:text-gray-400",
-  Diácono: "text-purple-600 dark:text-purple-400 font-medium",
+  Diácono: "text-violet-600/90 dark:text-violet-400/90 font-medium",
 };
 
 function etiquetaParticipacion(m: MiembroData): { texto: string; className: string } {
   if (m.participacion_en_grupo === "colider") {
-    return { texto: "Co-líder", className: "text-[#0ca6b2] font-medium" };
+    return { texto: "Co-líder", className: "text-violet-700 dark:text-violet-300 font-medium" };
   }
   if (m.participacion_en_grupo === "apoyo") {
-    return { texto: "Grupo de apoyo", className: "text-violet-600 dark:text-violet-400 font-medium" };
+    return { texto: "Grupo de apoyo", className: "text-violet-600/90 dark:text-violet-400/90 font-medium" };
   }
   return {
     texto: m.rol ?? "Miembro",
@@ -115,10 +141,6 @@ function toDateStrLocal(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function soloDigitosCedula(value: string): string {
-  return value.replace(/\D/g, "");
-}
-
 function RegistroAsistenciaModal({
   isOpen,
   onClose,
@@ -135,7 +157,7 @@ function RegistroAsistenciaModal({
   grupoNombre: string;
   proximaReunionText: string;
   ubicacion: string;
-  /** Sin miembros no se puede registrar asistencia (cédula debe coincidir con alguien del grupo) */
+  /** Sin miembros no se puede registrar asistencia (documento ID debe coincidir con alguien del grupo) */
   hayMiembrosEnGrupo: boolean;
   /** Grupo inactivo: no se registra asistencia */
   grupoActivo: boolean;
@@ -164,13 +186,13 @@ function RegistroAsistenciaModal({
       setError("Este grupo no tiene miembros asignados. Agrega personas antes de registrar asistencia.");
       return;
     }
-    const digits = soloDigitosCedula(cedula);
+    const digits = soloDigitosDocumentoId(cedula);
     if (!fecha) {
       setError("Elige la fecha de la reunión.");
       return;
     }
     if (!digits) {
-      setError("Ingresa la cédula del miembro.");
+      setError("Ingresa el documento ID del miembro.");
       return;
     }
     setError(null);
@@ -209,11 +231,11 @@ function RegistroAsistenciaModal({
       const match = (miembros ?? []).find((p) => {
         const c = (p as { cedula: string | null }).cedula;
         if (!c) return false;
-        return soloDigitosCedula(c) === digits;
+        return soloDigitosDocumentoId(c) === digits;
       }) as { id: string; nombre: string; cedula: string | null } | undefined;
 
       if (!match) {
-        setError("La cédula ingresada no corresponde a un miembro de este grupo.");
+        setError("El documento ID ingresado no corresponde a un miembro de este grupo.");
         setEnviando(false);
         return;
       }
@@ -292,13 +314,13 @@ function RegistroAsistenciaModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
-        className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-[#2a2a2a]"
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-gray-200/60 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900"
         role="dialog"
         aria-labelledby="asistencia-titulo"
       >
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
           <div>
-            <h2 id="asistencia-titulo" className="text-lg font-semibold text-[#18301d] dark:text-white">
+            <h2 id="asistencia-titulo" className="text-lg font-semibold text-gray-900 dark:text-white">
               Registrar asistencia
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{grupoNombre}</p>
@@ -316,8 +338,8 @@ function RegistroAsistenciaModal({
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="rounded-xl bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/15 px-4 py-3 text-sm">
-            <p className="font-medium text-[#18301d] dark:text-white">{proximaReunionText}</p>
+          <div className="rounded-2xl bg-gray-100/70 px-4 py-3 text-sm dark:bg-white/[0.06]">
+            <p className="font-medium text-gray-900 dark:text-white">{proximaReunionText}</p>
             {ubicacion && <p className="text-gray-600 dark:text-gray-400 mt-1">{ubicacion}</p>}
             {fechaLabel && (
               <p className="text-gray-600 dark:text-gray-400 mt-1">Fecha: {fechaLabel}</p>
@@ -340,18 +362,19 @@ function RegistroAsistenciaModal({
             </div>
           ) : (
             <div>
-              <label htmlFor="cedula-asistencia" className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
-                Cédula del miembro
+              <label htmlFor="cedula-asistencia" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                Documento ID del miembro
               </label>
               <input
                 id="cedula-asistencia"
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 autoComplete="off"
                 placeholder="Ej: 1234567890"
                 value={cedula}
-                onChange={(e) => setCedula(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#252525] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2]"
+                onChange={(e) => setCedula(soloDigitosDocumentoId(e.target.value))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20"
               />
             </div>
           )}
@@ -367,7 +390,7 @@ function RegistroAsistenciaModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 px-4 text-gray-600 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-100 dark:hover:bg-[#252525] transition"
+              className="flex-1 rounded-full py-3 px-4 font-medium text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.08]"
             >
               Cerrar
             </button>
@@ -375,7 +398,7 @@ function RegistroAsistenciaModal({
               type="button"
               onClick={() => void handleSubmit()}
               disabled={enviando || !hayMiembrosEnGrupo || !grupoActivo}
-              className="flex-1 py-3 px-4 bg-[#0ca6b2] text-white font-semibold rounded-xl hover:bg-[#0a8f99] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="flex-1 rounded-full bg-gray-900 py-3 px-4 font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
             >
               {enviando ? "Guardando…" : "Registrar"}
             </button>
@@ -440,7 +463,7 @@ function AgregarPersonasModal({
       setExito(null);
       try {
         const qSafe = q.replace(/[%_]/g, "");
-        const digits = soloDigitosCedula(qSafe);
+        const digits = soloDigitosDocumentoId(qSafe);
 
         const { data, error: qErr } = await supabase
           .from("personas")
@@ -464,7 +487,7 @@ function AgregarPersonasModal({
 
         const finales =
           digits && digits.length >= 4
-            ? sinEsteGrupo.filter((p) => soloDigitosCedula(p.cedula ?? "").includes(digits))
+            ? sinEsteGrupo.filter((p) => soloDigitosDocumentoId(p.cedula ?? "").includes(digits))
             : sinEsteGrupo;
 
         const ordenados = finales
@@ -538,14 +561,14 @@ function AgregarPersonasModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-[#2a2a2a]">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-gray-200/60 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900">
+        <div className="flex items-center justify-between border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
           <div>
-            <h2 className="text-lg font-semibold text-[#18301d] dark:text-white">{titulo}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{titulo}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
               {modo === "apoyo"
                 ? "Quedarán en la sección Grupo de apoyo y su estado será En servicio."
-                : "Busca por nombre o cédula y agrégalo como miembro del núcleo."}
+                : "Busca por nombre o documento ID y agrégalo como miembro del núcleo."}
             </p>
           </div>
           <button
@@ -562,58 +585,62 @@ function AgregarPersonasModal({
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
-              Nombre o cédula
+            <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+              Nombre o documento ID
             </label>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ej: Melissa o 1102867002"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#252525] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2]"
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20"
             />
           </div>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-2">{error}</p>}
           {exito && <p className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-xl px-3 py-2">{exito}</p>}
 
-          <div className="rounded-xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between">
+          <div className="overflow-hidden rounded-2xl border border-gray-200/60 dark:border-white/10">
+            <div className="flex items-center justify-between border-b border-gray-200/60 px-4 py-3 dark:border-white/10">
               <p className="text-sm text-gray-500 dark:text-gray-400">{buscando ? "Buscando…" : `${resultados.length} resultado(s)`}</p>
             </div>
 
             {resultados.length === 0 ? (
-              <div className="p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                {buscando ? "Un momento…" : "No hay resultados. Prueba con otro nombre o cédula."}
+              <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                {buscando ? "Un momento…" : "No hay resultados. Prueba con otro nombre o documento ID."}
               </div>
             ) : (
-              <div className="divide-y divide-gray-50 dark:divide-[#2a2a2a] max-h-[320px] overflow-auto">
+              <div className="scrollbar-brand max-h-[320px] divide-y divide-gray-200/50 overflow-y-auto overscroll-y-contain dark:divide-white/10">
                 {resultados.map((p) => {
                   const estadoMostrado = p.estado;
+                  const pill = estadoMiembroPillFor(estadoMostrado);
                   const rolClass = rolMiembroStyles[p.rol] ?? "text-gray-500 dark:text-gray-400";
                   const esAgregando = !!agregandoIds[p.id];
                   const enOtroGrupo = p.grupo_id != null;
                   return (
-                    <div key={p.id} className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-[#252525] transition">
+                    <div key={p.id} className="px-4 py-3 flex items-center justify-between gap-3 transition hover:bg-gray-200/40 dark:hover:bg-white/[0.06]">
                       <div className="flex items-center gap-3 min-w-0">
                         <UserAvatar seed={p.nombre} size={36} />
                         <div className="min-w-0">
-                          <p className="font-medium text-[#18301d] dark:text-white truncate">{p.nombre}</p>
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{p.nombre}</p>
                           <p className={`text-xs truncate mt-0.5 ${rolClass}`}>{p.rol}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">{p.cedula ? `Cédula: ${p.cedula}` : ""}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">{p.cedula ? `Doc. ID: ${p.cedula}` : ""}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${estadoMiembroStyles[estadoMostrado] ?? "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400"}`}>
+                        <span
+                          className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${pill.badge}`}
+                        >
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot}`} />
                           {estadoMostrado}
                         </span>
                         <button
                           type="button"
                           onClick={() => void handleAgregar(p.id)}
                           disabled={esAgregando || enOtroGrupo}
-                          className={`px-3 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`rounded-full px-3 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                             enOtroGrupo
-                              ? "bg-gray-200 dark:bg-[#252525] text-gray-600 dark:text-gray-400"
-                              : "bg-[#0ca6b2] text-white hover:bg-[#0a8f99]"
+                              ? "bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400"
+                              : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                           }`}
                         >
                           {enOtroGrupo ? "En otro grupo" : esAgregando ? "Agregando…" : "Agregar"}
@@ -630,7 +657,7 @@ function AgregarPersonasModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 px-4 text-gray-600 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-100 dark:hover:bg-[#252525] transition"
+              className="flex-1 rounded-full py-3 px-4 font-medium text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.08]"
             >
               Cerrar
             </button>
@@ -834,7 +861,7 @@ export default function Page() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <svg className="w-10 h-10 animate-spin text-[#0ca6b2]" fill="none" viewBox="0 0 24 24">
+        <svg className="h-8 w-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
@@ -846,7 +873,7 @@ export default function Page() {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4">
         <p className="text-gray-500 dark:text-gray-400 mb-4">Grupo no encontrado.</p>
-        <Link href="/grupos" className="text-[#0ca6b2] font-medium hover:underline">
+        <Link href="/grupos" className="font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white">
           Volver a grupos
         </Link>
       </div>
@@ -938,77 +965,84 @@ export default function Page() {
           await cargarStats();
         }}
       />
-      {/* Header con imagen */}
-      <div className="relative h-48 sm:h-64 md:h-80">
-        {grupo.imagen ? (
-          <Image
-            src={grupo.imagen}
-            alt={grupo.nombre}
-            fill
-            className="object-cover object-top"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0ca6b2] to-[#18301d] opacity-90" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#18301d] dark:from-[#111] via-[#18301d]/60 dark:via-[#111]/60 to-transparent" />
+      <div className="w-full max-w-none px-4 pt-8 md:px-6 lg:px-8">
+        <div className="relative mb-8 rounded-3xl bg-gray-100/50 dark:bg-white/[0.04] p-5 md:p-6">
+          <Link
+            href="/grupos"
+            className="absolute left-4 top-4 z-10 rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white md:left-5 md:top-5"
+            title="Volver a grupos"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </Link>
 
-        <Link
-          href="/grupos"
-          className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </Link>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-3 py-1 bg-[#0ca6b2] text-white text-xs font-semibold rounded-full">
-                {tipoLabel}
-              </span>
-              <span className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 ${grupo.activo ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                {estadoLabel}
-              </span>
+          <div className="flex flex-col items-center gap-6 pt-10 md:flex-row md:items-center md:gap-8 md:pt-4 md:pl-4">
+            <div className="flex min-h-[9rem] shrink-0 items-center justify-center md:min-h-[7.5rem]">
+              <GrupoAvatarCluster nombreGrupo={grupo.nombre} sizeCenter={96} sizeSide={56} />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{grupo.nombre}</h1>
-            <p className="text-white/80 text-sm md:text-base">{grupo.descripcion || "Sin descripción"}</p>
+            <div className="min-w-0 flex-1 text-center md:text-left">
+              <div className="mb-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-normal text-gray-700 shadow-sm shadow-black/[0.04] dark:bg-white/10 dark:text-gray-300 dark:shadow-none">
+                  {tipoLabel}
+                </span>
+                <span
+                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    grupo.activo
+                      ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                      : "bg-gray-500/10 text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      grupo.activo ? "bg-emerald-400/80 dark:bg-emerald-400/55" : "bg-gray-400 dark:bg-gray-500"
+                    }`}
+                  />
+                  {estadoLabel}
+                </span>
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">
+                {grupo.nombre}
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">
+                {grupo.descripcion || "Sin descripción"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-3 gap-6">
+      <div className="px-4 py-6 md:px-6 lg:px-8">
+        <div className="w-full">
+          <div className="grid gap-6 lg:grid-cols-3">
             {!grupoOperativo && (
-              <div className="lg:col-span-3 rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-5 py-4 text-sm text-amber-950 dark:text-amber-100">
+              <div className="rounded-3xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-sm text-amber-950 dark:border-amber-800/40 dark:bg-amber-950/25 dark:text-amber-100 lg:col-span-3">
                 <p className="font-semibold">Grupo inactivo</p>
                 <p className="mt-1 text-amber-900/90 dark:text-amber-100/85">
                   No puedes registrar asistencia, agregar miembros ni usar acciones de gestión hasta que reactives el grupo.
                 </p>
               </div>
             )}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6 lg:col-span-2">
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-4 text-center">
-                  <p className="text-2xl md:text-3xl font-bold text-[#18301d] dark:text-white">{miembros.length}</p>
+                <div className="rounded-3xl bg-gray-100/40 p-4 text-center dark:bg-white/[0.04]">
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">{miembros.length}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Personas en el grupo</p>
                   {apoyoLista.length > 0 && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 leading-tight">
+                    <p className="mt-1 text-xs leading-tight text-gray-400 dark:text-gray-500">
                       {miembrosNucleo.length} núcleo · {apoyoLista.length} apoyo
                     </p>
                   )}
                 </div>
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-4 text-center">
-                  <p className="text-2xl md:text-3xl font-bold text-[#0ca6b2]">
+                <div className="rounded-3xl bg-gray-100/40 p-4 text-center dark:bg-white/[0.04]">
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">
                     {statsLoading ? "—" : asistenciaMes}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Asistencia</p>
                 </div>
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-4 text-center">
-                  <p className="text-2xl md:text-3xl font-bold text-[#e64b27]">
+                <div className="rounded-3xl bg-gray-100/40 p-4 text-center dark:bg-white/[0.04]">
+                  <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">
                     {statsLoading ? "—" : reunionesMes}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Reuniones/mes</p>
@@ -1018,10 +1052,12 @@ export default function Page() {
               {/* Núcleo del grupo (miembros + co-líderes) */}
               <div
                 id="miembros-del-grupo"
-                className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden scroll-mt-24"
+                className="scroll-mt-24 overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]"
               >
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-[#18301d] dark:text-white">Miembros del grupo</h3>
+                <div className="flex items-center justify-between gap-3 border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
+                    Miembros del grupo
+                  </h3>
                   <button
                     type="button"
                     disabled={!grupoOperativo}
@@ -1031,41 +1067,52 @@ export default function Page() {
                       setModalAgregarPersonas(true);
                     }}
                     title={!grupoOperativo ? "Reactiva el grupo para agregar miembros" : undefined}
-                    className="text-sm text-[#0ca6b2] font-medium hover:underline shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
+                    className="shrink-0 text-sm font-medium text-gray-900 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline dark:text-white"
                   >
                     + Agregar miembro
                   </button>
                 </div>
-                <div className="divide-y divide-gray-50 dark:divide-[#2a2a2a]">
+                <div className="scrollbar-brand max-h-[min(calc(12*4rem),70dvh)] divide-y divide-gray-200/50 overflow-y-auto overscroll-y-contain dark:divide-white/10">
                   {miembrosNucleo.length === 0 ? (
-                    <div className="px-5 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                    <div className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       {miembros.length === 0 ? (
                         <>
-                          Aún no hay personas en este grupo. Pulsa <span className="font-medium text-[#0ca6b2]">+ Agregar miembro</span> o usa{" "}
-                          <span className="font-medium text-violet-600 dark:text-violet-400">Grupo de apoyo</span> en acciones rápidas.
+                          Aún no hay personas en este grupo. Pulsa <span className="font-medium text-gray-900 dark:text-white">+ Agregar miembro</span> o usa{" "}
+                          <span className="font-medium text-violet-700 dark:text-violet-300">Grupo de apoyo</span> en acciones rápidas.
                         </>
                       ) : (
-                        <>Solo hay personas en grupo de apoyo. Agrega miembros al núcleo con <span className="font-medium text-[#0ca6b2]">+ Agregar miembro</span>.</>
+                        <>
+                          Solo hay personas en grupo de apoyo. Agrega miembros al núcleo con{" "}
+                          <span className="font-medium text-gray-900 dark:text-white">+ Agregar miembro</span>.
+                        </>
                       )}
                     </div>
                   ) : (
                     miembrosNucleo.map((miembro) => {
                       const estadoMostrado = estadoVisibleEnGrupo(miembro.estado);
+                      const pill = estadoMiembroPillFor(estadoMostrado);
                       const { texto: subEtiqueta, className: subClass } = etiquetaParticipacion(miembro);
                       return (
-                        <div key={miembro.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-[#252525] transition">
-                          <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          key={miembro.id}
+                          className="flex h-16 shrink-0 items-center justify-between gap-3 px-5 transition hover:bg-gray-200/40 dark:hover:bg-white/[0.06]"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
                             <UserAvatar seed={miembro.nombre} size={40} />
-                            <div className="min-w-0">
-                              <Link href={`/personas/${miembro.id}`} className="font-medium text-[#18301d] dark:text-white hover:text-[#0ca6b2] transition block truncate">
+                            <div className="min-w-0 py-1">
+                              <Link
+                                href={`/personas/${miembro.id}`}
+                                className="block truncate font-medium leading-tight text-gray-900 transition hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
+                              >
                                 {miembro.nombre}
                               </Link>
-                              <p className={`text-xs mt-0.5 truncate ${subClass}`}>{subEtiqueta}</p>
+                              <p className={`mt-0.5 truncate text-xs leading-tight ${subClass}`}>{subEtiqueta}</p>
                             </div>
                           </div>
                           <span
-                            className={`shrink-0 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${estadoMiembroStyles[estadoMostrado] ?? "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400"}`}
+                            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${pill.badge}`}
                           >
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot}`} />
                             {estadoMostrado}
                           </span>
                         </div>
@@ -1073,100 +1120,21 @@ export default function Page() {
                     })
                   )}
                 </div>
-              </div>
-
-              {/* Grupo de apoyo */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-[#18301d] dark:text-white">Grupo de apoyo</h3>
-                  <button
-                    type="button"
-                    disabled={!grupoOperativo}
-                    onClick={() => {
-                      if (!grupoOperativo) return;
-                      setModoAgregarPersonas("apoyo");
-                      setModalAgregarPersonas(true);
-                    }}
-                    title={!grupoOperativo ? "Reactiva el grupo para agregar apoyo" : undefined}
-                    className="text-sm text-violet-600 dark:text-violet-400 font-medium hover:underline shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
-                  >
-                    + Agregar apoyo
-                  </button>
-                </div>
-                <div className="divide-y divide-gray-50 dark:divide-[#2a2a2a]">
-                  {apoyoLista.length === 0 ? (
-                    <div className="px-5 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-                      Personas que apoyan al grupo sin ser del núcleo. Quedan con estado <span className="font-medium">En servicio</span>. Agrégalas desde aquí o desde la ficha de la persona.
-                    </div>
-                  ) : (
-                    apoyoLista.map((miembro) => {
-                      const estadoMostrado = estadoVisibleEnGrupo(miembro.estado);
-                      const { texto: subEtiqueta, className: subClass } = etiquetaParticipacion(miembro);
-                      return (
-                        <div key={miembro.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-[#252525] transition">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <UserAvatar seed={miembro.nombre} size={40} />
-                            <div className="min-w-0">
-                              <Link href={`/personas/${miembro.id}`} className="font-medium text-[#18301d] dark:text-white hover:text-[#0ca6b2] transition block truncate">
-                                {miembro.nombre}
-                              </Link>
-                              <p className={`text-xs mt-0.5 truncate ${subClass}`}>{subEtiqueta}</p>
-                            </div>
-                          </div>
-                          <span
-                            className={`shrink-0 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap ${estadoMiembroStyles[estadoMostrado] ?? "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400"}`}
-                          >
-                            {estadoMostrado}
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a]">
-                  <h3 className="font-semibold text-[#18301d] dark:text-white">Últimas reuniones</h3>
-                </div>
-                {ultimasReuniones.length === 0 ? (
-                  <div className="p-5 text-center text-gray-500 dark:text-gray-400 text-sm">
-                    Aún no hay asistencias registradas para este grupo.
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-50 dark:divide-[#2a2a2a]">
-                    {ultimasReuniones.map((r) => (
-                      <div key={r.fecha} className="px-5 py-3 flex items-center justify-between">
-                        <div className="min-w-0 pr-4">
-                          <p className="text-sm text-[#18301d] dark:text-white font-medium">
-                            {formatFechaCorta(r.fecha)}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-1">
-                            {r.nombres.length > 0 ? r.nombres.join(", ") : "—"}
-                          </p>
-                        </div>
-                        <p className="text-xs text-[#0ca6b2] dark:text-[#0ca6b2] font-medium whitespace-nowrap shrink-0">
-                          {r.asistentes} {r.asistentes === 1 ? "persona" : "personas"}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Próxima reunión */}
-              <div className="bg-gradient-to-br from-[#0ca6b2] to-[#088a94] rounded-2xl p-5 text-white">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="rounded-3xl bg-gray-100/40 p-5 dark:bg-white/[0.04]">
+                <div className="mb-3 flex items-center gap-2 text-gray-900 dark:text-white">
+                  <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                   </svg>
-                  <span className="font-medium">Próxima reunión</span>
+                  <span className="text-sm font-semibold">Próxima reunión</span>
                 </div>
-                <p className="text-xl font-bold mb-1">{proximaReunion}</p>
-                <p className="text-white/80">{grupo.ubicacion || "—"}</p>
+                <p className="mb-1 text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{proximaReunion}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{grupo.ubicacion || "—"}</p>
                 <button
                   type="button"
                   disabled={miembros.length === 0 || !grupoOperativo}
@@ -1180,60 +1148,60 @@ export default function Page() {
                         ? "Agrega miembros al grupo para registrar asistencia"
                         : undefined
                   }
-                  className={`mt-4 w-full py-2.5 font-semibold rounded-xl transition ${
+                  className={`mt-4 w-full rounded-full py-2.5 text-sm font-semibold transition ${
                     miembros.length === 0 || !grupoOperativo
-                      ? "bg-white/35 text-white/70 cursor-not-allowed"
-                      : "bg-white text-[#0ca6b2] hover:bg-white/90"
+                      ? "cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-white/10 dark:text-gray-500"
+                      : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                   }`}
                 >
                   Registrar asistencia
                 </button>
                 {miembros.length === 0 && grupoOperativo && (
-                  <p className="text-xs text-white/85 mt-2 text-center leading-snug">
-                    Agrega miembros con <span className="font-semibold">+ Agregar miembro</span> para habilitar el registro de asistencia.
+                  <p className="mt-2 text-center text-xs leading-snug text-gray-500 dark:text-gray-400">
+                    Agrega miembros con <span className="font-semibold text-gray-900 dark:text-white">+ Agregar miembro</span> para habilitar el registro de asistencia.
                   </p>
                 )}
                 {!grupoOperativo && (
-                  <p className="text-xs text-white/85 mt-2 text-center leading-snug">
+                  <p className="mt-2 text-center text-xs leading-snug text-gray-500 dark:text-gray-400">
                     Reactiva el grupo en acciones rápidas para registrar asistencia.
                   </p>
                 )}
               </div>
 
               {/* Información del grupo */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a]">
-                  <h3 className="font-semibold text-[#18301d] dark:text-white">Información</h3>
+              <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                <div className="border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">Información</h3>
                 </div>
-                <div className="p-5 space-y-4">
+                <div className="space-y-4 p-5">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#0ca6b2] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Día y hora</p>
-                      <p className="font-medium text-[#18301d] dark:text-white">
+                      <p className="font-medium text-gray-900 dark:text-white">
                         {grupo.dia && grupo.hora ? `${grupo.dia} a las ${grupo.hora}` : "—"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#e64b27] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                     </svg>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Lugar</p>
-                      <p className="font-medium text-[#18301d] dark:text-white">{grupo.ubicacion || "—"}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{grupo.ubicacion || "—"}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-[#f9c70c] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Creado</p>
-                      <p className="font-medium text-[#18301d] dark:text-white">{formatCreatedAt(grupo.created_at)}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formatCreatedAt(grupo.created_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -1241,15 +1209,18 @@ export default function Page() {
 
               {/* Líder */}
               {grupo.lideres && (
-                <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a]">
-                    <h3 className="font-semibold text-[#18301d] dark:text-white">Liderazgo</h3>
+                <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                  <div className="border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">Liderazgo</h3>
                   </div>
                   <div className="p-5">
                     <div className="flex items-center gap-3">
                       <UserAvatar seed={grupo.lideres.nombre} size={48} />
                       <div className="flex-1">
-                        <Link href={`/lideres/${grupo.lideres.id}`} className="font-medium text-[#18301d] dark:text-white hover:text-[#0ca6b2] transition">
+                        <Link
+                          href={`/lideres/${grupo.lideres.id}`}
+                          className="font-medium text-gray-900 transition hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
+                        >
                           {grupo.lideres.nombre}
                         </Link>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Líder principal</p>
@@ -1257,7 +1228,7 @@ export default function Page() {
                       {grupo.lideres.telefono && (
                         <a
                           href={`https://wa.me/${grupo.lideres.telefono.replace(/\D/g, "")}`}
-                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#333] text-gray-400 hover:text-[#0ca6b2] transition"
+                          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/10 dark:hover:text-white"
                           title="WhatsApp"
                         >
                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1270,12 +1241,10 @@ export default function Page() {
                 </div>
               )}
 
-              {/* Acciones rápidas */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2a2a2a]">
-                  <h3 className="font-semibold text-[#18301d] dark:text-white">Acciones rápidas</h3>
-                </div>
-                <div className="p-3 space-y-1">
+              {/* Grupo de apoyo */}
+              <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                <div className="flex items-center justify-between gap-3 border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">Grupo de apoyo</h3>
                   <button
                     type="button"
                     disabled={!grupoOperativo}
@@ -1284,12 +1253,99 @@ export default function Page() {
                       setModoAgregarPersonas("apoyo");
                       setModalAgregarPersonas(true);
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition text-left disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
+                    title={!grupoOperativo ? "Reactiva el grupo para agregar apoyo" : undefined}
+                    className="shrink-0 text-sm font-medium text-violet-800 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-40 disabled:no-underline dark:text-violet-300"
                   >
-                    <svg className="w-5 h-5 text-[#0ca6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    + Agregar apoyo
+                  </button>
+                </div>
+                <div className="scrollbar-brand max-h-[min(20rem,50dvh)] divide-y divide-gray-200/50 overflow-y-auto overscroll-y-contain dark:divide-white/10">
+                  {apoyoLista.length === 0 ? (
+                    <div className="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      Personas que apoyan al grupo sin ser del núcleo. Quedan con estado <span className="font-medium">En servicio</span>. Agrégalas desde aquí o desde la ficha de la persona.
+                    </div>
+                  ) : (
+                    apoyoLista.map((miembro) => {
+                      const estadoMostrado = estadoVisibleEnGrupo(miembro.estado);
+                      const pill = estadoMiembroPillFor(estadoMostrado);
+                      const { texto: subEtiqueta, className: subClass } = etiquetaParticipacion(miembro);
+                      return (
+                        <div
+                          key={miembro.id}
+                          className="flex items-center justify-between gap-3 px-5 py-3 transition hover:bg-gray-200/40 dark:hover:bg-white/[0.06]"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <UserAvatar seed={miembro.nombre} size={40} />
+                            <div className="min-w-0">
+                              <Link
+                                href={`/personas/${miembro.id}`}
+                                className="block truncate font-medium text-gray-900 transition hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
+                              >
+                                {miembro.nombre}
+                              </Link>
+                              <p className={`mt-0.5 truncate text-xs ${subClass}`}>{subEtiqueta}</p>
+                            </div>
+                          </div>
+                          <span
+                            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${pill.badge}`}
+                          >
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${pill.dot}`} />
+                            {estadoMostrado}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                <div className="border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">Últimas reuniones</h3>
+                </div>
+                {ultimasReuniones.length === 0 ? (
+                  <div className="p-5 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Aún no hay asistencias registradas para este grupo.
+                  </div>
+                ) : (
+                  <div className="scrollbar-brand max-h-[min(18rem,45dvh)] divide-y divide-gray-200/50 overflow-y-auto overscroll-y-contain dark:divide-white/10">
+                    {ultimasReuniones.map((r) => (
+                      <div key={r.fecha} className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 sm:pr-4">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{formatFechaCorta(r.fecha)}</p>
+                          <p className="mt-1 truncate text-xs text-gray-600 dark:text-gray-400 sm:mt-0.5">
+                            {r.nombres.length > 0 ? r.nombres.join(", ") : "—"}
+                          </p>
+                        </div>
+                        <p className="shrink-0 whitespace-nowrap text-xs font-medium text-gray-600 dark:text-gray-400">
+                          {r.asistentes} {r.asistentes === 1 ? "persona" : "personas"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Acciones rápidas */}
+              <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+                <div className="border-b border-gray-200/60 px-5 py-4 dark:border-white/10">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">Acciones rápidas</h3>
+                </div>
+                <div className="space-y-1 p-3">
+                  <button
+                    type="button"
+                    disabled={!grupoOperativo}
+                    onClick={() => {
+                      if (!grupoOperativo) return;
+                      setModoAgregarPersonas("apoyo");
+                      setModalAgregarPersonas(true);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-gray-200/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:hover:bg-white/[0.06] dark:disabled:hover:bg-transparent"
+                  >
+                    <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    <span className="text-sm font-medium text-[#18301d] dark:text-white">Agregar grupo de apoyo</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Agregar grupo de apoyo</span>
                   </button>
                   <button
                     type="button"
@@ -1299,37 +1355,37 @@ export default function Page() {
                       setModoAgregarPersonas("miembros");
                       setModalAgregarPersonas(true);
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition text-left disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
+                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-gray-200/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:hover:bg-white/[0.06] dark:disabled:hover:bg-transparent"
                   >
-                    <svg className="w-5 h-5 text-[#18301d] dark:text-[#0ca6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="h-5 w-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="text-sm font-medium text-[#18301d] dark:text-white">Agregar miembros</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Agregar miembros</span>
                   </button>
 
-                  <div className="border-t border-gray-100 dark:border-[#2a2a2a] my-2 pt-2 space-y-1">
+                  <div className="my-2 space-y-1 border-t border-gray-200/60 pt-2 dark:border-white/10">
                     {grupoOperativo ? (
                       <button
                         type="button"
                         onClick={() => setModalInactivar(true)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/15 transition text-left"
+                        className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-amber-50 dark:hover:bg-amber-900/15"
                       >
-                        <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                         </svg>
-                        <span className="text-sm font-medium text-[#18301d] dark:text-white">Inactivar grupo</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Inactivar grupo</span>
                       </button>
                     ) : (
                       <button
                         type="button"
                         disabled={grupoAccionLoading}
                         onClick={() => void confirmarReactivarGrupo()}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/15 transition text-left disabled:opacity-50"
+                        className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-green-50 disabled:opacity-50 dark:hover:bg-green-900/15"
                       >
-                        <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm font-medium text-[#18301d] dark:text-white">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {grupoAccionLoading ? "Reactivando…" : "Reactivar grupo"}
                         </span>
                       </button>
@@ -1374,15 +1430,15 @@ export default function Page() {
             aria-hidden
           />
           <div
-            className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-[#2a2a2a] p-6"
+            className="relative w-full max-w-md rounded-3xl border border-gray-200/60 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900"
             role="dialog"
             aria-labelledby="inactivar-grupo-titulo"
           >
-            <h3 id="inactivar-grupo-titulo" className="text-lg font-semibold text-[#18301d] dark:text-white mb-2">
+            <h3 id="inactivar-grupo-titulo" className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
               Inactivar grupo
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              <strong className="text-[#18301d] dark:text-white">«{grupo.nombre}»</strong> quedará inactivo: no podrás registrar
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              <strong className="text-gray-900 dark:text-white">«{grupo.nombre}»</strong> quedará inactivo: no podrás registrar
               asistencia ni agregar miembros hasta que lo reactives. Los datos y las personas asignadas al grupo no se borran.
             </p>
             <div className="flex gap-3">
@@ -1390,7 +1446,7 @@ export default function Page() {
                 type="button"
                 disabled={grupoAccionLoading}
                 onClick={() => setModalInactivar(false)}
-                className="flex-1 py-3 px-4 text-gray-600 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-100 dark:hover:bg-[#252525] transition disabled:opacity-50"
+                className="flex-1 rounded-full py-3 px-4 font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-white/[0.08]"
               >
                 Cancelar
               </button>
@@ -1398,7 +1454,7 @@ export default function Page() {
                 type="button"
                 disabled={grupoAccionLoading}
                 onClick={() => void confirmarInactivarGrupo()}
-                className="flex-1 py-3 px-4 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-50 transition"
+                className="flex-1 rounded-full bg-amber-600 py-3 px-4 font-semibold text-white transition hover:bg-amber-700 disabled:opacity-50"
               >
                 {grupoAccionLoading ? "Guardando…" : "Inactivar"}
               </button>
@@ -1415,15 +1471,15 @@ export default function Page() {
             aria-hidden
           />
           <div
-            className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-[#2a2a2a] p-6"
+            className="relative w-full max-w-md rounded-3xl border border-gray-200/60 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900"
             role="dialog"
             aria-labelledby="eliminar-grupo-titulo"
           >
-            <h3 id="eliminar-grupo-titulo" className="text-lg font-semibold text-[#18301d] dark:text-white mb-2">
+            <h3 id="eliminar-grupo-titulo" className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
               Eliminar grupo
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Vas a eliminar permanentemente <strong className="text-[#18301d] dark:text-white">«{grupo.nombre}»</strong>. Solo es
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              Vas a eliminar permanentemente <strong className="text-gray-900 dark:text-white">«{grupo.nombre}»</strong>. Solo es
               posible si el grupo no tiene miembros. Los registros de asistencia de este grupo también se eliminarán.
             </p>
             <p className="text-sm text-red-600 dark:text-red-400 mb-6 font-medium">Esta acción no se puede deshacer.</p>
@@ -1432,7 +1488,7 @@ export default function Page() {
                 type="button"
                 disabled={grupoAccionLoading}
                 onClick={() => setModalEliminar(false)}
-                className="flex-1 py-3 px-4 text-gray-600 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-100 dark:hover:bg-[#252525] transition disabled:opacity-50"
+                className="flex-1 rounded-full py-3 px-4 font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-white/[0.08]"
               >
                 Cancelar
               </button>
@@ -1440,7 +1496,7 @@ export default function Page() {
                 type="button"
                 disabled={grupoAccionLoading || !puedeEliminarGrupo}
                 onClick={() => void confirmarEliminarGrupo()}
-                className="flex-1 py-3 px-4 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition"
+                className="flex-1 rounded-full bg-red-600 py-3 px-4 font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
               >
                 {grupoAccionLoading ? "Eliminando…" : "Eliminar definitivamente"}
               </button>

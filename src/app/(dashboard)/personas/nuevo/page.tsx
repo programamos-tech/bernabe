@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/UserAvatar";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { soloDigitosDocumentoId } from "@/lib/documento-id";
+import {
+  parseTriBoolForm,
+  SITUACION_ACERCAMIENTO_OPTIONS,
+  type SituacionAcercamiento,
+} from "@/lib/personas-situacion-acercamiento";
 import { createClient } from "@/lib/supabase/client";
+import { PERSONA_NATIVE_SELECT_CLASS } from "@/lib/persona-form-ui";
 
 interface GrupoOption {
   id: string;
@@ -51,6 +58,8 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
   const [nombre, setNombre] = useState("");
+  const [documentoId, setDocumentoId] = useState("");
+  const [vieneDeOtraIglesia, setVieneDeOtraIglesia] = useState<"" | "true" | "false">("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,7 +77,7 @@ export default function Page() {
     const form = e.currentTarget;
     const formData = new FormData(form);
     const nombreVal = (formData.get("nombre") as string)?.trim();
-    const cedulaVal = (formData.get("cedula") as string)?.trim() || null;
+    const cedulaVal = documentoId.trim() || null;
     const telefonoVal = (formData.get("telefono") as string)?.trim() || null;
     const emailVal = (formData.get("email") as string)?.trim() || null;
     const estadoCivilVal = (formData.get("estadoCivil") as string) || null;
@@ -76,6 +85,20 @@ export default function Page() {
     const direccionVal = (formData.get("direccion") as string)?.trim() || null;
     const grupoIdVal = (formData.get("grupo") as string)?.trim() || null;
     const notasVal = (formData.get("notas") as string)?.trim() || null;
+    const bautizadoVal = parseTriBoolForm(formData.get("bautizado"));
+    const vieneOtraVal = parseTriBoolForm(formData.get("vieneDeOtraIglesia"));
+    const iglesiaAntVal = (formData.get("nombreIglesiaAnterior") as string)?.trim() || null;
+    const situRaw = (formData.get("situacionAcercamiento") as string)?.trim() || null;
+    const situacionesValidas: SituacionAcercamiento[] = [
+      "primera_vez_fe",
+      "otra_iglesia",
+      "retorno",
+      "no_indica",
+    ];
+    const situacionVal =
+      situRaw && situacionesValidas.includes(situRaw as SituacionAcercamiento)
+        ? (situRaw as SituacionAcercamiento)
+        : null;
 
     if (!nombreVal) {
       setError("El nombre es obligatorio.");
@@ -119,11 +142,24 @@ export default function Page() {
           notas: null,
           estado: grupoIdVal ? "Activo" : "Visitante",
           rol: "Miembro",
+          bautizado: bautizadoVal,
+          viene_de_otra_iglesia: vieneOtraVal,
+          nombre_iglesia_anterior: vieneOtraVal === true ? iglesiaAntVal : null,
+          situacion_acercamiento: situacionVal,
         })
         .select("id")
         .single();
 
-      if (insertErr) throw insertErr;
+      if (insertErr) {
+        if (insertErr.code === "23505") {
+          setError(
+            "Ya existe una persona con ese documento de identidad en tu iglesia. Revisa el número o busca en el listado."
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        throw insertErr;
+      }
 
       if (notasVal && nuevaPersona?.id) {
         const { error: notaErr } = await supabase.from("persona_notas").insert({
@@ -193,11 +229,16 @@ export default function Page() {
                     />
                   </FormField>
 
-                  <FormField icon="id" label="Cédula">
+                  <FormField icon="id" label="Documento ID">
                     <input
                       type="text"
                       name="cedula"
-                      placeholder="Ej: 1.023.456.789"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      value={documentoId}
+                      onChange={(e) => setDocumentoId(soloDigitosDocumentoId(e.target.value))}
+                      placeholder="Ej: 1023456789"
                       className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
                     />
                   </FormField>
@@ -239,13 +280,10 @@ export default function Page() {
                   </div>
 
                   <FormField icon="heart" label="Estado civil">
-                    <select
-                      name="estadoCivil"
-                      className="w-full bg-transparent text-[#18301d] dark:text-white focus:outline-none cursor-pointer"
-                    >
-                      <option value="" className="dark:bg-[#252525]">Seleccionar...</option>
+                    <select name="estadoCivil" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Seleccionar...</option>
                       {estadosCiviles.map((estado) => (
-                        <option key={estado} value={estado} className="dark:bg-[#252525]">
+                        <option key={estado} value={estado}>
                           {estado}
                         </option>
                       ))}
@@ -253,13 +291,10 @@ export default function Page() {
                   </FormField>
 
                   <FormField icon="work" label="Ocupación">
-                    <select
-                      name="ocupacion"
-                      className="w-full bg-transparent text-[#18301d] dark:text-white focus:outline-none cursor-pointer"
-                    >
-                      <option value="" className="dark:bg-[#252525]">Seleccionar...</option>
+                    <select name="ocupacion" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Seleccionar...</option>
                       {ocupaciones.map((ocupacion) => (
-                        <option key={ocupacion} value={ocupacion} className="dark:bg-[#252525]">
+                        <option key={ocupacion} value={ocupacion}>
                           {ocupacion}
                         </option>
                       ))}
@@ -274,6 +309,60 @@ export default function Page() {
                       className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
                     />
                   </FormField>
+                </div>
+              </div>
+
+              {/* Camino espiritual / llegada */}
+              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
+                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-1">Camino espiritual y llegada</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Ayuda a distinguir visitantes nuevos en la fe de quienes vienen de otras congregaciones. Todo es opcional.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <FormField icon="sparkles" label="¿Está bautizado/a?">
+                    <select name="bautizado" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  <FormField icon="sparkles" label="Situación de acercamiento">
+                    <select name="situacionAcercamiento" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Seleccionar…</option>
+                      {SITUACION_ACERCAMIENTO_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  <FormField icon="sparkles" label="¿Viene de otra iglesia?">
+                    <select
+                      name="vieneDeOtraIglesia"
+                      value={vieneDeOtraIglesia}
+                      onChange={(e) => setVieneDeOtraIglesia(e.target.value as "" | "true" | "false")}
+                      className={PERSONA_NATIVE_SELECT_CLASS}
+                    >
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  {vieneDeOtraIglesia === "true" && (
+                    <div className="sm:col-span-2">
+                      <FormField icon="sparkles" label="Nombre de la iglesia anterior">
+                        <input
+                          type="text"
+                          name="nombreIglesiaAnterior"
+                          placeholder="Ej: Iglesia X, ciudad…"
+                          className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                        />
+                      </FormField>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -396,6 +485,13 @@ function FormField({
     heart: <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />,
     work: <><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0" /></>,
     location: <><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></>,
+    sparkles: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+      />
+    ),
   };
 
   return (
