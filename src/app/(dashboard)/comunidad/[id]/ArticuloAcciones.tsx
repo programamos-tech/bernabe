@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ensureAuthenticatedOrRedirectToRegister } from "@/lib/auth/ensure-authenticated-client";
 
 type Props = {
   likesBase: number;
@@ -8,12 +10,23 @@ type Props = {
 };
 
 export function ArticuloAcciones({ likesBase, comentarios }: Props) {
+  const router = useRouter();
   const [extraLike, setExtraLike] = useState<0 | 1>(0);
   const [guardado, setGuardado] = useState(false);
 
-  const toggleLike = useCallback(() => {
+  const toggleLike = useCallback(async () => {
+    if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
     setExtraLike((x) => (x === 1 ? 0 : 1));
-  }, []);
+  }, [router]);
+
+  const toggleGuardar = useCallback(async () => {
+    if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
+    setGuardado((g) => !g);
+  }, [router]);
+
+  const comentar = useCallback(async () => {
+    await ensureAuthenticatedOrRedirectToRegister(router.push);
+  }, [router]);
 
   const likes = likesBase + extraLike;
 
@@ -22,7 +35,7 @@ export function ArticuloAcciones({ likesBase, comentarios }: Props) {
       <div className="flex items-center gap-1 sm:gap-3">
         <button
           type="button"
-          onClick={toggleLike}
+          onClick={() => void toggleLike()}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#e64b27] transition-colors"
           aria-pressed={extraLike === 1}
           aria-label="Me gusta"
@@ -37,7 +50,12 @@ export function ArticuloAcciones({ likesBase, comentarios }: Props) {
           <span className="text-sm tabular-nums">{likes}</span>
         </button>
 
-        <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-gray-500 dark:text-gray-400">
+        <button
+          type="button"
+          onClick={() => void comentar()}
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#0ca6b2] transition-colors"
+          aria-label="Comentar"
+        >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path
               strokeLinecap="round"
@@ -49,7 +67,7 @@ export function ArticuloAcciones({ likesBase, comentarios }: Props) {
             Comentar
             {comentarios > 0 ? <span className="text-gray-400 dark:text-gray-500"> · {comentarios}</span> : null}
           </span>
-        </span>
+        </button>
 
         <button
           type="button"
@@ -69,7 +87,7 @@ export function ArticuloAcciones({ likesBase, comentarios }: Props) {
 
       <button
         type="button"
-        onClick={() => setGuardado((g) => !g)}
+        onClick={() => void toggleGuardar()}
         className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 transition-colors ${
           guardado
             ? "text-[#0ca6b2] bg-[#0ca6b2]/10"

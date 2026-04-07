@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ensureAuthenticatedOrRedirectToRegister } from "@/lib/auth/ensure-authenticated-client";
 import { createClient } from "@/lib/supabase/client";
 import {
   ARTICULOS_COMUNIDAD_MOCK,
@@ -16,12 +18,14 @@ function ArticuloCard({
   guardado,
   onToggleLike,
   onToggleSave,
+  onComentar,
 }: {
   articulo: ArticuloComunidadMock;
   extraLikes: 0 | 1;
   guardado: boolean;
   onToggleLike: () => void;
   onToggleSave: () => void;
+  onComentar: () => void;
 }) {
   const likesMostrados = articulo.likes + extraLikes;
 
@@ -91,6 +95,7 @@ function ArticuloCard({
 
           <button
             type="button"
+            onClick={onComentar}
             className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#0ca6b2] transition-colors"
             aria-label="Comentar"
           >
@@ -151,6 +156,7 @@ function ArticuloCard({
 }
 
 export default function Page() {
+  const router = useRouter();
   const [userSeed, setUserSeed] = useState<string>("Usuario");
   const [extraLikesPorId, setExtraLikesPorId] = useState<Record<string, 0 | 1>>({});
   const [guardados, setGuardados] = useState<Record<string, boolean>>({});
@@ -162,16 +168,28 @@ export default function Page() {
     });
   }, []);
 
-  const toggleLike = useCallback((id: string) => {
-    setExtraLikesPorId((prev) => ({
-      ...prev,
-      [id]: prev[id] === 1 ? 0 : 1,
-    }));
-  }, []);
+  const toggleLike = useCallback(
+    async (id: string) => {
+      if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
+      setExtraLikesPorId((prev) => ({
+        ...prev,
+        [id]: prev[id] === 1 ? 0 : 1,
+      }));
+    },
+    [router]
+  );
 
-  const toggleSave = useCallback((id: string) => {
-    setGuardados((prev) => ({ ...prev, [id]: !prev[id] }));
-  }, []);
+  const toggleSave = useCallback(
+    async (id: string) => {
+      if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
+      setGuardados((prev) => ({ ...prev, [id]: !prev[id] }));
+    },
+    [router]
+  );
+
+  const comentar = useCallback(async () => {
+    await ensureAuthenticatedOrRedirectToRegister(router.push);
+  }, [router]);
 
   const destacados = useMemo(() => ARTICULOS_COMUNIDAD_MOCK.slice(0, 3), []);
 
@@ -192,6 +210,7 @@ export default function Page() {
                 <UserAvatar seed={userSeed} size={36} />
                 <button
                   type="button"
+                  onClick={() => void comentar()}
                   className="flex-1 text-left px-3 py-2 bg-gray-50 dark:bg-[#252525] rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition text-sm"
                 >
                   Escribí para otros líderes: discipulado, apoyo, guía pastoral…
@@ -234,8 +253,9 @@ export default function Page() {
                 articulo={articulo}
                 extraLikes={(extraLikesPorId[articulo.id] ?? 0) as 0 | 1}
                 guardado={!!guardados[articulo.id]}
-                onToggleLike={() => toggleLike(articulo.id)}
-                onToggleSave={() => toggleSave(articulo.id)}
+                onToggleLike={() => void toggleLike(articulo.id)}
+                onToggleSave={() => void toggleSave(articulo.id)}
+                onComentar={() => void comentar()}
               />
             ))}
           </div>
