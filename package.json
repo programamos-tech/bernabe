@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:personas": "node --env-file=.env.local scripts/seed-demo-personas.mjs"
+    "seed:personas": "node --env-file=.env.local scripts/seed-demo-personas.mjs",
+    "seed:grupos": "node --env-file=.env.local scripts/seed-grupos-iglesia.mjs",
+    "seed:lideres": "node --env-file=.env.local scripts/seed-lideres-iglesia.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",

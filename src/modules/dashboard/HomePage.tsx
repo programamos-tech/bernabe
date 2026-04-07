@@ -286,11 +286,13 @@ export function HomePage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
       <div className="w-full max-w-none">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">
+        <div className="mb-8 min-w-0">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">
             ¡Hola, {pastorName}! 👋
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Aquí está el resumen de tu iglesia hoy.</p>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
+            Aquí está el resumen de tu iglesia hoy.
+          </p>
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

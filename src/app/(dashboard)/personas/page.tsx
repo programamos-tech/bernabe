@@ -192,9 +192,9 @@ export default function Page() {
     <div className="w-full max-w-none px-4 py-8 md:px-6 lg:px-8 min-h-[calc(100vh-4rem)]">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Personas</h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Personas</h1>
+            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
               Miembros y visitantes de la iglesia.
             </p>
           </div>

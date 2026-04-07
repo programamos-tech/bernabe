@@ -225,9 +225,9 @@ export default function Page() {
   return (
     <div className="w-full max-w-none min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Grupos</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Grupos</h1>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
             Comunidades de conexión y crecimiento de la iglesia.
           </p>
         </div>

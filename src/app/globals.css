@@ -58,6 +58,24 @@
     -webkit-text-stroke: 0.3px currentColor;
   }
 
+  /** Navbar: resto del nombre en peso logo; primera letra más marcada. */
+  .font-logo-brand {
+    font-family: var(--font-logo), cursive;
+    font-weight: 400;
+    -webkit-text-stroke: 0.3px currentColor;
+  }
+  .font-logo-brand::first-letter {
+    font-weight: 900;
+    -webkit-text-stroke: 0.65px currentColor;
+  }
+
+  /** Misma familia tipográfica del logo, sin trazo ni peso extra — títulos de lectura (Comunidad, etc.). */
+  .font-logo-soft {
+    font-family: var(--font-logo), cursive;
+    font-weight: 400;
+    -webkit-text-stroke: 0;
+  }
+
   .btn-primary {
     display: inline-flex;
     align-items: center;

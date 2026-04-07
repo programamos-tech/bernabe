@@ -466,9 +466,11 @@ export default function Page() {
   return (
     <div className="min-h-[calc(100vh-4rem)] w-full max-w-none px-4 py-8 md:px-6 lg:px-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Calendario</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Eventos, reuniones y actividades de la iglesia.</p>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Calendario</h1>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
+            Eventos, reuniones y actividades de la iglesia.
+          </p>
         </div>
         <Link
           href="/eventos/nuevo"

@@ -8,28 +8,21 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
-  { href: "/home", label: "Inicio" },
-  { href: "/comunidad", label: "Comunidad" },
+  { href: "/home", label: "Mi iglesia" },
   { href: "/personas", label: "Personas" },
   { href: "/grupos", label: "Grupos" },
   { href: "/eventos", label: "Eventos" },
   { href: "/calendario", label: "Calendario" },
   { href: "/lideres", label: "Líderes" },
+  { href: "/comunidad", label: "Comunidad" },
 ] as const;
 
 const mobileNavItems = [
   {
     href: "/home",
-    label: "Inicio",
+    label: "Mi iglesia",
     icon: (
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-    ),
-  },
-  {
-    href: "/comunidad",
-    label: "Comunidad",
-    icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
     ),
   },
   {
@@ -67,6 +60,13 @@ const mobileNavItems = [
       <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
     ),
   },
+  {
+    href: "/comunidad",
+    label: "Comunidad",
+    icon: (
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
+    ),
+  },
 ] as const;
 
 export function DashboardNavbar() {
@@ -86,7 +86,7 @@ export function DashboardNavbar() {
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95">
         <div className="flex items-center justify-between h-14 px-4 md:px-6">
           <Link href="/home" className="inline-block group">
-            <span className="font-logo text-xl text-gray-900 dark:text-white tracking-tight block">
+            <span className="font-logo-brand text-xl text-gray-900 dark:text-white tracking-tight block">
               Bernabé
             </span>
           </Link>

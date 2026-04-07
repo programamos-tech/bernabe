@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ARTICULOS_COMUNIDAD_MOCK, CATEGORIAS_LIDERAZGO } from "@/lib/comunidad-articulos-mock";
 
 const btnPrimary =
   "inline-flex items-center justify-center rounded-full bg-gray-900 px-8 py-4 text-center font-semibold text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100";
@@ -26,6 +27,12 @@ function Navbar() {
               className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
               Características
+            </a>
+            <a
+              href="#comunidad"
+              className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            >
+              Comunidad
             </a>
             <a
               href="#how-it-works"
@@ -58,29 +65,171 @@ function Navbar() {
   );
 }
 
-function LandingHeroVisual() {
+/** Misma escala de puntos que en /personas (solo demo landing). */
+const landingEstadoDot: Record<string, string> = {
+  Activo: "bg-emerald-400/75 dark:bg-emerald-400/55",
+  Visitante: "bg-amber-300/90 dark:bg-amber-300/65",
+  "En seguimiento": "bg-sky-400/80 dark:bg-sky-400/55",
+  "En servicio": "bg-violet-400/80 dark:bg-violet-400/55",
+  Inactivo: "bg-gray-400/85 dark:bg-gray-500/65",
+};
+
+const LANDING_PERSONAS_DEMO = [
+  {
+    nombre: "María Elena Vásquez",
+    telefono: "+58 424-1122334",
+    grupo: "Zona Norte",
+    estado: "Activo",
+    contacto: "28 mar 2025",
+  },
+  {
+    nombre: "Carlos Rivas",
+    telefono: "+58 414-9988776",
+    grupo: "Sin asignar",
+    estado: "Visitante",
+    contacto: "30 mar 2025",
+  },
+  {
+    nombre: "Ana Lucía Méndez",
+    telefono: "+58 412-5544332",
+    grupo: "Jóvenes",
+    estado: "En seguimiento",
+    contacto: "27 mar 2025",
+  },
+  {
+    nombre: "Roberto Díaz",
+    telefono: "+58 426-2211009",
+    grupo: "Matrimonios",
+    estado: "Activo",
+    contacto: "25 mar 2025",
+  },
+  {
+    nombre: "Luisa Herrera",
+    telefono: "+58 424-6677881",
+    grupo: "Intercesión",
+    estado: "En servicio",
+    contacto: "22 mar 2025",
+  },
+] as const;
+
+function LandingHeroPersonasPreview() {
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[min(100%,22rem)] sm:max-w-[26rem]">
-      <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-        <UserAvatar seed="landing·bernabé·centro" size={112} className="ring-4 ring-white/95 dark:ring-white/10" />
+    <div
+      className="pointer-events-none select-none"
+      role="img"
+      aria-label="Vista previa de la pantalla Personas en Bernabé: tabla de miembros con nombre, grupo, estado y último contacto."
+    >
+      <div className="mb-3 min-w-0">
+        <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Personas</h2>
+        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">Miembros y visitantes de la iglesia.</p>
       </div>
-      <div className="absolute left-[4%] top-[14%] z-10">
-        <UserAvatar seed="landing·comunidad·a" size={76} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
+
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <svg
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <div className="rounded-full bg-gray-100/90 py-2 pl-9 pr-3 text-xs text-gray-400 dark:bg-white/[0.06] dark:text-gray-500">
+            Buscar persona...
+          </div>
+        </div>
+        <div className="flex h-9 w-full items-center rounded-full bg-gray-100/90 px-3 text-xs text-gray-500 dark:bg-white/[0.06] dark:text-gray-400 sm:w-44">
+          Todos los estados
+        </div>
       </div>
-      <div className="absolute right-[4%] top-[12%] z-10">
-        <UserAvatar seed="landing·grupo·b" size={72} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[12%] left-[8%] z-10">
-        <UserAvatar seed="landing·pastoral·c" size={68} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[10%] right-[10%] z-10">
-        <UserAvatar seed="landing·líder·d" size={64} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute left-[26%] top-[4%] z-[5] hidden sm:block">
-        <UserAvatar seed="landing·visita·e" size={52} className="opacity-90 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute right-[24%] bottom-[6%] z-[5] hidden sm:block">
-        <UserAvatar seed="landing·iglesia·f" size={50} className="opacity-90 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
+
+      <div className="overflow-hidden rounded-2xl bg-gray-100/50 dark:bg-white/[0.04] sm:rounded-3xl">
+        <div className="min-w-0">
+          <table className="w-full table-fixed border-collapse text-left text-[10px] sm:text-xs">
+            <colgroup>
+              <col className="w-[36%]" />
+              <col className="w-[16%]" />
+              <col className="w-[20%]" />
+              <col className="w-[16%]" />
+              <col className="w-[12%]" />
+            </colgroup>
+            <thead>
+              <tr className="text-gray-500 dark:text-gray-400">
+                <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
+                  Persona
+                </th>
+                <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
+                  Grupo
+                </th>
+                <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
+                  Estado
+                </th>
+                <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
+                  Último contacto
+                </th>
+                <th className="px-1.5 pb-1.5 pt-2.5 text-right font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {LANDING_PERSONAS_DEMO.map((row) => (
+                <tr key={row.nombre} className="border-t border-gray-200/60 dark:border-white/[0.06]">
+                  <td className="min-w-0 px-1.5 py-2 sm:px-2 sm:py-2.5">
+                    <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+                      <UserAvatar seed={row.nombre} size={28} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium leading-tight text-gray-900 dark:text-white">{row.nombre}</div>
+                        <div className="truncate text-[9px] text-gray-500 dark:text-gray-400 sm:text-[10px]">{row.telefono}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="min-w-0 px-1.5 py-2 text-gray-600 dark:text-gray-300 sm:px-2 sm:py-2.5">
+                    <span className="line-clamp-2 break-words leading-tight">{row.grupo}</span>
+                  </td>
+                  <td className="min-w-0 px-1.5 py-2 sm:px-2 sm:py-2.5">
+                    <div className="flex items-start gap-1 sm:items-center sm:gap-1.5">
+                      <span
+                        className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full sm:mt-0 ${landingEstadoDot[row.estado] ?? landingEstadoDot.Activo}`}
+                      />
+                      <span className="min-w-0 break-words leading-tight text-gray-700 dark:text-gray-300">{row.estado}</span>
+                    </div>
+                  </td>
+                  <td className="min-w-0 px-1.5 py-2 tabular-nums text-gray-500 dark:text-gray-400 sm:px-2 sm:py-2.5">
+                    <span className="line-clamp-2 break-words leading-tight">{row.contacto}</span>
+                  </td>
+                  <td className="px-1 py-2 sm:px-2 sm:py-2.5">
+                    <div className="flex items-center justify-end gap-0 text-gray-400">
+                      <span className="rounded-full p-0.5 sm:p-1">
+                        <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </span>
+                      <span className="rounded-full p-0.5 sm:p-1">
+                        <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
+                        </svg>
+                      </span>
+                      <span className="rounded-full p-0.5 sm:p-1">
+                        <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                        </svg>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-gray-200/60 px-3 py-2.5 text-center text-[10px] text-gray-500 dark:border-white/[0.06] dark:text-gray-400 sm:px-4 sm:text-xs sm:text-left">
+          Mostrando <span className="font-medium text-gray-800 dark:text-gray-200">1</span> —{" "}
+          <span className="font-medium text-gray-800 dark:text-gray-200">5</span> de{" "}
+          <span className="font-medium text-gray-800 dark:text-gray-200">127</span>
+        </div>
       </div>
     </div>
   );
@@ -103,8 +252,8 @@ function HeroSection() {
   return (
     <section className="bg-gradient-to-b from-gray-100/40 to-white px-4 pb-20 pt-32 dark:from-[#111111] dark:to-[#151515] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)]">
+          <div className="min-w-0">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-2 dark:bg-amber-400/10">
               <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400/90 dark:bg-amber-300/80" />
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">La plataforma para pastores y líderes</span>
@@ -131,9 +280,9 @@ function HeroSection() {
               </p>
             </div>
           </div>
-          <div className="relative flex justify-center lg:justify-end">
-            <div className="w-full max-w-md rounded-3xl bg-white/80 p-8 shadow-sm shadow-black/[0.06] dark:bg-white/[0.06] dark:shadow-none sm:p-10">
-              <LandingHeroVisual />
+          <div className="relative flex w-full min-w-0 justify-center lg:justify-end">
+            <div className="w-full max-w-full rounded-3xl border border-gray-200/70 bg-white/90 p-3 shadow-lg shadow-black/[0.06] dark:border-white/[0.08] dark:bg-[#181818]/95 dark:shadow-none sm:p-4">
+              <LandingHeroPersonasPreview />
             </div>
           </div>
         </div>
@@ -209,6 +358,88 @@ function FeaturesSection() {
               <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{feature.description}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ComunidadLandingSection() {
+  const preview = ARTICULOS_COMUNIDAD_MOCK.slice(0, 2);
+
+  return (
+    <section
+      id="comunidad"
+      className="scroll-mt-24 border-y border-gray-200/60 bg-gradient-to-b from-sky-50/90 to-white px-4 py-24 dark:border-white/[0.06] dark:from-sky-950/25 dark:to-[#111111] sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto max-w-7xl">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
+              Dentro de Bernabé
+            </p>
+            <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              <span className="font-logo-soft font-medium">Comunidad</span> para quienes{" "}
+              <span className="text-sky-700 dark:text-sky-300">lideran y pastorean</span>
+            </h2>
+            <p className="mt-4 max-w-lg text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+              Compartí estudios, reflexiones y apoyo con otros líderes de tu red. No es otro blog genérico: está pensado para{" "}
+              <strong className="font-medium text-gray-900 dark:text-white">equipos que dirigen en la iglesia local</strong>.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {CATEGORIAS_LIDERAZGO.map((cat) => (
+                <span
+                  key={cat}
+                  className="rounded-full border border-sky-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-sky-900 dark:border-sky-500/25 dark:bg-white/[0.06] dark:text-sky-100"
+                >
+                  {cat}
+                </span>
+              ))}
+            </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/register" className={`${btnPrimary} w-full sm:w-auto`}>
+                Crear cuenta y ver Comunidad
+              </Link>
+              <Link
+                href="/login"
+                className="text-center text-sm font-medium text-sky-800 underline-offset-4 hover:underline dark:text-sky-300"
+              >
+                Ya tengo cuenta
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div
+              className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-sky-400/10 blur-2xl dark:bg-sky-500/10"
+              aria-hidden
+            />
+            <div className="relative space-y-3 rounded-2xl border border-gray-200/80 bg-white/90 p-4 shadow-lg shadow-sky-900/5 dark:border-white/[0.08] dark:bg-[#1a1a1a]/95 dark:shadow-none">
+              <p className="px-1 text-xs font-medium text-gray-500 dark:text-gray-400">Vista previa del feed</p>
+              {preview.map((a) => (
+                <div
+                  key={a.id}
+                  className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 dark:border-[#2a2a2a] dark:bg-[#141414]"
+                >
+                  <div className="flex gap-2.5">
+                    <UserAvatar seed={a.autor} size={36} className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:text-sky-200">
+                          {a.categoria}
+                        </span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{a.autor}</span>
+                      </div>
+                      <p className="mt-1 font-logo-soft text-sm font-normal leading-snug text-gray-900 dark:text-white line-clamp-2">
+                        {a.titulo}
+                      </p>
+                      <p className="mt-1 text-xs leading-snug text-gray-600 dark:text-gray-400 line-clamp-2">{a.excerpt}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -397,6 +628,11 @@ function Footer() {
                 </a>
               </li>
               <li>
+                <a href="#comunidad" className="text-sm text-gray-400 transition hover:text-white">
+                  Comunidad de líderes
+                </a>
+              </li>
+              <li>
                 <a href="#how-it-works" className="text-sm text-gray-400 transition hover:text-white">
                   Cómo funciona
                 </a>
@@ -433,7 +669,7 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-400 transition hover:text-white">
+                <a href="#comunidad" className="text-sm text-gray-400 transition hover:text-white">
                   Comunidad
                 </a>
               </li>
@@ -481,6 +717,7 @@ export default function LandingPage() {
       <Navbar />
       <HeroSection />
       <FeaturesSection />
+      <ComunidadLandingSection />
       <HowItWorksSection />
       <TestimonialsSection />
       <CTASection />

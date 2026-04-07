@@ -205,11 +205,13 @@ export default function Page() {
     "w-full rounded-full border border-gray-200/80 bg-gray-100/80 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15 md:w-64";
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full max-w-none px-4 py-8 md:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] w-full min-w-0 max-w-none px-4 py-8 md:px-6 lg:px-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Líderes</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Seguimiento y gestión del equipo de liderazgo.</p>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Líderes</h1>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
+            Seguimiento y gestión del equipo de liderazgo.
+          </p>
         </div>
         <Link
           href="/lideres/nuevo"
@@ -418,24 +420,24 @@ export default function Page() {
       </div>
 
       {!loading && lideres.length > 0 && filtered.length > 0 ? (
-        <div className="hidden overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] md:block">
-          <div className="scrollbar-brand overflow-x-auto">
-            <table className="min-w-[860px] w-full table-fixed">
+        <div className="hidden min-w-0 overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] md:block">
+          <div className="min-w-0 overflow-x-hidden">
+            <table className="w-full min-w-0 table-fixed">
               <colgroup>
-                <col style={{ width: "24%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "32%" }} />
-                <col style={{ width: "9%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "auto", minWidth: "132px" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "26%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "10%" }} />
               </colgroup>
               <thead>
                 <tr className="border-b border-gray-200/60 dark:border-white/10">
                   <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
                     Líder
                   </th>
-                  <th className="whitespace-nowrap px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
+                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
                     Documento ID
                   </th>
                   <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">Rol</th>
@@ -446,7 +448,7 @@ export default function Page() {
                     Miembros
                   </th>
                   <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">Estado</th>
-                  <th className="w-32 px-3 py-4 lg:px-6" aria-label="Acciones" />
+                  <th className="px-2 py-4 lg:px-3" aria-label="Acciones" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50 dark:divide-white/10">
@@ -463,11 +465,13 @@ export default function Page() {
                         </div>
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-4 align-top text-sm text-gray-600 dark:text-gray-400 lg:px-6">{lider.cedula ?? "—"}</td>
+                    <td className="break-words px-3 py-4 align-top text-sm text-gray-600 dark:text-gray-400 lg:px-6">{lider.cedula ?? "—"}</td>
                     <td className="px-3 py-4 align-top lg:px-6">
                       {lider.rolEtiqueta ? (
-                        <span className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${rolStyles[lider.rolEstilo]}`}>
-                          {lider.rolEtiqueta}
+                        <span
+                          className={`inline-flex max-w-full rounded-full px-2 py-1 text-[11px] font-medium leading-snug sm:px-3 sm:text-xs ${rolStyles[lider.rolEstilo]}`}
+                        >
+                          <span className="break-words">{lider.rolEtiqueta}</span>
                         </span>
                       ) : (
                         "—"
@@ -492,14 +496,14 @@ export default function Page() {
                     <td className="px-3 py-4 align-top lg:px-6">
                       <EstadoPill estado={lider.estado} />
                     </td>
-                    <td className="px-3 py-4 align-top lg:px-6">
-                      <div className="flex items-center gap-1">
+                    <td className="px-1 py-4 align-top lg:px-2">
+                      <div className="flex flex-wrap items-center justify-end gap-0.5">
                         <button
                           type="button"
-                          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
                           title="Enviar mensaje"
                         >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -509,19 +513,19 @@ export default function Page() {
                         </button>
                         <button
                           type="button"
-                          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
                           title="WhatsApp"
                         >
-                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
                           </svg>
                         </button>
                         <Link
                           href={`/lideres/${lider.id}`}
-                          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
                           title="Ver perfil"
                         >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>

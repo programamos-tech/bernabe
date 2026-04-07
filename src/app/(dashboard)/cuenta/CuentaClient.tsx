@@ -122,11 +122,13 @@ export default function CuentaClient({
   ] as const;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
-      <div className="w-full max-w-none">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-3xl">Mi cuenta</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">Administra tu perfil y la configuración de tu iglesia.</p>
+    <div className="min-h-[calc(100vh-4rem)] px-4 py-4 md:py-5 md:px-6 pb-24 md:pb-6">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-3 md:mb-4">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Mi cuenta</h1>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
+            Administra tu perfil y la configuración de tu iglesia.
+          </p>
         </div>
 
         <div className="mb-6 rounded-3xl bg-gray-100/50 p-6 dark:bg-white/[0.04]">
@@ -367,13 +369,13 @@ export default function CuentaClient({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
           <Link
             href="/lideres"
-            className="flex items-center gap-4 rounded-3xl bg-gray-100/40 p-5 transition-colors hover:bg-gray-100/60 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+            className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 transition-colors hover:border-gray-200 hover:bg-gray-50/80 dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-[#3a3a3a] dark:hover:bg-white/[0.03] sm:gap-4 sm:p-5"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-gray-500 shadow-sm shadow-black/[0.04] dark:bg-white/[0.08] dark:text-gray-400 dark:shadow-none">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-[#252525] dark:text-gray-400 sm:h-12 sm:w-12 sm:rounded-2xl">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -382,8 +384,10 @@ export default function CuentaClient({
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 dark:text-white">Gestionar líderes</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Administra tu equipo de liderazgo</p>
+              <p className="text-xl md:text-2xl font-medium leading-snug text-[#18301d] dark:text-white font-logo-soft tracking-tight">
+                Gestionar líderes
+              </p>
+              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 leading-snug">Administra tu equipo de liderazgo</p>
             </div>
           </Link>
 
@@ -391,10 +395,10 @@ export default function CuentaClient({
             type="button"
             onClick={handleCerrarSesion}
             disabled={loggingOut}
-            className="flex w-full items-center gap-4 rounded-3xl bg-gray-100/40 p-5 text-left transition-colors hover:bg-red-500/5 dark:bg-white/[0.04] dark:hover:bg-red-500/10 disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 text-left transition-colors hover:border-red-200 hover:bg-red-50/40 dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-red-500/20 dark:hover:bg-red-500/5 disabled:opacity-50 sm:gap-4 sm:p-5"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-red-600/90 shadow-sm shadow-black/[0.04] dark:bg-white/[0.08] dark:text-red-400/90 dark:shadow-none">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-red-600/90 dark:bg-[#252525] dark:text-red-400/90 sm:h-12 sm:w-12 sm:rounded-2xl">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -403,8 +407,10 @@ export default function CuentaClient({
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 dark:text-white">Cerrar sesión</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{loggingOut ? "Saliendo..." : "Salir de tu cuenta"}</p>
+              <p className="text-xl md:text-2xl font-medium leading-snug text-[#18301d] dark:text-white font-logo-soft tracking-tight">
+                Cerrar sesión
+              </p>
+              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 leading-snug">{loggingOut ? "Saliendo..." : "Salir de tu cuenta"}</p>
             </div>
           </button>
         </div>
