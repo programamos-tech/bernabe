@@ -58,7 +58,11 @@ AS $$
     FROM public.persona_asistencia pa
     WHERE pa.grupo_id = p_grupo_id
   )
-  SELECT pa.fecha::date, pa.persona_id, p.nombre::text, COALESCE(p.sexo, '')::text AS sexo
+  SELECT
+    pa.fecha::date,
+    pa.persona_id,
+    p.nombre::text,
+    COALESCE(to_jsonb(p) ->> 'sexo', '')::text AS sexo
   FROM public.persona_asistencia pa
   INNER JOIN ult u ON u.d IS NOT NULL AND pa.fecha = u.d
   INNER JOIN public.personas p ON p.id = pa.persona_id
