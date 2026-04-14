@@ -29,7 +29,7 @@ export function pasosCaminoEtapas(): readonly EtapaPersonaDb[] {
 
 /**
  * Etapa que debe reflejar el mapa y la cabecera cuando el rol en grupo implica un punto del camino
- * distinto al valor guardado en `personas.etapa` (p. ej. co-líder = líder en formación, no «en servicio»).
+ * distinto al valor guardado en `personas.etapa` (p. ej. co-líder = líder en formación, no etapa `en_servicio` / «Buen siervo»).
  */
 export function etapaMostradaEnCamino(
   etapa: EtapaPersonaDb,
@@ -48,6 +48,10 @@ export function etapaMostradaEnCamino(
 export function hitosCaminoPersona(args: {
   fechaRegistroIso: string | null;
   fechaIngresoGrupoIso: string | null;
+  fechaCaminoBautismoIso: string | null;
+  /** Si hay bautismo registrado, el hito muestra «Bautizado» (no «Camino al bautismo»). */
+  fechaBautismoIso: string | null;
+  bautizado: boolean | null;
   grupoNombre: string | null;
   coLiderDesdeIso: string | null;
 }): HitoCaminoPersona[] {
@@ -68,7 +72,28 @@ export function hitosCaminoPersona(args: {
       iso: fi,
       titulo: "En grupo de célula",
       descripcion: g ? `Asignada/o a «${g}».` : "Asignada/o a un grupo.",
-      etapaAncla: "consolidado",
+      etapaAncla: "nuevo_creyente",
+    });
+  }
+  const fCamino = normIso(args.fechaCaminoBautismoIso);
+  const fBautismo = normIso(args.fechaBautismoIso);
+  const bautismoRealizado = args.bautizado === true || Boolean(fBautismo);
+  if (bautismoRealizado && (fBautismo || fCamino)) {
+    const iso = fBautismo ?? fCamino!;
+    out.push({
+      iso,
+      titulo: "Bautizado",
+      descripcion: fBautismo
+        ? "Bautismo registrado en la iglesia."
+        : "Bautismo registrado (fecha según el registro del camino).",
+      etapaAncla: "bautizado",
+    });
+  } else if (fCamino) {
+    out.push({
+      iso: fCamino,
+      titulo: "Camino al bautismo",
+      descripcion: "Inicio formal del proceso de preparación al bautismo.",
+      etapaAncla: "bautizado",
     });
   }
   const cl = normIso(args.coLiderDesdeIso);

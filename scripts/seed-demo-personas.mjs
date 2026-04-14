@@ -69,7 +69,7 @@ function buildRows({ organizationId, grupos, count, cedulaStart }) {
     const telefono = randomPhone(cedulaStart + i);
     const emailPersona = `demo.miembro.${cedula}@example.invalid`;
 
-    /** @type {"visitante"|"nuevo_creyente"|"en_proceso"|"consolidado"|"lider_en_formacion"|"lider_grupo"|"en_servicio"|"inactivo"} */
+    /** @type {"visitante"|"nuevo_creyente"|"bautizado"|"consolidado"|"lider_en_formacion"|"lider_grupo"|"en_servicio"|"inactivo"} */
     let etapa;
     /** @type {"miembro"|"apoyo"|"colider"|null} */
     let participacion_en_grupo = null;
@@ -87,7 +87,7 @@ function buildRows({ organizationId, grupos, count, cedulaStart }) {
     } else if (bucket < 88) {
       etapa = "visitante";
     } else if (bucket < 95) {
-      etapa = "en_proceso";
+      etapa = "bautizado";
     } else {
       grupo_id = gIds[k % gIds.length];
       participacion_en_grupo = "miembro";

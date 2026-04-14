@@ -352,7 +352,7 @@ export default function Page() {
     if (oldG !== newG) {
       if (!newG) {
         updatePayload.participacion_en_grupo = null;
-        updatePayload.etapa = "en_proceso";
+        updatePayload.etapa = "nuevo_creyente";
         updatePayload.fecha_ingreso_grupo = null;
         updatePayload.co_lider_desde = null;
       } else if (!oldG) {
@@ -362,9 +362,9 @@ export default function Page() {
         if (
           initialEtapa === "visitante" ||
           initialEtapa === "nuevo_creyente" ||
-          initialEtapa === "en_proceso"
+          initialEtapa === "bautizado"
         ) {
-          updatePayload.etapa = "consolidado";
+          updatePayload.etapa = "nuevo_creyente";
         }
       } else {
         updatePayload.participacion_en_grupo = "miembro";

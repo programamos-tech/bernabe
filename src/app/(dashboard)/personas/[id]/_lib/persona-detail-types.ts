@@ -44,6 +44,9 @@ export interface Persona {
   fechaRegistroIso: string | null;
   ultimoContactoIso: string | null;
   fechaIngresoGrupoIso: string | null;
+  fechaCaminoBautismoIso: string | null;
+  fechaBautismoIso: string | null;
+  lugarBautismo: string | null;
   coLiderDesdeIso: string | null;
   notasHistorial: NotaHistorialItem[];
   peticionesOracion: NotaHistorialItem[];

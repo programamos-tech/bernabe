@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, type JSX } from "react";
+import { GrupoCalendarioStyleCard, GrupoSelectableCard } from "../../_components/GrupoSeleccionCalendarioCards";
 import { createClient } from "@/lib/supabase/client";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { fechaHoyYYYYMMDD } from "@/lib/fecha-hoy-local";
+import { fechaLocalToIso } from "../_lib/persona-detail-dates";
 import {
   ETAPA_LABELS,
   ETAPAS_FILTRO_LISTA,
@@ -463,7 +466,7 @@ function ConfirmarLiberarGrupoModal({
             </p>
             <ul className="mt-3 list-disc list-inside space-y-1 text-amber-800/90 dark:text-amber-100/90">
               <li>Quedará <strong>sin grupo asignado</strong>.</li>
-              <li>Su etapa pasará a <strong>En proceso</strong>.</li>
+              <li>Su etapa pasará a <strong>Nuevo creyente</strong> (sin célula asignada).</li>
               <li>No se borran notas pastorales ni registros de seguimiento; solo se libera del grupo.</li>
             </ul>
           </div>
@@ -509,6 +512,9 @@ export interface GrupoParaAsignar {
   id: string;
   nombre: string;
   imagen: string | null;
+  hora?: string | null;
+  ubicacion?: string | null;
+  dia?: string | null;
 }
 
 function participacionDesdeDb(raw: string | null | undefined): ParticipacionEnGrupo {
@@ -800,14 +806,23 @@ function AsignarGrupoModal({
     void (async () => {
       const { data, error: qErr } = await supabase
         .from("grupos")
-        .select("id, nombre, imagen")
+        .select("id, nombre, imagen, hora, ubicacion, dia")
+        .eq("activo", true)
         .order("nombre");
       if (cancelled) return;
       if (qErr) {
         setError(qErr.message);
         setGrupos([]);
       } else {
-        setGrupos((data as GrupoParaAsignar[]) ?? []);
+        setGrupos(
+          ((data ?? []) as GrupoParaAsignar[]).map((g) => ({
+            ...g,
+            imagen: g.imagen ?? null,
+            hora: g.hora ?? null,
+            ubicacion: g.ubicacion ?? null,
+            dia: g.dia ?? null,
+          }))
+        );
       }
       setLoadingList(false);
     })();
@@ -837,7 +852,7 @@ function AsignarGrupoModal({
         .from("personas")
         .update({
           grupo_id: selectedId,
-          etapa: "consolidado",
+          etapa: "nuevo_creyente",
           participacion_en_grupo: "miembro",
           fecha_ingreso_grupo: fechaHoyYYYYMMDD(),
           co_lider_desde: null,
@@ -863,7 +878,7 @@ function AsignarGrupoModal({
         aria-hidden
       />
       <div
-        className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-[#2a2a2a]"
+        className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-[#2a2a2a] dark:bg-[#1a1a1a]"
         role="dialog"
         aria-labelledby="asignar-grupo-titulo"
       >
@@ -897,8 +912,8 @@ function AsignarGrupoModal({
           )}
 
           {loadingList ? (
-            <div className="py-12 flex justify-center">
-              <svg className="w-8 h-8 animate-spin text-[#0ca6b2]" fill="none" viewBox="0 0 24 24">
+            <div className="flex justify-center py-12">
+              <svg className="h-8 w-8 animate-spin text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path
                   className="opacity-75"
@@ -912,27 +927,26 @@ function AsignarGrupoModal({
               No hay grupos en tu organización. Crea uno desde la sección Grupos.
             </p>
           ) : (
-            <div className="max-h-[min(360px,50vh)] overflow-y-auto space-y-2 pr-1">
-              {grupos.map((g) => (
-                <label
-                  key={g.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${
-                    selectedId === g.id
-                      ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                      : "border-gray-100 dark:border-[#2a2a2a] hover:border-[#0ca6b2]/40"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="grupo-asignar"
-                    value={g.id}
-                    checked={selectedId === g.id}
-                    onChange={() => setSelectedId(g.id)}
-                    className="w-4 h-4 text-[#0ca6b2] focus:ring-[#0ca6b2] shrink-0"
-                  />
-                  <span className="text-sm font-medium text-[#18301d] dark:text-white">{g.nombre}</span>
-                </label>
-              ))}
+            <div
+              className="grid max-h-[min(420px,55vh)] grid-cols-2 gap-3 overflow-y-auto overflow-x-hidden pr-1 [-webkit-overflow-scrolling:touch]"
+              role="radiogroup"
+              aria-labelledby="asignar-grupo-titulo"
+            >
+              {grupos.map((g) => {
+                const sel = selectedId === g.id;
+                const horaLinea = g.hora?.trim() || g.dia?.trim() || "—";
+                const ubicacionLinea = g.ubicacion?.trim() || "—";
+                return (
+                  <GrupoSelectableCard key={g.id} selected={sel} onSelect={() => setSelectedId(g.id)}>
+                    <GrupoCalendarioStyleCard
+                      nombre={g.nombre}
+                      horaLinea={horaLinea}
+                      ubicacionLinea={ubicacionLinea}
+                      grupoId={g.id}
+                    />
+                  </GrupoSelectableCard>
+                );
+              })}
             </div>
           )}
 
@@ -949,7 +963,7 @@ function AsignarGrupoModal({
               type="button"
               onClick={() => void handleAssign()}
               disabled={!selectedId || submitting || loadingList || grupos.length === 0}
-              className="flex-1 py-3 px-4 bg-[#0ca6b2] text-white font-semibold rounded-xl hover:bg-[#0a8f99] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-neutral-300/90 bg-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-500 dark:text-neutral-950 dark:hover:bg-neutral-400"
             >
               {submitting ? (
                 <>
@@ -978,12 +992,15 @@ const ETAPAS_SELECTOR = ETAPAS_FILTRO_LISTA.filter(
   (x): x is { value: EtapaPersonaDb; label: string } => x.value !== "Todos"
 );
 
+const SEGUIMIENTOS_MIN_PARA_CONSOLIDADO = 3;
+
 function CambiarEtapaModal({
   isOpen,
   onClose,
   personaId,
   personaNombre,
   etapaActual,
+  registrosSeguimientoCount,
   onSaved,
 }: {
   isOpen: boolean;
@@ -991,7 +1008,9 @@ function CambiarEtapaModal({
   personaId: string;
   personaNombre: string;
   etapaActual: EtapaPersonaDb;
-  onSaved: (etapa: EtapaPersonaDb) => void;
+  /** Seguimientos pastorales (historial sin solo-asistencia); mínimo 3 para pasar a Consolidado. */
+  registrosSeguimientoCount: number;
+  onSaved: (etapa: EtapaPersonaDb, opts?: { fechaCaminoBautismoIso: string | null }) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [selected, setSelected] = useState<EtapaPersonaDb>(etapaActual);
@@ -1010,12 +1029,32 @@ function CambiarEtapaModal({
       onClose();
       return;
     }
+    if (
+      selected === "consolidado" &&
+      etapaActual !== "consolidado" &&
+      registrosSeguimientoCount < SEGUIMIENTOS_MIN_PARA_CONSOLIDADO
+    ) {
+      setError(
+        `Para pasar a ${ETAPA_LABELS.consolidado} se requieren al menos ${SEGUIMIENTOS_MIN_PARA_CONSOLIDADO} registros de seguimiento pastoral (ahora hay ${registrosSeguimientoCount}).`,
+      );
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const { error: updErr } = await supabase.from("personas").update({ etapa: selected }).eq("id", personaId);
+      const hoy = fechaHoyYYYYMMDD();
+      const payload: Record<string, unknown> = { etapa: selected };
+      if (selected === "bautizado" && etapaActual !== "bautizado") {
+        payload.fecha_camino_bautismo = hoy;
+      }
+      const { error: updErr } = await supabase.from("personas").update(payload).eq("id", personaId);
       if (updErr) throw updErr;
-      onSaved(selected);
+      onSaved(
+        selected,
+        selected === "bautizado" && etapaActual !== "bautizado"
+          ? { fechaCaminoBautismoIso: hoy }
+          : undefined
+      );
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo guardar.");
@@ -1069,13 +1108,19 @@ function CambiarEtapaModal({
             {ETAPAS_SELECTOR.map(({ value, label }) => {
               const isSel = selected === value;
               const isCurrent = etapaActual === value;
+              const consolidadoBloqueado =
+                value === "consolidado" &&
+                etapaActual !== "consolidado" &&
+                registrosSeguimientoCount < SEGUIMIENTOS_MIN_PARA_CONSOLIDADO;
               return (
                 <label
                   key={value}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition ${
-                    isSel
-                      ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                      : "border-transparent hover:bg-gray-100/80 dark:hover:bg-white/[0.06]"
+                  className={`flex items-center gap-3 rounded-xl border-2 p-3 transition ${
+                    consolidadoBloqueado
+                      ? "cursor-not-allowed border-transparent opacity-60"
+                      : `cursor-pointer border-transparent hover:bg-gray-100/80 dark:hover:bg-white/[0.06] ${
+                          isSel ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10" : ""
+                        }`
                   }`}
                 >
                   <input
@@ -1083,8 +1128,9 @@ function CambiarEtapaModal({
                     name="cambiar-etapa"
                     value={value}
                     checked={isSel}
+                    disabled={consolidadoBloqueado}
                     onChange={() => setSelected(value)}
-                    className="h-4 w-4 shrink-0 text-[#0ca6b2] focus:ring-[#0ca6b2]"
+                    className="h-4 w-4 shrink-0 text-[#0ca6b2] focus:ring-[#0ca6b2] disabled:cursor-not-allowed"
                   />
                   <span className={`h-2 w-2 shrink-0 rounded-full ${etapaDotClass[value]}`} aria-hidden />
                   <span className="min-w-0 flex-1">
@@ -1092,6 +1138,12 @@ function CambiarEtapaModal({
                     {isCurrent && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">Etapa actual</span>
                     )}
+                    {consolidadoBloqueado ? (
+                      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                        Requiere al menos {SEGUIMIENTOS_MIN_PARA_CONSOLIDADO} seguimientos pastorales (tienes{" "}
+                        {registrosSeguimientoCount}).
+                      </span>
+                    ) : null}
                   </span>
                 </label>
               );
@@ -1135,6 +1187,160 @@ function CambiarEtapaModal({
   );
 }
 
+function RegistrarBautismoModal({
+  isOpen,
+  onClose,
+  personaId,
+  personaNombre,
+  onSaved,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  personaId: string;
+  personaNombre: string;
+  onSaved: (payload: { fechaBautismoIso: string; lugarBautismo: string }) => void;
+}) {
+  const supabase = useMemo(() => createClient(), []);
+  const [fechaBautismo, setFechaBautismo] = useState<Date | null>(() => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    return d;
+  });
+  const [lugarBautismo, setLugarBautismo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      setFechaBautismo(d);
+      setLugarBautismo("");
+      setError(null);
+    }
+  }, [isOpen]);
+
+  const guardar = async () => {
+    if (loading) return;
+    const lugar = lugarBautismo.trim();
+    const fechaIso = fechaLocalToIso(fechaBautismo);
+    if (!fechaIso) {
+      setError("Selecciona la fecha del bautismo.");
+      return;
+    }
+    if (!lugar) {
+      setError("Indica el lugar donde se bautizó.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: updErr } = await supabase
+        .from("personas")
+        .update({
+          bautizado: true,
+          fecha_bautismo: fechaIso,
+          lugar_bautismo: lugar,
+          etapa: "bautizado",
+          fecha_camino_bautismo: fechaIso,
+        })
+        .eq("id", personaId);
+      if (updErr) throw updErr;
+      onSaved({ fechaBautismoIso: fechaIso, lugarBautismo: lugar });
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo registrar el bautismo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={loading ? undefined : onClose} aria-hidden />
+      <div
+        className="relative w-full max-w-lg overflow-visible rounded-2xl border border-gray-100 bg-white shadow-2xl dark:border-[#2a2a2a] dark:bg-[#1a1a1a]"
+        role="dialog"
+        aria-labelledby="registrar-bautismo-titulo"
+        aria-modal="true"
+      >
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-[#2a2a2a]">
+          <div>
+            <h2 id="registrar-bautismo-titulo" className="text-lg font-semibold text-[#18301d] dark:text-white">
+              Registrar bautismo
+            </h2>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{personaNombre}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg p-2 text-gray-400 transition hover:text-gray-600 disabled:opacity-50 dark:hover:text-white"
+            aria-label="Cerrar"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="relative z-10 space-y-4 p-5">
+          <p className="text-xs leading-snug text-gray-500 dark:text-gray-400">
+            Al guardar, se registrarán fecha y lugar del bautismo y la persona quedará marcada como bautizada en el camino.
+          </p>
+          {error ? (
+            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+              {error}
+            </p>
+          ) : null}
+          <div className="space-y-1.5">
+            <label htmlFor="fecha-bautismo" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Fecha del bautismo
+            </label>
+            <DatePicker
+              id="fecha-bautismo"
+              name="fechaBautismo"
+              value={fechaBautismo}
+              onChange={setFechaBautismo}
+              placeholder="Seleccionar fecha"
+              variant="soft"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="lugar-bautismo" className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Lugar donde se bautizó
+            </label>
+            <input
+              id="lugar-bautismo"
+              type="text"
+              value={lugarBautismo}
+              onChange={(e) => setLugarBautismo(e.target.value)}
+              placeholder="Ej.: Río Chama, Sede Central, Campamento..."
+              className="w-full rounded-xl border border-gray-200/70 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/45 dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15"
+            />
+          </div>
+        </div>
+
+        <div className="relative z-0 flex gap-3 border-t border-gray-100 p-4 dark:border-[#2a2a2a]">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 rounded-xl py-3 font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-[#252525]"
+          >
+            Cancelar
+          </button>
+          <button type="button" onClick={() => void guardar()} disabled={loading} className={BTN_MODAL_ACCION_PRIMARIA}>
+            {loading ? "Guardando…" : "Guardar bautismo"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PersonaDetailModals({
   personaId,
   personaNombre,
@@ -1149,6 +1355,7 @@ export function PersonaDetailModals({
   showPasarApoyoModal,
   showDesignarColiderModal,
   showCambiarEtapaModal,
+  showRegistrarBautismoModal,
   onCloseSeguimiento,
   onSaveSeguimiento,
   onCloseLiberar,
@@ -1157,9 +1364,12 @@ export function PersonaDetailModals({
   onAssignedGrupo,
   onClosePasarApoyo,
   onCloseDesignarColider,
+  onCloseRegistrarBautismo,
   onParticipacionGrupoActualizada,
   onCloseEtapa,
   onSavedEtapa,
+  onSavedBautismo,
+  registrosSeguimientoCount,
 }: {
   personaId: string;
   personaNombre: string;
@@ -1167,6 +1377,7 @@ export function PersonaDetailModals({
   personaGrupoId: string | null;
   personaGrupo: string;
   personaEtapa: EtapaPersonaDb;
+  registrosSeguimientoCount: number;
   showSeguimientoModal: boolean;
   showLiberarGrupoModal: boolean;
   liberandoGrupo: boolean;
@@ -1174,6 +1385,7 @@ export function PersonaDetailModals({
   showPasarApoyoModal: boolean;
   showDesignarColiderModal: boolean;
   showCambiarEtapaModal: boolean;
+  showRegistrarBautismoModal: boolean;
   onCloseSeguimiento: () => void;
   onSaveSeguimiento: (data: SeguimientoSavePayload) => void | Promise<void>;
   onCloseLiberar: () => void;
@@ -1182,9 +1394,11 @@ export function PersonaDetailModals({
   onAssignedGrupo: (grupo: GrupoParaAsignar) => void;
   onClosePasarApoyo: () => void;
   onCloseDesignarColider: () => void;
+  onCloseRegistrarBautismo: () => void;
   onParticipacionGrupoActualizada: (p: ParticipacionEnGrupo, etapa: EtapaPersonaDb) => void;
   onCloseEtapa: () => void;
-  onSavedEtapa: (etapa: EtapaPersonaDb) => void;
+  onSavedEtapa: (etapa: EtapaPersonaDb, opts?: { fechaCaminoBautismoIso: string | null }) => void;
+  onSavedBautismo: (payload: { fechaBautismoIso: string; lugarBautismo: string }) => void;
 }) {
   return (
     <>
@@ -1239,7 +1453,15 @@ export function PersonaDetailModals({
         personaId={personaId}
         personaNombre={personaNombre}
         etapaActual={personaEtapa}
+        registrosSeguimientoCount={registrosSeguimientoCount}
         onSaved={onSavedEtapa}
+      />
+      <RegistrarBautismoModal
+        isOpen={showRegistrarBautismoModal}
+        onClose={onCloseRegistrarBautismo}
+        personaId={personaId}
+        personaNombre={personaNombre}
+        onSaved={onSavedBautismo}
       />
     </>
   );

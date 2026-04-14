@@ -276,3 +276,66 @@
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/**
+ * Lista Personas: aro tipo “historia” IG alrededor del avatar (apoyo / co-líder).
+ * Brillo suave en la esfera + gradiente que gira detrás del recorte.
+ */
+@keyframes avatar-story-ring-glow-violet {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(124, 58, 237, 0.2),
+      0 0 10px rgba(124, 58, 237, 0.25);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(196, 181, 253, 0.35),
+      0 0 18px rgba(124, 58, 237, 0.5);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes avatar-story-ring-glow-teal {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(12, 166, 178, 0.2),
+      0 0 10px rgba(12, 166, 178, 0.22);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(94, 234, 212, 0.3),
+      0 0 18px rgba(12, 166, 178, 0.48);
+    filter: brightness(1.08);
+  }
+}
+
+/** Halo bajo el nodo de etapa actual: visible pero sin el “flash” de animate-ping. */
+@keyframes mapa-etapa-actual-halo {
+  0% {
+    transform: scale(0.86);
+    opacity: 0.42;
+  }
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-avatar-story-ring-violet {
+    animation: avatar-story-ring-glow-violet 2.8s ease-in-out infinite;
+  }
+
+  .animate-avatar-story-ring-teal {
+    animation: avatar-story-ring-glow-teal 2.8s ease-in-out infinite;
+  }
+
+  .animate-mapa-etapa-actual-halo {
+    animation: mapa-etapa-actual-halo 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform, opacity;
+  }
+}

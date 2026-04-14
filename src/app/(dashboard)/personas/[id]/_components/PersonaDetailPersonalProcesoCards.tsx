@@ -783,7 +783,7 @@ export function ProcesoYCaminoCard({
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Etapa del proceso y camino espiritual</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Embudo, grupo y seguimiento pastoral a la izquierda; bautismo y cómo llegó a la iglesia a la derecha. La etapa
+            Aquí va el bautismo y cómo llegó a la iglesia. La etapa
             del embudo la cambias con{" "}
             <span className="font-medium text-gray-600 dark:text-gray-300">Cambiar etapa</span> en la cabecera.
           </p>

@@ -30,7 +30,7 @@ const LANDING_PERSONAS_DEMO: { nombre: string; telefono: string; grupo: string; 
       nombre: "Ana Lucía Méndez",
       telefono: "+58 412-5544332",
       grupo: "Jóvenes",
-      etapa: "en_proceso",
+      etapa: "bautizado",
       contacto: "27 mar 2025",
     },
     {

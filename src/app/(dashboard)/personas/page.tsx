@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { UserAvatar } from "@/components/UserAvatar";
+import { AvatarHistoriasServicioGrupo } from "@/components/AvatarHistoriasServicioGrupo";
 import { soloDigitosDocumentoId } from "@/lib/documento-id";
 import {
   ETAPA_LABELS,
@@ -211,7 +211,7 @@ export default function Page() {
             Personas
           </h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
-            Etapa de discipulado, grupo y contacto de cada persona. Lista paginada en servidor ({PAGE_SIZE} por página).
+            Etapa de discipulado, grupo y contacto de cada persona.
           </p>
         </div>
         <Link
@@ -316,7 +316,13 @@ export default function Page() {
             {personas.map((persona) => (
               <div key={persona.id} className="rounded-2xl bg-gray-100/60 p-4 dark:bg-white/[0.05]">
                 <div className="flex items-start gap-3">
-                  <UserAvatar seed={persona.nombre} sexo={parsePersonaSexo(persona.sexo)} size={44} />
+                  <AvatarHistoriasServicioGrupo
+                    seed={persona.nombre}
+                    sexo={parsePersonaSexo(persona.sexo)}
+                    size={44}
+                    participacion={persona.participacion_en_grupo}
+                    grupoId={persona.grupo_id}
+                  />
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/personas/${persona.id}`}
@@ -410,7 +416,13 @@ export default function Page() {
                       </td>
                       <td className="px-5 py-3.5">
                         <Link href={`/personas/${persona.id}`} prefetch={false} className="group flex items-center gap-3">
-                          <UserAvatar seed={persona.nombre} sexo={parsePersonaSexo(persona.sexo)} size={36} />
+                          <AvatarHistoriasServicioGrupo
+                            seed={persona.nombre}
+                            sexo={parsePersonaSexo(persona.sexo)}
+                            size={36}
+                            participacion={persona.participacion_en_grupo}
+                            grupoId={persona.grupo_id}
+                          />
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white group-hover:text-gray-600 dark:group-hover:text-gray-300 transition">
                               {persona.nombre}

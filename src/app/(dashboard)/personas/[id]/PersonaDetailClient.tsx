@@ -11,7 +11,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { GrupoResumenCard, type GrupoResumenCardModel } from "@/components/GrupoResumenCard";
-import { UserAvatar } from "@/components/UserAvatar";
+import { AvatarHistoriasServicioGrupo } from "@/components/AvatarHistoriasServicioGrupo";
 import {
   labelSituacionAcercamiento,
   labelTriBool,
@@ -105,6 +105,9 @@ interface Persona {
   ultimoContactoIso: string | null;
   /** YYYY-MM-DD ingreso al grupo actual; null sin grupo. */
   fechaIngresoGrupoIso: string | null;
+  fechaCaminoBautismoIso: string | null;
+  fechaBautismoIso: string | null;
+  lugarBautismo: string | null;
   /** YYYY-MM-DD designación co-líder; null si no aplica. */
   coLiderDesdeIso: string | null;
   notasHistorial: NotaHistorialItem[];
@@ -294,6 +297,7 @@ export default function PersonaDetailClient({
   const [showPasarApoyoModal, setShowPasarApoyoModal] = useState(false);
   const [showDesignarColiderModal, setShowDesignarColiderModal] = useState(false);
   const [showCambiarEtapaModal, setShowCambiarEtapaModal] = useState(false);
+  const [showRegistrarBautismoModal, setShowRegistrarBautismoModal] = useState(false);
   /** El SELECT de detalle incluyó columnas de info para líder (pareja, trabajo, salud, emergencia). */
   const [detalleIncludesInfoLider, setDetalleIncludesInfoLider] = useState(true);
   /** Incluye bautismo, situación de acercamiento y otra iglesia (SELECT sin columnas espirituales = false). */
@@ -303,6 +307,13 @@ export default function PersonaDetailClient({
     if (!persona) return 0;
     return calcularRacha(persona.registrosSeguimiento.map((r) => r.fecha));
   }, [persona]);
+
+  /** Registrar bautismo: al menos 1 asistencia al grupo + 1 seguimiento pastoral (no cuenta solo asistencia en historial). */
+  const puedeRegistrarBautismo = useMemo(() => {
+    if (!persona) return false;
+    if (persona.bautizado === true) return false;
+    return rachaAsistencia >= 1 && persona.registrosSeguimiento.length >= 1;
+  }, [persona, rachaAsistencia]);
 
   useEffect(() => {
     if (!id) return;
@@ -348,16 +359,19 @@ export default function PersonaDetailClient({
       })();
 
       const gruposJoin = PERSONA_DETALLE_GRUPOS_JOIN;
-      const personaBase =
+      const personaBaseCols =
         "id, cedula, nombre, telefono, email, fecha_nacimiento, edad, estado_civil, ocupacion, direccion, sexo, grupo_id, participacion_en_grupo, rol, etapa, fecha_registro, ultimo_contacto, notas, created_at, fecha_ingreso_grupo, co_lider_desde";
+      const personaBase = `${personaBaseCols}, fecha_camino_bautismo, fecha_bautismo, lugar_bautismo`;
       const personaSpiritual =
         "bautizado, viene_de_otra_iglesia, nombre_iglesia_anterior, situacion_acercamiento";
       const personaLider =
         "tiene_pareja, nombre_pareja, trabaja_actualmente, estudia_actualmente, condicion_salud, contacto_emergencia_nombre, contacto_emergencia_telefono";
-      /** SELECT completo en producción; un solo fallback mínimo si falta alguna columna (DB antigua). */
+      /** SELECT completo en producción; fallbacks si falta alguna columna (DB antigua). */
       const selectAttempts = [
         `${personaBase}, ${personaSpiritual}, ${personaLider}, ${gruposJoin}`,
+        `${personaBaseCols}, ${personaSpiritual}, ${personaLider}, ${gruposJoin}`,
         `${personaBase}, ${gruposJoin}`,
+        `${personaBaseCols}, ${gruposJoin}`,
       ];
 
       let row: Record<string, unknown> | null = null;
@@ -580,6 +594,13 @@ export default function PersonaDetailClient({
       const coLiderRaw = ((r.co_lider_desde as string | null | undefined) ?? "").trim();
       const coLiderDesdeIso =
         coLiderRaw && /^\d{4}-\d{2}-\d{2}/.test(coLiderRaw) ? coLiderRaw.slice(0, 10) : null;
+      const fechaCaminoRaw = ((r.fecha_camino_bautismo as string | null | undefined) ?? "").trim();
+      const fechaCaminoBautismoIso =
+        fechaCaminoRaw && /^\d{4}-\d{2}-\d{2}/.test(fechaCaminoRaw) ? fechaCaminoRaw.slice(0, 10) : null;
+      const fechaBautismoRaw = ((r.fecha_bautismo as string | null | undefined) ?? "").trim();
+      const fechaBautismoIso =
+        fechaBautismoRaw && /^\d{4}-\d{2}-\d{2}/.test(fechaBautismoRaw) ? fechaBautismoRaw.slice(0, 10) : null;
+      const lugarBautismo = ((r.lugar_bautismo as string | null | undefined) ?? "").trim() || null;
 
       setDetalleIncludesInfoLider(successfulSelectIndex === 0);
       setDetalleIncludesSpiritual(successfulSelectIndex === 0);
@@ -608,6 +629,9 @@ export default function PersonaDetailClient({
         fechaRegistroIso,
         ultimoContactoIso,
         fechaIngresoGrupoIso,
+        fechaCaminoBautismoIso,
+        fechaBautismoIso,
+        lugarBautismo,
         coLiderDesdeIso,
         notasHistorial,
         peticionesOracion,
@@ -663,7 +687,6 @@ export default function PersonaDetailClient({
       };
       return {
         ...prev,
-        etapa: prev.etapa === "visitante" ? "en_proceso" : prev.etapa,
         ultimoContacto: "Hoy",
         registrosSeguimiento: [optimistic, ...prev.registrosSeguimiento],
       };
@@ -774,7 +797,7 @@ export default function PersonaDetailClient({
         .from("personas")
         .update({
           grupo_id: null,
-          etapa: "en_proceso",
+          etapa: "nuevo_creyente",
           participacion_en_grupo: null,
           fecha_ingreso_grupo: null,
           co_lider_desde: null,
@@ -792,7 +815,7 @@ export default function PersonaDetailClient({
               grupoImagen: null,
               grupoResumen: null,
               participacionEnGrupo: null,
-              etapa: "en_proceso",
+              etapa: "nuevo_creyente",
               fechaIngresoGrupoIso: null,
               coLiderDesdeIso: null,
             }
@@ -817,7 +840,7 @@ export default function PersonaDetailClient({
             grupoImagen: grupo.imagen,
             grupoResumen: null,
             participacionEnGrupo: "miembro",
-            etapa: "consolidado",
+            etapa: "nuevo_creyente",
             fechaIngresoGrupoIso: fechaHoyYYYYMMDD(),
             coLiderDesdeIso: null,
           }
@@ -1105,6 +1128,7 @@ export default function PersonaDetailClient({
         showPasarApoyoModal={showPasarApoyoModal}
         showDesignarColiderModal={showDesignarColiderModal}
         showCambiarEtapaModal={showCambiarEtapaModal}
+        showRegistrarBautismoModal={showRegistrarBautismoModal}
         onCloseSeguimiento={() => setShowSeguimientoModal(false)}
         onSaveSeguimiento={handleSaveSeguimiento}
         onCloseLiberar={() => !liberandoGrupo && setShowLiberarGrupoModal(false)}
@@ -1113,6 +1137,7 @@ export default function PersonaDetailClient({
         onAssignedGrupo={handleAsignadoGrupo}
         onClosePasarApoyo={() => setShowPasarApoyoModal(false)}
         onCloseDesignarColider={() => setShowDesignarColiderModal(false)}
+        onCloseRegistrarBautismo={() => setShowRegistrarBautismoModal(false)}
         onParticipacionGrupoActualizada={(p, etapa) => {
           setPersona((prev) =>
             prev
@@ -1130,10 +1155,37 @@ export default function PersonaDetailClient({
           );
         }}
         onCloseEtapa={() => setShowCambiarEtapaModal(false)}
-        onSavedEtapa={(etapa) => {
-          setPersona((prev) => (prev ? { ...prev, etapa } : prev));
+        onSavedEtapa={(etapa, opts) => {
+          setPersona((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  etapa,
+                  fechaCaminoBautismoIso:
+                    opts?.fechaCaminoBautismoIso !== undefined
+                      ? opts.fechaCaminoBautismoIso
+                      : prev.fechaCaminoBautismoIso,
+                }
+              : prev
+          );
           showAppToast("Etapa actualizada", "success");
         }}
+        onSavedBautismo={(payload) => {
+          setPersona((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  etapa: "bautizado",
+                  bautizado: true,
+                  fechaBautismoIso: payload.fechaBautismoIso,
+                  lugarBautismo: payload.lugarBautismo,
+                  fechaCaminoBautismoIso: payload.fechaBautismoIso,
+                }
+              : prev
+          );
+          showAppToast("Bautismo registrado", "success");
+        }}
+        registrosSeguimientoCount={persona.registrosSeguimiento.length}
       />
 
       {/* Toast (éxito / error) */}
@@ -1164,8 +1216,21 @@ export default function PersonaDetailClient({
       <div className="mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
           <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            <div className="shrink-0 rounded-full bg-white/80 p-1 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:bg-white/[0.08] dark:shadow-none dark:ring-white/[0.08]">
-              <UserAvatar seed={persona.nombre} sexo={persona.sexo} size={104} />
+            <div
+              className={
+                persona.grupoId &&
+                (persona.participacionEnGrupo === "apoyo" || persona.participacionEnGrupo === "colider")
+                  ? "shrink-0"
+                  : "shrink-0 rounded-full bg-white/80 p-1 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:bg-white/[0.08] dark:shadow-none dark:ring-white/[0.08]"
+              }
+            >
+              <AvatarHistoriasServicioGrupo
+                seed={persona.nombre}
+                sexo={persona.sexo}
+                size={104}
+                participacion={persona.participacionEnGrupo}
+                grupoId={persona.grupoId}
+              />
             </div>
             <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -1184,6 +1249,69 @@ export default function PersonaDetailClient({
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${etapaVisual.dot}`} />
                   {ETAPA_LABELS[etapaCabecera]}
                 </span>
+                {persona.grupoId && persona.participacionEnGrupo === "apoyo" ? (
+                  <span
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/12 px-3 py-1 text-xs font-semibold text-violet-900 shadow-sm shadow-violet-900/5 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-100 dark:shadow-none"
+                    title="Participación actual en este grupo"
+                  >
+                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Sirve en grupo de apoyo
+                    {persona.grupo ? (
+                      <span className="max-w-[10rem] truncate font-medium opacity-95 sm:max-w-[14rem]">«{persona.grupo}»</span>
+                    ) : null}
+                  </span>
+                ) : null}
+                {persona.grupoId && persona.participacionEnGrupo === "colider" ? (
+                  <span
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#0ca6b2]/40 bg-[#0ca6b2]/12 px-3 py-1 text-xs font-semibold text-teal-950 shadow-sm shadow-teal-900/10 dark:border-[#0ca6b2]/35 dark:bg-[#0ca6b2]/18 dark:text-teal-50 dark:shadow-none"
+                    title="Participación actual en este grupo"
+                  >
+                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                    </svg>
+                    Co-líder del grupo
+                    {persona.grupo ? (
+                      <span className="max-w-[10rem] truncate font-medium opacity-95 sm:max-w-[14rem]">«{persona.grupo}»</span>
+                    ) : null}
+                  </span>
+                ) : null}
+                <div className="ml-1 flex items-center gap-1">
+                  {whatsappLink && (
+                    <a
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                      title="WhatsApp"
+                    >
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                      </svg>
+                    </a>
+                  )}
+                  {persona.telefono && (
+                    <a
+                      href={`tel:${persona.telefono}`}
+                      className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                      title="Llamar"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                      </svg>
+                    </a>
+                  )}
+                  <Link
+                    href="/personas"
+                    className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                    title="Volver"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
               <div className="w-full shrink-0 text-right sm:w-auto">
                 <RachasCabeceraPersona
@@ -1225,6 +1353,9 @@ export default function PersonaDetailClient({
                 etapaActual={persona.etapa}
                 fechaRegistroIso={persona.fechaRegistroIso}
                 fechaIngresoGrupoIso={persona.fechaIngresoGrupoIso}
+                fechaCaminoBautismoIso={persona.fechaCaminoBautismoIso}
+                fechaBautismoIso={persona.fechaBautismoIso}
+                bautizado={persona.bautizado}
                 coLiderDesdeIso={persona.coLiderDesdeIso}
                 participacionEnGrupo={persona.participacionEnGrupo}
                 grupoNombre={persona.grupoId ? persona.grupo : null}
@@ -1242,52 +1373,25 @@ export default function PersonaDetailClient({
                 <span className="group-hover:underline">¡Escríbele o llámale! Dale seguimiento a esta persona.</span>
               </button>
             )}
-            {persona.etapa === "en_proceso" && (
+            {persona.etapa === "bautizado" && persona.bautizado !== true && (
               <p className="mt-2 flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200/90">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                En proceso de integración. ¡Invítalo a un grupo!
+                En preparación al bautismo. Acompaña el proceso hasta consolidar.
+              </p>
+            )}
+            {persona.etapa === "bautizado" && persona.bautizado === true && (
+              <p className="mt-2 flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200/90">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l2.25 2.25L15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Bautismo registrado. Acompaña hacia la consolidación.
               </p>
             )}
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-center gap-1 border-t border-gray-200/60 pt-4 dark:border-white/[0.06] sm:flex-col sm:items-end sm:gap-2 md:flex-row md:items-center lg:ml-auto lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-            {whatsappLink && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                title="WhatsApp"
-              >
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                </svg>
-              </a>
-            )}
-            {persona.telefono && (
-              <a
-                href={`tel:${persona.telefono}`}
-                className="rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                title="Llamar"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                </svg>
-              </a>
-            )}
-            <Link
-              href="/personas"
-              className="rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
-              title="Volver"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </Link>
-          </div>
         </div>
       </div>
 
@@ -1314,60 +1418,6 @@ export default function PersonaDetailClient({
               />
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-              {/* Registros de seguimiento — persona_historial (excl. asistencia a reunión) */}
-              <div
-                id="registros-seguimiento"
-                className="min-w-0 scroll-mt-24 rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6"
-              >
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Registros de seguimiento</h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Cada contacto queda con fecha, qué pasó y las notas solo de esa conversación.
-                </p>
-                {persona.registrosSeguimiento.length === 0 ? (
-                  <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                    Aún no hay registros. Usa{" "}
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Registrar seguimiento</span> a la
-                    derecha para crear el primero.
-                  </p>
-                ) : (
-                  <ul className="mt-5 space-y-4">
-                    {persona.registrosSeguimiento.map((reg, i) => (
-                      <li key={reg.id} className="flex gap-3">
-                        <div className="flex w-6 shrink-0 flex-col items-center pt-1.5">
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0ca6b2] ring-4 ring-[#0ca6b2]/15 dark:ring-[#0ca6b2]/20" />
-                          {i < persona.registrosSeguimiento.length - 1 ? (
-                            <span className="mt-1 w-px flex-1 min-h-[1rem] bg-gradient-to-b from-[#0ca6b2]/35 to-transparent dark:from-[#0ca6b2]/30" />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1 rounded-xl border border-gray-200/70 bg-white/60 p-4 dark:border-white/[0.08] dark:bg-white/[0.04]">
-                          <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {reg.titulo}
-                              {reg.subtitulo ? (
-                                <span className="font-normal text-gray-600 dark:text-gray-400"> · {reg.subtitulo}</span>
-                              ) : null}
-                            </p>
-                            <time className="shrink-0 text-xs font-medium tabular-nums text-[#0ca6b2]">
-                              {reg.fechaDisplay}
-                            </time>
-                          </div>
-                          {reg.notas ? (
-                            <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/[0.08]">
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                Notas de esta conversación
-                              </p>
-                              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                                {reg.notas}
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
               {/* Notas pastorales — persona_notas (independientes de cada contacto) */}
               <div className="min-w-0 rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notas pastorales</h2>
@@ -1404,6 +1454,49 @@ export default function PersonaDetailClient({
                       <li key={n.id} className="py-4 first:pt-0">
                         <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-white">{n.contenido}</p>
                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          {n.creadoEn}
+                          {n.autor && n.autor !== "—" ? ` · ${n.autor}` : ""}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Peticiones de oración — misma fila que notas en desktop */}
+              <div className="min-w-0 rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Peticiones de oración</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Motivos para orar por esta persona, con fecha, para ti y para el equipo.
+                </p>
+                <div className="mt-4 space-y-3">
+                  <textarea
+                    value={nuevaPeticion}
+                    onChange={(e) => setNuevaPeticion(e.target.value)}
+                    placeholder="Escribe una petición…"
+                    rows={3}
+                    className="w-full resize-none rounded-xl border border-gray-200/60 bg-white/80 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15"
+                  />
+                  {errorPeticion && (
+                    <p className="text-xs text-red-600 dark:text-red-400">{errorPeticion}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleAgregarPeticion()}
+                    disabled={guardandoPeticion || !nuevaPeticion.trim()}
+                    className="w-full rounded-xl border border-gray-200/70 bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                  >
+                    {guardandoPeticion ? "Guardando…" : "Agregar petición"}
+                  </button>
+                </div>
+                {persona.peticionesOracion.length === 0 ? (
+                  <p className="mt-5 text-sm text-gray-500 dark:text-gray-400">Aún no hay peticiones.</p>
+                ) : (
+                  <ul className="mt-5 max-h-[min(50vh,22rem)] divide-y divide-gray-200/50 overflow-y-auto dark:divide-white/[0.06]">
+                    {persona.peticionesOracion.map((n) => (
+                      <li key={n.id} className="py-3 first:pt-0">
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-white">{n.contenido}</p>
+                        <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                           {n.creadoEn}
                           {n.autor && n.autor !== "—" ? ` · ${n.autor}` : ""}
                         </p>
@@ -1480,6 +1573,39 @@ export default function PersonaDetailClient({
                   Acciones rápidas
                 </h3>
                 <div className="space-y-2">
+                  {persona.grupoId && persona.etapa === "nuevo_creyente" ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowRegistrarBautismoModal(true)}
+                      disabled={!puedeRegistrarBautismo}
+                      className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-gray-200/40 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/[0.06]"
+                      title={
+                        persona.bautizado
+                          ? "Ya tiene bautismo registrado."
+                          : rachaAsistencia < 1
+                            ? "Necesita al menos 1 asistencia al grupo registrada."
+                            : persona.registrosSeguimiento.length < 1
+                              ? "Necesita al menos 1 seguimiento pastoral (mensaje, llamada, visita…); la asistencia sola no cuenta."
+                              : undefined
+                      }
+                    >
+                      <svg className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.75c3.106 0 5.625 2.519 5.625 5.625 0 2.368-1.463 4.393-3.536 5.219L12 20.25l-2.089-5.656A5.625 5.625 0 016.375 9.375 5.625 5.625 0 0112 3.75z" />
+                      </svg>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-medium text-gray-900 dark:text-white">Registrar bautismo</span>
+                        {persona.bautizado === true ? (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Ya registrado.</span>
+                        ) : rachaAsistencia < 1 ? (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Se habilita con al menos 1 asistencia al grupo.</span>
+                        ) : persona.registrosSeguimiento.length < 1 ? (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Se habilita con al menos 1 seguimiento pastoral (además de asistencia).
+                          </span>
+                        ) : null}
+                      </div>
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setShowSeguimientoModal(true)}
@@ -1562,43 +1688,54 @@ export default function PersonaDetailClient({
                 </div>
               </div>
 
-              {/* Peticiones de oración — columna derecha, debajo de Acciones rápidas */}
-              <div className="rounded-3xl border border-gray-200/40 bg-gray-100/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.04] sm:p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Peticiones de oración</h2>
+              {/* Registros de seguimiento — debajo de Acciones rápidas */}
+              <div
+                id="registros-seguimiento"
+                className="min-w-0 scroll-mt-24 rounded-3xl border border-gray-200/50 bg-gray-100/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.04] sm:p-6"
+              >
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Registros de seguimiento</h2>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Motivos para orar por esta persona, con fecha, para ti y para el equipo.
+                  Cada contacto queda con fecha, qué pasó y las notas solo de esa conversación.
                 </p>
-                <div className="mt-4 space-y-3">
-                  <textarea
-                    value={nuevaPeticion}
-                    onChange={(e) => setNuevaPeticion(e.target.value)}
-                    placeholder="Escribe una petición…"
-                    rows={3}
-                    className="w-full resize-none rounded-xl border border-gray-200/60 bg-white/80 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15"
-                  />
-                  {errorPeticion && (
-                    <p className="text-xs text-red-600 dark:text-red-400">{errorPeticion}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => void handleAgregarPeticion()}
-                    disabled={guardandoPeticion || !nuevaPeticion.trim()}
-                    className="w-full rounded-xl border border-gray-200/70 bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-                  >
-                    {guardandoPeticion ? "Guardando…" : "Agregar petición"}
-                  </button>
-                </div>
-                {persona.peticionesOracion.length === 0 ? (
-                  <p className="mt-5 text-sm text-gray-500 dark:text-gray-400">Aún no hay peticiones.</p>
+                {persona.registrosSeguimiento.length === 0 ? (
+                  <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                    Aún no hay registros. Usa{" "}
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Registrar seguimiento</span> arriba para
+                    crear el primero.
+                  </p>
                 ) : (
-                  <ul className="mt-5 max-h-[min(50vh,22rem)] divide-y divide-gray-200/50 overflow-y-auto dark:divide-white/[0.06]">
-                    {persona.peticionesOracion.map((n) => (
-                      <li key={n.id} className="py-3 first:pt-0">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-white">{n.contenido}</p>
-                        <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-                          {n.creadoEn}
-                          {n.autor && n.autor !== "—" ? ` · ${n.autor}` : ""}
-                        </p>
+                  <ul className="mt-5 space-y-4">
+                    {persona.registrosSeguimiento.map((reg, i) => (
+                      <li key={reg.id} className="flex gap-3">
+                        <div className="flex w-6 shrink-0 flex-col items-center pt-1.5">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0ca6b2] ring-4 ring-[#0ca6b2]/15 dark:ring-[#0ca6b2]/20" />
+                          {i < persona.registrosSeguimiento.length - 1 ? (
+                            <span className="mt-1 min-h-[1rem] w-px flex-1 bg-gradient-to-b from-[#0ca6b2]/35 to-transparent dark:from-[#0ca6b2]/30" />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1 rounded-xl border border-gray-200/70 bg-white/60 p-4 dark:border-white/[0.08] dark:bg-white/[0.04]">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {reg.titulo}
+                              {reg.subtitulo ? (
+                                <span className="font-normal text-gray-600 dark:text-gray-400"> · {reg.subtitulo}</span>
+                              ) : null}
+                            </p>
+                            <time className="shrink-0 text-xs font-medium tabular-nums text-[#0ca6b2]">
+                              {reg.fechaDisplay}
+                            </time>
+                          </div>
+                          {reg.notas ? (
+                            <div className="mt-3 border-t border-gray-100 pt-3 dark:border-white/[0.08]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Notas de esta conversación
+                              </p>
+                              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                                {reg.notas}
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
                       </li>
                     ))}
                   </ul>
