@@ -69,8 +69,8 @@ function buildRows({ organizationId, grupos, count, cedulaStart }) {
     const telefono = randomPhone(cedulaStart + i);
     const emailPersona = `demo.miembro.${cedula}@example.invalid`;
 
-    /** @type {"Activo"|"Visitante"|"Inactivo"|"En seguimiento"|"En servicio"} */
-    let estado;
+    /** @type {"visitante"|"nuevo_creyente"|"en_proceso"|"consolidado"|"lider_en_formacion"|"lider_grupo"|"en_servicio"|"inactivo"} */
+    let etapa;
     /** @type {"miembro"|"apoyo"|"colider"|null} */
     let participacion_en_grupo = null;
     let grupo_id = null;
@@ -79,19 +79,19 @@ function buildRows({ organizationId, grupos, count, cedulaStart }) {
     if (bucket < 68) {
       grupo_id = gIds[k % gIds.length];
       participacion_en_grupo = "miembro";
-      estado = "Activo";
+      etapa = "consolidado";
     } else if (bucket < 80) {
       grupo_id = gIds[k % gIds.length];
       participacion_en_grupo = k % 2 === 0 ? "apoyo" : "colider";
-      estado = "En servicio";
+      etapa = "en_servicio";
     } else if (bucket < 88) {
-      estado = "Visitante";
+      etapa = "visitante";
     } else if (bucket < 95) {
-      estado = "En seguimiento";
+      etapa = "en_proceso";
     } else {
       grupo_id = gIds[k % gIds.length];
       participacion_en_grupo = "miembro";
-      estado = "Inactivo";
+      etapa = "inactivo";
     }
 
     rows.push({
@@ -102,8 +102,8 @@ function buildRows({ organizationId, grupos, count, cedulaStart }) {
       email: emailPersona,
       grupo_id,
       participacion_en_grupo,
-      rol: estado === "Visitante" ? "Visitante" : "Miembro",
-      estado,
+      rol: etapa === "visitante" ? "Visitante" : "Miembro",
+      etapa,
       fecha_registro: "2025-11-01",
       ultimo_contacto: randomContactDate(k),
     });

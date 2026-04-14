@@ -154,7 +154,7 @@ export default function Page() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-none px-4 pt-8 md:px-6 lg:px-8">
+      <div className="w-full pt-8">
         <div className="relative mb-8 rounded-3xl bg-gray-100/50 dark:bg-white/[0.04] p-5 md:p-6">
           <Link
             href="/eventos"
@@ -211,7 +211,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="px-4 py-6 md:px-6 lg:px-8">
+      <div className="py-6">
         <div className="w-full">
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">

@@ -122,8 +122,8 @@ export default function CuentaClient({
   ] as const;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-4 md:py-5 md:px-6 pb-24 md:pb-6">
-      <div className="mx-auto w-full max-w-7xl">
+    <div className="min-h-[calc(100vh-4rem)] py-4 md:py-5 pb-24 md:pb-6">
+      <div className="w-full">
         <div className="mb-3 md:mb-4">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Mi cuenta</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">

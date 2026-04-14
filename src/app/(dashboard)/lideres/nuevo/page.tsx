@@ -165,8 +165,7 @@ export default function Page() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="bg-gradient-to-r from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] py-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="w-28 h-28 rounded-2xl bg-white dark:bg-[#2a2a2a] p-1.5 shadow-xl">
               <Avatar size={100} name={nombre || "Nuevo Líder"} variant="beam" colors={["#0ca6b2", "#18301d", "#e64b27", "#f9c70c", "#faddbf"]} />
@@ -183,12 +182,10 @@ export default function Page() {
               </svg>
             </Link>
           </div>
-        </div>
       </div>
 
       {/* Content */}
-      <form onSubmit={handleSubmit} className="px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <form onSubmit={handleSubmit} className="py-6">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
               {error}
@@ -469,7 +466,6 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </div>
       </form>
     </div>
   );

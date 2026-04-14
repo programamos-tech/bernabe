@@ -84,7 +84,7 @@ export function DashboardNavbar() {
     <>
       {/* Top Header */}
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95">
-        <div className="flex items-center justify-between h-14 px-4 md:px-6">
+        <div className="flex h-14 w-full items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
           <Link href="/home" className="inline-block group">
             <span className="font-logo-brand text-xl text-gray-900 dark:text-white tracking-tight block">
               Bernabé

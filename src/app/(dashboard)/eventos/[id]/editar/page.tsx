@@ -141,8 +141,7 @@ export default function Page() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#0ca6b2] to-[#14b8a6] dark:from-[#1a1a1a] dark:to-[#252525] px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="bg-gradient-to-r from-[#0ca6b2] to-[#14b8a6] dark:from-[#1a1a1a] dark:to-[#252525] py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-white/20 dark:bg-[#333] flex items-center justify-center">
@@ -165,12 +164,11 @@ export default function Page() {
               </svg>
             </Link>
           </div>
-        </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6 md:px-6">
-        <form onSubmit={handleSubmit} className="max-w-7xl mx-auto">
+      <div className="py-6">
+        <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Main Column */}
             <div className="lg:col-span-2 space-y-6">

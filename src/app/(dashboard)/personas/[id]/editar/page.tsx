@@ -11,6 +11,9 @@ import {
   SITUACION_ACERCAMIENTO_OPTIONS,
   type SituacionAcercamiento,
 } from "@/lib/personas-situacion-acercamiento";
+import { parseEtapaDb } from "@/lib/persona-etapa";
+import { parsePersonaSexo, type PersonaSexo } from "@/lib/persona-sexo";
+import { fechaHoyYYYYMMDD } from "@/lib/fecha-hoy-local";
 import { createClient } from "@/lib/supabase/client";
 import { PERSONA_NATIVE_SELECT_CLASS } from "@/lib/persona-form-ui";
 
@@ -69,10 +72,13 @@ export default function Page() {
   const id = typeof params.id === "string" ? params.id : "";
 
   const initialGrupoRef = useRef<string | null>(null);
-  const initialEstadoRef = useRef<string>("");
+  const initialEtapaRef = useRef<string>("visitante");
   const spiritualColumnsAvailableRef = useRef(true);
+  const infoLiderColumnsAvailableRef = useRef(true);
   /** Si la carga usó columnas mínimas, no persistimos camino espiritual al guardar. */
   const [spiritualPersistenceOk, setSpiritualPersistenceOk] = useState(true);
+  /** Columnas de información para el líder (pareja, trabajo/estudio, salud, emergencia). */
+  const [infoLiderPersistenceOk, setInfoLiderPersistenceOk] = useState(true);
 
   const [grupos, setGrupos] = useState<GrupoOption[]>([]);
   const [loadStatus, setLoadStatus] = useState<"loading" | "ready" | "notfound" | "error">("loading");
@@ -85,6 +91,7 @@ export default function Page() {
   const [documentoId, setDocumentoId] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
+  const [sexo, setSexo] = useState<PersonaSexo | "">("");
   const [estadoCivil, setEstadoCivil] = useState("");
   const [ocupacion, setOcupacion] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -93,6 +100,13 @@ export default function Page() {
   const [situacion, setSituacion] = useState("");
   const [vieneDeOtraIglesia, setVieneDeOtraIglesia] = useState<"" | "true" | "false">("");
   const [nombreIglesiaAnterior, setNombreIglesiaAnterior] = useState("");
+  const [tieneParejaTri, setTieneParejaTri] = useState<"" | "true" | "false">("");
+  const [nombrePareja, setNombrePareja] = useState("");
+  const [trabajaTri, setTrabajaTri] = useState<"" | "true" | "false">("");
+  const [estudiaTri, setEstudiaTri] = useState<"" | "true" | "false">("");
+  const [condicionSalud, setCondicionSalud] = useState("");
+  const [contactoEmergenciaNombre, setContactoEmergenciaNombre] = useState("");
+  const [contactoEmergenciaTelefono, setContactoEmergenciaTelefono] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -111,7 +125,9 @@ export default function Page() {
     setLoadStatus("loading");
     setLoadMessage(null);
     setSpiritualPersistenceOk(true);
+    setInfoLiderPersistenceOk(true);
     spiritualColumnsAvailableRef.current = true;
+    infoLiderColumnsAvailableRef.current = true;
     const supabase = createClient();
     (async () => {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
@@ -129,47 +145,103 @@ export default function Page() {
       }
 
       let row: Record<string, unknown> | null = null;
-      const fullSelect =
-        "id, organization_id, cedula, nombre, telefono, email, fecha_nacimiento, estado_civil, ocupacion, direccion, grupo_id, estado, bautizado, viene_de_otra_iglesia, nombre_iglesia_anterior, situacion_acercamiento";
+      const spiritualSelect =
+        "id, organization_id, cedula, nombre, sexo, telefono, email, fecha_nacimiento, estado_civil, ocupacion, direccion, grupo_id, etapa, bautizado, viene_de_otra_iglesia, nombre_iglesia_anterior, situacion_acercamiento";
+      const liderSuffix =
+        ", tiene_pareja, nombre_pareja, trabaja_actualmente, estudia_actualmente, condicion_salud, contacto_emergencia_nombre, contacto_emergencia_telefono";
+      const selectWithLider = spiritualSelect + liderSuffix;
       const minimalSelect =
-        "id, organization_id, cedula, nombre, telefono, email, fecha_nacimiento, estado_civil, ocupacion, direccion, grupo_id, estado";
+        "id, organization_id, cedula, nombre, sexo, telefono, email, fecha_nacimiento, estado_civil, ocupacion, direccion, grupo_id, etapa";
 
-      const resFull = await supabase
+      const missingCol = (msg: string) =>
+        /column|does not exist|42703|PGRST204|schema cache|unknown column|could not find/i.test(msg);
+
+      const resMax = await supabase
         .from("personas")
-        .select(fullSelect)
+        .select(selectWithLider)
         .eq("id", id)
         .eq("organization_id", organizationId)
         .maybeSingle();
 
-      if (resFull.error) {
-        const msg = resFull.error.message ?? "";
-        const looksLikeMissingSpiritualColumn =
-          /bautizado|viene_de_otra|situacion_acercamiento|nombre_iglesia|column.*does not exist|could not find|42703|PGRST204|schema cache|unknown column/i.test(
-            msg
-          );
-        if (!looksLikeMissingSpiritualColumn) {
-          setLoadMessage(msg || "No se pudo cargar la persona.");
-          setLoadStatus("error");
-          return;
-        }
-        spiritualColumnsAvailableRef.current = false;
-        setSpiritualPersistenceOk(false);
-        const resMin = await supabase
-          .from("personas")
-          .select(minimalSelect)
-          .eq("id", id)
-          .eq("organization_id", organizationId)
-          .maybeSingle();
-        if (resMin.error) {
-          setLoadMessage(resMin.error.message || "No se pudo cargar la persona.");
-          setLoadStatus("error");
-          return;
-        }
-        row = resMin.data as Record<string, unknown> | null;
-      } else {
+      if (!resMax.error) {
         spiritualColumnsAvailableRef.current = true;
+        infoLiderColumnsAvailableRef.current = true;
         setSpiritualPersistenceOk(true);
-        row = resFull.data as Record<string, unknown> | null;
+        setInfoLiderPersistenceOk(true);
+        row = resMax.data as Record<string, unknown> | null;
+      } else {
+        const msgMax = resMax.error.message ?? "";
+        const looksLikeMissingLider =
+          /tiene_pareja|nombre_pareja|trabaja_actualmente|estudia_actualmente|condicion_salud|contacto_emergencia/i.test(
+            msgMax
+          );
+        if (!missingCol(msgMax)) {
+          setLoadMessage(msgMax || "No se pudo cargar la persona.");
+          setLoadStatus("error");
+          return;
+        }
+        if (looksLikeMissingLider) {
+          infoLiderColumnsAvailableRef.current = false;
+          setInfoLiderPersistenceOk(false);
+          const resMid = await supabase
+            .from("personas")
+            .select(spiritualSelect)
+            .eq("id", id)
+            .eq("organization_id", organizationId)
+            .maybeSingle();
+          if (!resMid.error) {
+            spiritualColumnsAvailableRef.current = true;
+            setSpiritualPersistenceOk(true);
+            row = resMid.data as Record<string, unknown> | null;
+          } else {
+            const msgMid = resMid.error.message ?? "";
+            const looksLikeMissingSpiritual =
+              /bautizado|viene_de_otra|situacion_acercamiento|nombre_iglesia/i.test(msgMid);
+            if (!missingCol(msgMid) || !looksLikeMissingSpiritual) {
+              setLoadMessage(msgMid || "No se pudo cargar la persona.");
+              setLoadStatus("error");
+              return;
+            }
+            spiritualColumnsAvailableRef.current = false;
+            setSpiritualPersistenceOk(false);
+            const resMin = await supabase
+              .from("personas")
+              .select(minimalSelect)
+              .eq("id", id)
+              .eq("organization_id", organizationId)
+              .maybeSingle();
+            if (resMin.error) {
+              setLoadMessage(resMin.error.message || "No se pudo cargar la persona.");
+              setLoadStatus("error");
+              return;
+            }
+            row = resMin.data as Record<string, unknown> | null;
+          }
+        } else {
+          const looksLikeMissingSpiritual =
+            /bautizado|viene_de_otra|situacion_acercamiento|nombre_iglesia/i.test(msgMax);
+          if (!looksLikeMissingSpiritual) {
+            setLoadMessage(msgMax || "No se pudo cargar la persona.");
+            setLoadStatus("error");
+            return;
+          }
+          infoLiderColumnsAvailableRef.current = false;
+          setInfoLiderPersistenceOk(false);
+          spiritualColumnsAvailableRef.current = false;
+          setSpiritualPersistenceOk(false);
+          const resMin = await supabase
+            .from("personas")
+            .select(minimalSelect)
+            .eq("id", id)
+            .eq("organization_id", organizationId)
+            .maybeSingle();
+          if (resMin.error) {
+            setLoadMessage(resMin.error.message || "No se pudo cargar la persona.");
+            setLoadStatus("error");
+            return;
+          }
+          row = resMin.data as Record<string, unknown> | null;
+        }
       }
 
       if (!row) {
@@ -179,12 +251,13 @@ export default function Page() {
 
       const r = row;
       initialGrupoRef.current = (r.grupo_id as string | null) ?? null;
-      initialEstadoRef.current = (r.estado as string) ?? "Visitante";
+      initialEtapaRef.current = parseEtapaDb(r.etapa as string);
 
       setNombre((r.nombre as string) ?? "");
       setDocumentoId(soloDigitosDocumentoId(String(r.cedula ?? "")));
       setTelefono((r.telefono as string) ?? "");
       setEmail((r.email as string) ?? "");
+      setSexo(parsePersonaSexo(r.sexo) ?? "");
       setFechaNacimiento(parseFechaRow((r.fecha_nacimiento as string) ?? null));
       setEstadoCivil((r.estado_civil as string) ?? "");
       setOcupacion((r.ocupacion as string) ?? "");
@@ -194,6 +267,13 @@ export default function Page() {
       setSituacion((r.situacion_acercamiento as string) ?? "");
       setVieneDeOtraIglesia(boolToTri(r.viene_de_otra_iglesia as boolean | null));
       setNombreIglesiaAnterior((r.nombre_iglesia_anterior as string) ?? "");
+      setTieneParejaTri(boolToTri(r.tiene_pareja as boolean | null));
+      setNombrePareja((r.nombre_pareja as string) ?? "");
+      setTrabajaTri(boolToTri(r.trabaja_actualmente as boolean | null));
+      setEstudiaTri(boolToTri(r.estudia_actualmente as boolean | null));
+      setCondicionSalud((r.condicion_salud as string) ?? "");
+      setContactoEmergenciaNombre((r.contacto_emergencia_nombre as string) ?? "");
+      setContactoEmergenciaTelefono((r.contacto_emergencia_telefono as string) ?? "");
 
       setLoadStatus("ready");
     })();
@@ -235,7 +315,7 @@ export default function Page() {
     }
 
     const oldG = initialGrupoRef.current;
-    const initialEstado = initialEstadoRef.current;
+    const initialEtapa = initialEtapaRef.current;
 
     const updatePayload: Record<string, unknown> = {
       nombre: nombreVal,
@@ -247,6 +327,7 @@ export default function Page() {
       ocupacion: ocupacionVal,
       direccion: direccionVal,
       grupo_id: newG,
+      sexo: sexo === "" ? null : sexo,
     };
     if (spiritualColumnsAvailableRef.current) {
       updatePayload.bautizado = bautizadoVal;
@@ -255,17 +336,40 @@ export default function Page() {
       updatePayload.situacion_acercamiento = situacionVal;
     }
 
+    if (infoLiderColumnsAvailableRef.current) {
+      const tieneParejaVal = parseTriBoolForm(tieneParejaTri);
+      const trabajaVal = parseTriBoolForm(trabajaTri);
+      const estudiaVal = parseTriBoolForm(estudiaTri);
+      updatePayload.tiene_pareja = tieneParejaVal;
+      updatePayload.nombre_pareja = tieneParejaVal === true ? nombrePareja.trim() || null : null;
+      updatePayload.trabaja_actualmente = trabajaVal;
+      updatePayload.estudia_actualmente = estudiaVal;
+      updatePayload.condicion_salud = condicionSalud.trim() || null;
+      updatePayload.contacto_emergencia_nombre = contactoEmergenciaNombre.trim() || null;
+      updatePayload.contacto_emergencia_telefono = contactoEmergenciaTelefono.trim() || null;
+    }
+
     if (oldG !== newG) {
       if (!newG) {
         updatePayload.participacion_en_grupo = null;
-        updatePayload.estado = "En seguimiento";
+        updatePayload.etapa = "en_proceso";
+        updatePayload.fecha_ingreso_grupo = null;
+        updatePayload.co_lider_desde = null;
       } else if (!oldG) {
         updatePayload.participacion_en_grupo = "miembro";
-        if (initialEstado === "Visitante" || initialEstado === "En seguimiento") {
-          updatePayload.estado = "Activo";
+        updatePayload.fecha_ingreso_grupo = fechaHoyYYYYMMDD();
+        updatePayload.co_lider_desde = null;
+        if (
+          initialEtapa === "visitante" ||
+          initialEtapa === "nuevo_creyente" ||
+          initialEtapa === "en_proceso"
+        ) {
+          updatePayload.etapa = "consolidado";
         }
       } else {
         updatePayload.participacion_en_grupo = "miembro";
+        updatePayload.fecha_ingreso_grupo = fechaHoyYYYYMMDD();
+        updatePayload.co_lider_desde = null;
       }
     }
 
@@ -358,11 +462,11 @@ export default function Page() {
   }
 
   return (
-    <div className="w-full max-w-none min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
+    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
       <div className="mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="shrink-0 rounded-full bg-white/80 p-1 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:bg-white/[0.08] dark:shadow-none dark:ring-white/[0.08]">
-            <UserAvatar seed={nombre || "Persona"} size={104} />
+            <UserAvatar seed={nombre || "Persona"} sexo={sexo === "" ? null : sexo} size={104} />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-2xl">
@@ -444,6 +548,22 @@ export default function Page() {
                       className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
                     />
                   </FormField>
+
+                  <FormField icon="user" label="Sexo (avatar ilustrado)">
+                    <select
+                      name="sexo"
+                      value={sexo}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSexo(v === "masculino" || v === "femenino" ? v : "");
+                      }}
+                      className={PERSONA_NATIVE_SELECT_CLASS}
+                    >
+                      <option value="">Sin registrar</option>
+                      <option value="masculino">Masculino</option>
+                      <option value="femenino">Femenino</option>
+                    </select>
+                  </FormField>
                 </div>
               </div>
 
@@ -462,21 +582,66 @@ export default function Page() {
                     />
                   </div>
 
-                  <FormField icon="heart" label="Estado civil">
-                    <select
-                      name="estadoCivil"
-                      value={estadoCivil}
-                      onChange={(e) => setEstadoCivil(e.target.value)}
-                      className={PERSONA_NATIVE_SELECT_CLASS}
-                    >
-                      <option value="">Seleccionar...</option>
-                      {estadosCiviles.map((estado) => (
-                        <option key={estado} value={estado}>
-                          {estado}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
+                  <div className="sm:col-span-2 rounded-2xl border border-gray-200/70 bg-gray-100/35 p-4 dark:border-white/[0.08] dark:bg-white/[0.03]">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                      Estado civil y pareja
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField icon="heart" label="Estado civil">
+                        <select
+                          name="estadoCivil"
+                          value={estadoCivil}
+                          onChange={(e) => setEstadoCivil(e.target.value)}
+                          className={PERSONA_NATIVE_SELECT_CLASS}
+                        >
+                          <option value="">Seleccionar...</option>
+                          {estadosCiviles.map((estado) => (
+                            <option key={estado} value={estado}>
+                              {estado}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <FormField icon="heart" label="¿Tiene pareja o relación estable?">
+                        <select
+                          name="tienePareja"
+                          value={tieneParejaTri}
+                          onChange={(e) => setTieneParejaTri(e.target.value as "" | "true" | "false")}
+                          className={PERSONA_NATIVE_SELECT_CLASS}
+                          disabled={!infoLiderPersistenceOk}
+                        >
+                          <option value="">Sin registrar</option>
+                          <option value="true">Sí</option>
+                          <option value="false">No</option>
+                        </select>
+                      </FormField>
+
+                      {tieneParejaTri === "true" && (
+                        <div className="sm:col-span-2">
+                          <FormField icon="heart" label="Nombre de la pareja">
+                            <input
+                              type="text"
+                              name="nombrePareja"
+                              value={nombrePareja}
+                              onChange={(e) => setNombrePareja(e.target.value)}
+                              placeholder="Opcional"
+                              className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
+                              disabled={!infoLiderPersistenceOk}
+                            />
+                          </FormField>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {!infoLiderPersistenceOk && (
+                    <p className="sm:col-span-2 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:bg-amber-500/15 dark:text-amber-100">
+                      Tu base aún no tiene las columnas de información para líderes (pareja, trabajo, estudios, salud,
+                      emergencia). El estado civil de arriba sí se guarda; el resto de este bloque no se persistirá hasta aplicar
+                      la migración en Supabase.
+                    </p>
+                  )}
 
                   <FormField icon="work" label="Ocupación">
                     <select
@@ -502,6 +667,72 @@ export default function Page() {
                       onChange={(e) => setDireccion(e.target.value)}
                       placeholder="Ej: Calle 45 #12-34, Bogotá"
                       className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
+                    />
+                  </FormField>
+
+                  <FormField icon="work" label="¿Trabaja actualmente?">
+                    <select
+                      name="trabajaActualmente"
+                      value={trabajaTri}
+                      onChange={(e) => setTrabajaTri(e.target.value as "" | "true" | "false")}
+                      className={PERSONA_NATIVE_SELECT_CLASS}
+                      disabled={!infoLiderPersistenceOk}
+                    >
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  <FormField icon="work" label="¿Estudia actualmente?">
+                    <select
+                      name="estudiaActualmente"
+                      value={estudiaTri}
+                      onChange={(e) => setEstudiaTri(e.target.value as "" | "true" | "false")}
+                      className={PERSONA_NATIVE_SELECT_CLASS}
+                      disabled={!infoLiderPersistenceOk}
+                    >
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  <div className="sm:col-span-2">
+                    <FormField icon="work" label="Condición de salud o cuidados (alergias, medicación, etc.)">
+                      <textarea
+                        name="condicionSalud"
+                        value={condicionSalud}
+                        onChange={(e) => setCondicionSalud(e.target.value)}
+                        rows={3}
+                        placeholder="Opcional. Visible para líderes con fines pastorales de cuidado."
+                        className="w-full resize-none bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
+                        disabled={!infoLiderPersistenceOk}
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField icon="phone" label="Contacto de emergencia — nombre">
+                    <input
+                      type="text"
+                      name="contactoEmergenciaNombre"
+                      value={contactoEmergenciaNombre}
+                      onChange={(e) => setContactoEmergenciaNombre(e.target.value)}
+                      placeholder="Ej: Familiar, cónyuge…"
+                      className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
+                      disabled={!infoLiderPersistenceOk}
+                    />
+                  </FormField>
+
+                  <FormField icon="phone" label="Contacto de emergencia — teléfono">
+                    <input
+                      type="tel"
+                      name="contactoEmergenciaTelefono"
+                      value={contactoEmergenciaTelefono}
+                      onChange={(e) => setContactoEmergenciaTelefono(e.target.value)}
+                      placeholder="+57…"
+                      className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-white"
+                      disabled={!infoLiderPersistenceOk}
                     />
                   </FormField>
                 </div>

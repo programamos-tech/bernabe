@@ -10,7 +10,7 @@ export interface StatsSemanaComunidad {
   asistenciasEnGrupos: number;
   /** Pares distintos (grupo_id, fecha) con al menos una asistencia */
   reunionesDeGrupo: number;
-  /** Personas con estado Visitante creadas en la semana */
+  /** Personas con etapa visitante creadas en la semana */
   nuevosVisitantes: number;
   /** Entradas en persona_historial con seguimiento (excluye solo registro de asistencia) */
   seguimientos: number;

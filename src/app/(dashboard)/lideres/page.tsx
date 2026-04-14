@@ -205,7 +205,7 @@ export default function Page() {
     "w-full rounded-full border border-gray-200/80 bg-gray-100/80 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15 md:w-64";
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full min-w-0 max-w-none px-4 py-8 md:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] w-full min-w-0 py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Líderes</h1>

@@ -76,9 +76,11 @@ export interface Database {
           ocupacion: string | null;
           direccion: string | null;
           grupo_id: string | null;
+          fecha_ingreso_grupo: string | null;
+          co_lider_desde: string | null;
           participacion_en_grupo: string | null;
           rol: string;
-          estado: string;
+          etapa: string;
           fecha_registro: string | null;
           ultimo_contacto: string | null;
           notas: string | null;
@@ -86,6 +88,14 @@ export interface Database {
           viene_de_otra_iglesia: boolean | null;
           nombre_iglesia_anterior: string | null;
           situacion_acercamiento: string | null;
+          tiene_pareja: boolean | null;
+          nombre_pareja: string | null;
+          trabaja_actualmente: boolean | null;
+          estudia_actualmente: boolean | null;
+          condicion_salud: string | null;
+          contacto_emergencia_nombre: string | null;
+          contacto_emergencia_telefono: string | null;
+          sexo: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -211,6 +221,21 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["persona_notas"]["Insert"]>;
       };
+      persona_peticiones_oracion: {
+        Row: {
+          id: string;
+          organization_id: string;
+          persona_id: string;
+          contenido: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["persona_peticiones_oracion"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["persona_peticiones_oracion"]["Insert"]>;
+      };
       persona_asistencia: {
         Row: {
           id: string;
@@ -225,6 +250,20 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["persona_asistencia"]["Insert"]>;
+      };
+    };
+    Functions: {
+      ultima_asistencia_por_persona_grupo: {
+        Args: { p_grupo_id: string };
+        Returns: { persona_id: string; ultima_fecha: string }[];
+      };
+      grupo_asistencia_totales_mes: {
+        Args: { p_grupo_id: string; p_desde: string; p_hasta: string };
+        Returns: { registros: number; personas_distintas: number; fechas_distintas: number }[];
+      };
+      grupo_ultima_reunion_asistentes: {
+        Args: { p_grupo_id: string };
+        Returns: { fecha: string; persona_id: string; nombre: string; sexo: string }[];
       };
     };
   };

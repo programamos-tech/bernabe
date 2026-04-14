@@ -155,9 +155,8 @@ export default function Page() {
           className="object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-        <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6">
-          <div className="max-w-7xl mx-auto w-full">
-            <div className="flex items-end justify-between gap-4">
+        <div className="absolute inset-0 flex flex-col justify-end pb-6 pt-4">
+            <div className="flex w-full items-end justify-between gap-4">
               <div>
                 <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-[#0ca6b2] text-white mb-3">
                   Nuevo evento
@@ -176,13 +175,11 @@ export default function Page() {
                 </svg>
               </Link>
             </div>
-          </div>
         </div>
       </div>
 
       {/* Content */}
-      <form onSubmit={handleSubmit} className="px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <form onSubmit={handleSubmit} className="py-6">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
               {error}
@@ -444,7 +441,6 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </div>
       </form>
     </div>
   );

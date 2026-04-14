@@ -228,7 +228,7 @@ export default function Page() {
   }, [eventos, filterTipo, search]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full max-w-none px-4 py-8 md:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] w-full py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Eventos</h1>

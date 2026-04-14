@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ETAPA_LABELS, parseEtapaDb } from "@/lib/persona-etapa";
 import { createClient } from "@/lib/supabase/client";
 
 type StatId = "personas" | "grupos" | "visitantes" | "lideres";
@@ -143,7 +144,7 @@ export function HomePage() {
         const visitantesNuevosCountRes = await supabase
           .from("personas")
           .select("id", { count: "exact", head: true })
-          .eq("estado", "Visitante")
+          .eq("etapa", "visitante")
           .gte("created_at", sevenDaysAgo);
         const lideresActivosCountRes = await supabase
           .from("lideres")
@@ -181,7 +182,7 @@ export function HomePage() {
 
         const { data: recientes } = await supabase
           .from("personas")
-          .select("nombre,estado,created_at,grupo_id")
+          .select("nombre,etapa,created_at,grupo_id")
           .order("created_at", { ascending: false })
           .limit(6);
 
@@ -196,14 +197,25 @@ export function HomePage() {
           const items: RecentActivityItem[] = (recientes ?? []).map((p) => {
             const group = p.grupo_id ? grupoMap.get(p.grupo_id as string) ?? "Sin asignar" : "Sin asignar";
 
+            const etapa = parseEtapaDb(p.etapa as string);
             const action =
-              p.estado === "Visitante"
+              etapa === "visitante"
                 ? "Nueva visitante registrada"
-                : p.estado === "Activo"
-                  ? "Cambió a miembro activo"
-                  : p.estado === "En seguimiento"
-                    ? "Entró en seguimiento"
-                    : `Estado: ${p.estado}`;
+                : etapa === "nuevo_creyente"
+                  ? "Nuevo creyente registrado"
+                  : etapa === "en_proceso"
+                    ? "En proceso de integración"
+                    : etapa === "consolidado"
+                      ? "Persona consolidada en grupo"
+                      : etapa === "lider_en_formacion"
+                        ? "Líder en formación"
+                        : etapa === "lider_grupo"
+                          ? "Líder de grupo"
+                          : etapa === "en_servicio"
+                            ? "En servicio ministerial"
+                            : etapa === "inactivo"
+                              ? "Marcada como inactiva"
+                              : `Etapa: ${ETAPA_LABELS[etapa]}`;
 
             return {
               name: p.nombre,
@@ -284,8 +296,8 @@ export function HomePage() {
   }, [weekLabels.todayKey, weekLabels.tomorrowKey]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
-      <div className="w-full max-w-none">
+    <div className="min-h-[calc(100vh-4rem)] py-8">
+      <div className="w-full">
         <div className="mb-8 min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">
             ¡Hola, {pastorName}! 👋

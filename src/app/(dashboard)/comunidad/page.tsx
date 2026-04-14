@@ -194,8 +194,7 @@ export default function Page() {
   const destacados = useMemo(() => ARTICULOS_COMUNIDAD_MOCK.slice(0, 3), []);
 
   return (
-    <div className="px-4 py-4 md:py-5 md:px-6 min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="py-4 md:py-5 min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
         <div className="mb-3 md:mb-4">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Comunidad</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-xl leading-snug">
@@ -312,7 +311,6 @@ export default function Page() {
             </div>
           </aside>
         </div>
-      </div>
     </div>
   );
 }

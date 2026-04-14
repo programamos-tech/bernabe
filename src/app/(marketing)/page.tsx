@@ -1,127 +1,64 @@
 "use client";
 
 import Link from "next/link";
+import { HowItWorksSection } from "@/app/(marketing)/LandingHowItWorks";
+import { MarketingSiteHeader } from "@/app/(marketing)/MarketingSiteHeader";
+import { PricingSection } from "@/app/(marketing)/LandingPricing";
+import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
 import { UserAvatar } from "@/components/UserAvatar";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ARTICULOS_COMUNIDAD_MOCK, CATEGORIAS_LIDERAZGO } from "@/lib/comunidad-articulos-mock";
+import { ETAPA_LABELS, type EtapaPersonaDb, etapaDotClass } from "@/lib/persona-etapa";
 
-const btnPrimary =
-  "inline-flex items-center justify-center rounded-full bg-gray-900 px-8 py-4 text-center font-semibold text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100";
-
-const btnSecondary =
-  "inline-flex items-center justify-center rounded-full border border-gray-200 bg-white px-8 py-4 text-center font-semibold text-gray-900 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:hover:bg-white/[0.1]";
-
-function Logo() {
-  return <span className="font-logo text-3xl text-gray-900 dark:text-white">Bernabé</span>;
-}
-
-function Navbar() {
-  return (
-    <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200/60 bg-white/80 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#111111]/80">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Logo />
-          <nav className="hidden items-center gap-8 md:flex">
-            <a
-              href="#features"
-              className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            >
-              Características
-            </a>
-            <a
-              href="#comunidad"
-              className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            >
-              Comunidad
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            >
-              Cómo funciona
-            </a>
-            <a
-              href="#testimonials"
-              className="text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-            >
-              Testimonios
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className="text-sm font-medium text-gray-600 underline-offset-4 hover:underline dark:text-gray-400"
-            >
-              Iniciar sesión
-            </Link>
-            <Link href="/register" className={`${btnPrimary} px-5 py-2.5 text-sm`}>
-              Comenzar gratis
-            </Link>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-/** Misma escala de puntos que en /personas (solo demo landing). */
-const landingEstadoDot: Record<string, string> = {
-  Activo: "bg-emerald-400/75 dark:bg-emerald-400/55",
-  Visitante: "bg-amber-300/90 dark:bg-amber-300/65",
-  "En seguimiento": "bg-sky-400/80 dark:bg-sky-400/55",
-  "En servicio": "bg-violet-400/80 dark:bg-violet-400/55",
-  Inactivo: "bg-gray-400/85 dark:bg-gray-500/65",
-};
-
-const LANDING_PERSONAS_DEMO = [
-  {
-    nombre: "María Elena Vásquez",
-    telefono: "+58 424-1122334",
-    grupo: "Zona Norte",
-    estado: "Activo",
-    contacto: "28 mar 2025",
-  },
-  {
-    nombre: "Carlos Rivas",
-    telefono: "+58 414-9988776",
-    grupo: "Sin asignar",
-    estado: "Visitante",
-    contacto: "30 mar 2025",
-  },
-  {
-    nombre: "Ana Lucía Méndez",
-    telefono: "+58 412-5544332",
-    grupo: "Jóvenes",
-    estado: "En seguimiento",
-    contacto: "27 mar 2025",
-  },
-  {
-    nombre: "Roberto Díaz",
-    telefono: "+58 426-2211009",
-    grupo: "Matrimonios",
-    estado: "Activo",
-    contacto: "25 mar 2025",
-  },
-  {
-    nombre: "Luisa Herrera",
-    telefono: "+58 424-6677881",
-    grupo: "Intercesión",
-    estado: "En servicio",
-    contacto: "22 mar 2025",
-  },
-] as const;
+const LANDING_PERSONAS_DEMO: { nombre: string; telefono: string; grupo: string; etapa: EtapaPersonaDb; contacto: string }[] =
+  [
+    {
+      nombre: "María Elena Vásquez",
+      telefono: "+58 424-1122334",
+      grupo: "Zona Norte",
+      etapa: "consolidado",
+      contacto: "28 mar 2025",
+    },
+    {
+      nombre: "Carlos Rivas",
+      telefono: "+58 414-9988776",
+      grupo: "Sin asignar",
+      etapa: "visitante",
+      contacto: "30 mar 2025",
+    },
+    {
+      nombre: "Ana Lucía Méndez",
+      telefono: "+58 412-5544332",
+      grupo: "Jóvenes",
+      etapa: "en_proceso",
+      contacto: "27 mar 2025",
+    },
+    {
+      nombre: "Roberto Díaz",
+      telefono: "+58 426-2211009",
+      grupo: "Matrimonios",
+      etapa: "consolidado",
+      contacto: "25 mar 2025",
+    },
+    {
+      nombre: "Luisa Herrera",
+      telefono: "+58 424-6677881",
+      grupo: "Intercesión",
+      etapa: "en_servicio",
+      contacto: "22 mar 2025",
+    },
+  ];
 
 function LandingHeroPersonasPreview() {
   return (
     <div
       className="pointer-events-none select-none"
       role="img"
-      aria-label="Vista previa de la pantalla Personas en Bernabé: tabla de miembros con nombre, grupo, estado y último contacto."
+      aria-label="Vista previa de la pantalla Personas en Bernabé: tabla para el cuidado pastoral, con nombre, grupo, etapa y último contacto."
     >
       <div className="mb-3 min-w-0">
         <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Personas</h2>
-        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">Miembros y visitantes de la iglesia.</p>
+        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">Quién es parte de la iglesia, en qué grupo está y cuándo fue el último cuidado.</p>
       </div>
 
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -141,7 +78,7 @@ function LandingHeroPersonasPreview() {
           </div>
         </div>
         <div className="flex h-9 w-full items-center rounded-full bg-gray-100/90 px-3 text-xs text-gray-500 dark:bg-white/[0.06] dark:text-gray-400 sm:w-44">
-          Todos los estados
+          Todas las etapas
         </div>
       </div>
 
@@ -164,7 +101,7 @@ function LandingHeroPersonasPreview() {
                   Grupo
                 </th>
                 <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
-                  Estado
+                  Etapa
                 </th>
                 <th className="px-1.5 pb-1.5 pt-2.5 text-left font-medium uppercase tracking-wide sm:px-2 sm:pb-2 sm:pt-3.5 sm:text-[11px]">
                   Último contacto
@@ -192,9 +129,11 @@ function LandingHeroPersonasPreview() {
                   <td className="min-w-0 px-1.5 py-2 sm:px-2 sm:py-2.5">
                     <div className="flex items-start gap-1 sm:items-center sm:gap-1.5">
                       <span
-                        className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full sm:mt-0 ${landingEstadoDot[row.estado] ?? landingEstadoDot.Activo}`}
+                        className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full sm:mt-0 ${etapaDotClass[row.etapa]}`}
                       />
-                      <span className="min-w-0 break-words leading-tight text-gray-700 dark:text-gray-300">{row.estado}</span>
+                      <span className="min-w-0 break-words leading-tight text-gray-700 dark:text-gray-300">
+                        {ETAPA_LABELS[row.etapa]}
+                      </span>
                     </div>
                   </td>
                   <td className="min-w-0 px-1.5 py-2 tabular-nums text-gray-500 dark:text-gray-400 sm:px-2 sm:py-2.5">
@@ -256,27 +195,31 @@ function HeroSection() {
           <div className="min-w-0">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-2 dark:bg-amber-400/10">
               <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400/90 dark:bg-amber-300/80" />
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">La plataforma para pastores y líderes</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Bernabé Personas · cuidado en la iglesia local</span>
             </div>
             <h1 className="text-3xl font-semibold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
-              Organiza tu <span className="text-sky-700 dark:text-sky-300">iglesia</span>
-              <br />y cuida a <span className="text-violet-700 dark:text-violet-300">cada persona.</span>
+              El cuidado de las <span className="text-sky-700 dark:text-sky-300">personas</span>
+              <br />
+              en el corazón de <span className="text-violet-700 dark:text-violet-300">tu iglesia.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              Seguimiento de miembros, cuidado pastoral y grupos organizados. Simple y efectivo desde cualquier dispositivo.
+              Bernabé está pensado para acompañar a quienes asisten: miembros, visitantes, grupos y líderes, con un seguimiento pastoral claro y accesible desde cualquier dispositivo.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link href="/register" className={btnPrimary}>
-                Comenzar gratis
+                Prueba 15 días gratis
               </Link>
-              <a href="#how-it-works" className={btnSecondary}>
-                Ver cómo funciona
+              <a href="#precios" className={btnSecondary}>
+                Ver planes y precios
               </a>
             </div>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">
+              Acceso completo durante la prueba para ver cómo tu equipo cuida mejor a la gente. Luego elegís una licencia según el tamaño de tu iglesia.
+            </p>
             <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6">
               <SocialProofAvatars />
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-white">+50 iglesias</span> ya usan Bernabé
+                <span className="font-semibold text-gray-900 dark:text-white">+50 iglesias</span> ya acompañan a su gente con Bernabé
               </p>
             </div>
           </div>
@@ -291,46 +234,193 @@ function HeroSection() {
   );
 }
 
+const LANDING_GRUPOS_DEMO = [
+  {
+    nombre: "Zona Norte",
+    tipo: "Jóvenes",
+    descripcion: "Encuentro semanal y seguimiento pastoral.",
+    miembros: 12,
+    dia: "Sábado",
+    hora: "18:00",
+  },
+  {
+    nombre: "Matrimonios",
+    tipo: "Parejas",
+    descripcion: "Espacio para parejas de la congregación.",
+    miembros: 8,
+    dia: "Viernes",
+    hora: "20:00",
+  },
+  {
+    nombre: "Teens Centro",
+    tipo: "Teens",
+    descripcion: "Enseñanza y comunidad para adolescentes.",
+    miembros: 15,
+    dia: "Domingo",
+    hora: "10:00",
+  },
+  {
+    nombre: "Intercesión",
+    tipo: "General",
+    descripcion: "Oración y apoyo espiritual de la iglesia.",
+    miembros: 22,
+    dia: "Miércoles",
+    hora: "19:30",
+  },
+] as const;
+
+const LANDING_GRUPOS_FILTROS = ["Todos", "Parejas", "Jóvenes", "Teens"] as const;
+
+/** Vista previa de la pantalla Grupos (misma estructura que /grupos), estilo hero Personas. */
+function LandingGruposScreenPreview() {
+  return (
+    <div
+      className="pointer-events-none select-none min-w-0"
+      role="img"
+      aria-label="Vista previa de la pantalla Grupos: búsqueda, filtros y tarjetas para el cuidado por comunidades y líderes."
+    >
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Grupos</h2>
+          <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">
+            Cada grupo como espacio de pastoreo: quién pertenece y quién lidera el cuidado.
+          </p>
+        </div>
+        <div className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-gray-900 px-3 text-xs font-medium text-white dark:bg-white dark:text-gray-900 sm:h-10 sm:px-4">
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo grupo
+        </div>
+      </div>
+
+      <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="relative min-w-0 flex-1">
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <div className="rounded-full bg-gray-100/90 py-2 pl-9 pr-3 text-xs text-gray-400 dark:bg-white/[0.06] dark:text-gray-500">
+            Buscar grupo…
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
+          {LANDING_GRUPOS_FILTROS.map((label) => (
+            <span
+              key={label}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-medium sm:text-xs ${
+                label === "Todos"
+                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                  : "bg-gray-100/90 text-gray-700 dark:bg-white/[0.08] dark:text-gray-200"
+              }`}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {LANDING_GRUPOS_DEMO.map((g) => (
+          <div
+            key={g.nombre}
+            className="min-w-0 overflow-hidden rounded-2xl bg-gray-100/40 dark:bg-white/[0.04] sm:rounded-3xl"
+          >
+            <div className="relative bg-gradient-to-b from-gray-100/80 to-gray-100/30 dark:from-white/[0.06] dark:to-white/[0.02]">
+              <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-0.5rem)] flex-wrap items-center gap-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-900 dark:text-emerald-200 sm:px-2 sm:text-[10px]">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/80" />
+                  Activo
+                </span>
+                <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] font-normal text-gray-600 shadow-sm dark:bg-white/10 dark:text-gray-300 dark:shadow-none sm:px-2 sm:text-[10px]">
+                  {g.tipo}
+                </span>
+              </div>
+              <div className="flex h-[5.75rem] items-end justify-center pb-2 pt-6 sm:h-[6.25rem] sm:pb-3 sm:pt-7">
+                <GrupoAvatarCluster nombreGrupo={g.nombre} sizeCenter={48} sizeSide={30} />
+              </div>
+            </div>
+            <div className="px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
+              <h3 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white sm:text-base">{g.nombre}</h3>
+              <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-500 dark:text-gray-400 sm:text-xs">{g.descripcion}</p>
+              <div className="mt-3 flex items-center gap-3 border-t border-gray-200/60 pt-2.5 dark:border-white/10">
+                <div className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{g.miembros}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Miembros</p>
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-gray-200/80 dark:bg-white/10" />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-gray-900 dark:text-white">{g.dia}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400">{g.hora}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FeaturesSection() {
   const features = [
     {
+      id: "personas" as const,
       icon: (
         <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
         </svg>
       ),
-      title: "Gestión de personas",
-      description: "Registra cada persona que llega a tu iglesia. Visitantes, miembros y líderes organizados.",
+      title: "Cada persona vista",
+      description: "Conoce quién forma parte de la iglesia, su estado y el último contacto: del visitante nuevo al miembro de años.",
       iconClass: "text-sky-600/90 dark:text-sky-400/90",
     },
     {
+      id: "grupos" as const,
       icon: (
         <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z" />
         </svg>
       ),
-      title: "Grupos y células",
-      description: "Crea grupos por zona o afinidad. Cada líder ve su grupo y puede dar seguimiento.",
+      title: "Grupos con pastoreo",
+      description: "Crea grupos por zona o ministerio: cada líder ve a su gente y puede acompañar con contexto, no solo listas.",
       iconClass: "text-orange-600/85 dark:text-orange-400/85",
     },
     {
+      id: "seguimiento" as const,
       icon: (
         <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
         </svg>
       ),
-      title: "Seguimiento efectivo",
-      description: "Asegúrate de que ningún visitante se pierda. Asigna responsables y haz seguimiento real.",
+      title: "Seguimiento que sostiene",
+      description: "Que ningún visitante ni miembro quede invisible: responsables claros y pasos concretos de cuidado.",
       iconClass: "text-amber-600/90 dark:text-amber-400/90",
     },
     {
+      id: "vision" as const,
       icon: (
         <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
         </svg>
       ),
-      title: "Visión clara",
-      description: "Conoce el estado de tu iglesia. Cuántas personas, grupos activos y más.",
+      title: "Panorama pastoral",
+      description: "Una lectura humana de tu iglesia: personas, grupos activos y dónde hace falta acercarse.",
       iconClass: "text-violet-600/90 dark:text-violet-400/90",
     },
   ];
@@ -340,17 +430,17 @@ function FeaturesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto mb-16 max-w-3xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Todo lo que necesitas para <span className="text-sky-700 dark:text-sky-300">cuidar a tu gente</span>
+            Hecho para <span className="text-sky-700 dark:text-sky-300">el cuidado de las personas</span> en la iglesia
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            Herramientas simples para que cada líder cuide su grupo y ninguna persona se quede sin atención.
+            Herramientas sencillas para pastores y líderes: cada grupo con contexto y cada persona con alguien que la acompaña.
           </p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, i) => (
+          {features.map((feature) => (
             <div
-              key={i}
+              key={feature.id}
               className="group rounded-3xl border border-transparent bg-gray-100/40 p-6 transition-all hover:bg-gray-100/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
             >
               <div className={`mb-4 ${feature.iconClass}`}>{feature.icon}</div>
@@ -359,32 +449,45 @@ function FeaturesSection() {
             </div>
           ))}
         </div>
+
+        <div className="mt-12 lg:mt-14">
+          <p className="mb-4 mx-auto max-w-2xl text-center text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            Los grupos no son solo calendario: son el lugar donde la iglesia cuida en comunidad. Asigna líderes, registra reuniones y
+            consulta cuántas personas integran cada equipo, siempre con el foco en el acompañamiento.
+          </p>
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="rounded-3xl border border-gray-200/70 bg-white/90 p-3 shadow-lg shadow-black/[0.06] dark:border-white/[0.08] dark:bg-[#181818]/95 dark:shadow-none sm:p-4">
+              <LandingGruposScreenPreview />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-function ComunidadLandingSection() {
+function RecursosLandingSection() {
   const preview = ARTICULOS_COMUNIDAD_MOCK.slice(0, 2);
 
   return (
     <section
-      id="comunidad"
+      id="recursos"
       className="scroll-mt-24 border-y border-gray-200/60 bg-gradient-to-b from-sky-50/90 to-white px-4 py-24 dark:border-white/[0.06] dark:from-sky-950/25 dark:to-[#111111] sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div>
             <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
-              Dentro de Bernabé
+              Gratis, sin cuenta
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              <span className="font-logo-soft font-medium">Comunidad</span> para quienes{" "}
-              <span className="text-sky-700 dark:text-sky-300">lideran y pastorean</span>
+              <span className="font-logo-soft font-medium">Recursos</span> que respaldan el{" "}
+              <span className="text-sky-700 dark:text-sky-300">cuidado de las personas</span>
             </h2>
             <p className="mt-4 max-w-lg text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              Compartí estudios, reflexiones y apoyo con otros líderes de tu red. No es otro blog genérico: está pensado para{" "}
-              <strong className="font-medium text-gray-900 dark:text-white">equipos que dirigen en la iglesia local</strong>.
+              La app ordena el acompañamiento en la iglesia; estos textos fortalecen a quienes pastorean y equipan. Artículos y reflexiones,{" "}
+              <strong className="font-medium text-gray-900 dark:text-white">disponibles gratis</strong> en la web. Con cuenta accedés además a la
+              comunidad dentro de la app.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {CATEGORIAS_LIDERAZGO.map((cat) => (
@@ -397,12 +500,15 @@ function ComunidadLandingSection() {
               ))}
             </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/register" className={`${btnPrimary} w-full sm:w-auto`}>
-                Crear cuenta y ver Comunidad
+              <Link href="/recursos" className={`${btnPrimary} w-full sm:w-auto`}>
+                Ver todos los recursos
+              </Link>
+              <Link href="/register" className={`${btnSecondary} w-full sm:w-auto`}>
+                Crear cuenta (prueba 15 días)
               </Link>
               <Link
                 href="/login"
-                className="text-center text-sm font-medium text-sky-800 underline-offset-4 hover:underline dark:text-sky-300"
+                className="text-center text-sm font-medium text-sky-800 underline-offset-4 hover:underline dark:text-sky-300 sm:ml-1"
               >
                 Ya tengo cuenta
               </Link>
@@ -415,11 +521,12 @@ function ComunidadLandingSection() {
               aria-hidden
             />
             <div className="relative space-y-3 rounded-2xl border border-gray-200/80 bg-white/90 p-4 shadow-lg shadow-sky-900/5 dark:border-white/[0.08] dark:bg-[#1a1a1a]/95 dark:shadow-none">
-              <p className="px-1 text-xs font-medium text-gray-500 dark:text-gray-400">Vista previa del feed</p>
+              <p className="px-1 text-xs font-medium text-gray-500 dark:text-gray-400">Ejemplos de artículos (leé gratis en la web)</p>
               {preview.map((a) => (
-                <div
+                <Link
                   key={a.id}
-                  className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 dark:border-[#2a2a2a] dark:bg-[#141414]"
+                  href={`/recursos/${a.id}`}
+                  className="block rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 outline-none transition hover:border-sky-200/80 hover:bg-white dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-sky-500/30 dark:hover:bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-sky-500/40"
                 >
                   <div className="flex gap-2.5">
                     <UserAvatar seed={a.autor} size={36} className="shrink-0" />
@@ -434,111 +541,13 @@ function ComunidadLandingSection() {
                         {a.titulo}
                       </p>
                       <p className="mt-1 text-xs leading-snug text-gray-600 dark:text-gray-400 line-clamp-2">{a.excerpt}</p>
+                      <p className="mt-2 text-[11px] font-medium text-sky-700 dark:text-sky-300">Leer artículo →</p>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200/80 pt-2.5 dark:border-[#2a2a2a]">
-                    <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
-                      <Link
-                        href="/register"
-                        className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 transition hover:bg-white/80 hover:text-[#e64b27] dark:text-gray-400 dark:hover:bg-[#252525]"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                          />
-                        </svg>
-                        <span className="text-xs tabular-nums">{a.likes}</span>
-                      </Link>
-                      <Link
-                        href="/register"
-                        className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 transition hover:bg-white/80 hover:text-[#0ca6b2] dark:text-gray-400 dark:hover:bg-[#252525]"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
-                          />
-                        </svg>
-                        <span className="text-xs">
-                          Comentar
-                          {a.comentarios > 0 ? (
-                            <span className="text-gray-400 dark:text-gray-500"> · {a.comentarios}</span>
-                          ) : null}
-                        </span>
-                      </Link>
-                    </div>
-                    <Link
-                      href="/register"
-                      className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-gray-500 transition hover:bg-white/80 hover:text-[#18301d] dark:text-gray-400 dark:hover:bg-[#252525] dark:hover:text-white"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
-                        />
-                      </svg>
-                      Guardar
-                    </Link>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorksSection() {
-  const steps = [
-    {
-      number: "01",
-      title: "Crea tu cuenta",
-      description: "Regístrate en menos de 2 minutos. Sin tarjeta de crédito.",
-      seed: "onboarding·paso·1·cuenta",
-    },
-    {
-      number: "02",
-      title: "Crea tus grupos",
-      description: "Organiza células, grupos de conexión y asigna líderes a cada uno.",
-      seed: "onboarding·paso·2·grupos",
-    },
-    {
-      number: "03",
-      title: "Cuida a cada persona",
-      description: "Registra visitantes, asigna seguimiento y ve crecer tu iglesia.",
-      seed: "onboarding·paso·3·personas",
-    },
-  ];
-
-  return (
-    <section id="how-it-works" className="bg-gray-950 px-4 py-24 text-white dark:bg-zinc-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mx-auto mb-16 max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Comienza en <span className="text-amber-200/90">3 simples pasos</span>
-          </h2>
-          <p className="mt-4 text-lg text-gray-400">
-            No necesitas ser experto en tecnología. Si puedes usar WhatsApp, puedes usar Bernabé.
-          </p>
-        </div>
-
-        <div className="grid gap-8 md:grid-cols-3">
-          {steps.map((step) => (
-            <div key={step.number} className="group">
-              <div className="mb-6 flex flex-col items-center rounded-3xl bg-white/[0.06] px-6 pb-8 pt-10 transition-colors group-hover:bg-white/[0.09]">
-                <UserAvatar seed={step.seed} size={100} className="ring-2 ring-white/15" />
-                <span className="mt-6 text-5xl font-bold tabular-nums text-white/15">{step.number}</span>
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">{step.title}</h3>
-              <p className="text-gray-400">{step.description}</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -553,6 +562,9 @@ function TestimonialsSection() {
           <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             Lo que dicen <span className="text-violet-700 dark:text-violet-300">nuestros usuarios</span>
           </h2>
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+            Iglesias que priorizan el cuidado pastoral de miembros, visitantes y grupos.
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -611,19 +623,26 @@ function CTASection() {
     <section className="bg-white px-4 py-24 dark:bg-[#111111] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">
         <h2 className="mb-6 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-          ¿Listo para <span className="text-sky-700 dark:text-sky-300">cuidar mejor</span> a tu gente?
+          ¿Listo para poner el <span className="text-sky-700 dark:text-sky-300">cuidado de las personas</span> al centro?
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-          Únete a más de 50 iglesias que ya usan Bernabé para organizar sus grupos, dar seguimiento y cuidar a cada persona.
+          Sumate a más de 50 iglesias que ya usan Bernabé Personas para acompañar miembros y visitantes, ordenar grupos y apoyar a sus líderes.
         </p>
-        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/register" className={btnPrimary}>
-            Comenzar gratis ahora
+            Empezar prueba de 15 días
           </Link>
-          <a href="mailto:hola@bernabe.app" className={btnSecondary}>
-            Contactar ventas
+          <a href="#precios" className={btnSecondary}>
+            Ver planes y precios
           </a>
         </div>
+        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          ¿Más de 300 miembros en total (personas y líderes)?{" "}
+          <a href="mailto:hola@bernabe.app?subject=Licencia%20Bernab%C3%A9%20%28plan%20a%20medida%29" className="font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400">
+            Escribinos para un plan a medida
+          </a>
+          .
+        </p>
       </div>
     </section>
   );
@@ -637,7 +656,7 @@ function Footer() {
           <div className="md:col-span-1">
             <span className="font-logo text-3xl text-white">Bernabé</span>
             <p className="mt-4 text-sm leading-relaxed text-gray-400">
-              La plataforma para organizar tu iglesia y cuidar a cada persona.
+              Bernabé Personas: el cuidado de quienes asisten a tu iglesia —miembros, grupos y líderes— en un solo lugar.
             </p>
             <div className="mt-6 flex items-center gap-4">
               <a
@@ -676,9 +695,9 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#comunidad" className="text-sm text-gray-400 transition hover:text-white">
-                  Comunidad de líderes
-                </a>
+                <Link href="/recursos" className="text-sm text-gray-400 transition hover:text-white">
+                  Recursos
+                </Link>
               </li>
               <li>
                 <a href="#how-it-works" className="text-sm text-gray-400 transition hover:text-white">
@@ -691,7 +710,7 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-400 transition hover:text-white">
+                <a href="#precios" className="text-sm text-gray-400 transition hover:text-white">
                   Precios
                 </a>
               </li>
@@ -717,9 +736,9 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#comunidad" className="text-sm text-gray-400 transition hover:text-white">
-                  Comunidad
-                </a>
+                <Link href="/recursos" className="text-sm text-gray-400 transition hover:text-white">
+                  Recursos
+                </Link>
               </li>
             </ul>
           </div>
@@ -762,12 +781,13 @@ function Footer() {
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-white dark:bg-[#111111]">
-      <Navbar />
+      <MarketingSiteHeader />
       <HeroSection />
       <FeaturesSection />
-      <ComunidadLandingSection />
+      <RecursosLandingSection />
       <HowItWorksSection />
       <TestimonialsSection />
+      <PricingSection />
       <CTASection />
       <Footer />
     </main>

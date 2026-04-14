@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 
 interface TimePickerProps {
   value?: string | null;
@@ -13,6 +13,9 @@ interface TimePickerProps {
 const HOURS_12 = ["12", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"];
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
+const selectClass =
+  "w-full min-w-0 cursor-pointer rounded-lg border border-gray-200/90 bg-white py-2 px-1.5 text-center text-sm font-semibold tabular-nums text-gray-900 shadow-sm transition hover:border-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/15 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:hover:border-white/[0.16] dark:focus-visible:ring-white/20 dark:[color-scheme:dark]";
+
 export function TimePicker({
   value,
   onChange,
@@ -20,13 +23,13 @@ export function TimePicker({
   id,
   name,
 }: TimePickerProps) {
+  const generatedId = useId();
+  const fieldPrefix = id ?? generatedId;
   const [isOpen, setIsOpen] = useState(false);
   const [hour, setHour] = useState("07");
   const [minute, setMinute] = useState("00");
   const [period, setPeriod] = useState<"AM" | "PM">("PM");
   const containerRef = useRef<HTMLDivElement>(null);
-  const hourListRef = useRef<HTMLDivElement>(null);
-  const minuteListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value) {
@@ -53,23 +56,6 @@ export function TimePicker({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      if (hourListRef.current) {
-        const selectedHour = hourListRef.current.querySelector("[data-selected]");
-        if (selectedHour) {
-          selectedHour.scrollIntoView({ block: "center" });
-        }
-      }
-      if (minuteListRef.current) {
-        const selectedMinute = minuteListRef.current.querySelector("[data-selected]");
-        if (selectedMinute) {
-          selectedMinute.scrollIntoView({ block: "center" });
-        }
-      }
-    }
-  }, [isOpen]);
-
   const selectTime = (h: string, m: string, p: "AM" | "PM") => {
     const timeString = `${h}:${m} ${p}`;
     onChange?.(timeString);
@@ -88,19 +74,21 @@ export function TimePicker({
     setIsOpen(false);
   };
 
+  const preview = `${hour}:${minute} ${period}`;
+
   return (
     <div ref={containerRef} className="relative">
       <input type="hidden" id={id} name={name} value={value || ""} />
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] text-left text-[#18301d] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:border-transparent transition bg-white dark:bg-[#252525] flex items-center justify-between"
+        className="flex w-full items-center justify-between rounded-xl border border-gray-200/90 bg-white px-3.5 py-2.5 text-left text-sm text-gray-900 shadow-sm transition hover:border-gray-300 hover:bg-gray-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/12 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:shadow-none dark:hover:border-white/[0.14] dark:hover:bg-white/[0.08] dark:focus-visible:ring-white/20 dark:focus-visible:ring-offset-[#141414]"
       >
-        <span className={value ? "text-[#18301d] dark:text-white" : "text-gray-400"}>
+        <span className={value ? "font-medium text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}>
           {value || placeholder}
         </span>
         <svg
-          className="w-5 h-5 text-gray-400"
+          className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -115,115 +103,85 @@ export function TimePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] shadow-xl p-4 w-72">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-2xl font-bold text-[#0ca6b2]">{hour}</span>
-            <span className="text-2xl font-bold text-gray-400">:</span>
-            <span className="text-2xl font-bold text-[#0ca6b2]">{minute}</span>
-            <span className="text-lg font-semibold text-[#18301d] dark:text-white ml-2">{period}</span>
-          </div>
+        <div className="absolute right-0 z-50 mt-2 w-[min(calc(100vw-2rem),17.5rem)] rounded-xl border border-gray-200/90 bg-white p-3 shadow-lg dark:border-white/10 dark:bg-[#161616] sm:left-0 sm:right-auto sm:w-64">
+          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Elegir hora</p>
 
-          <div className="flex gap-2 mb-4">
-            {/* Hours */}
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-2 font-medium">Hora</p>
-              <div 
-                ref={hourListRef}
-                className="h-40 overflow-y-auto rounded-xl bg-gray-50 dark:bg-[#252525] p-1 scrollbar-hide"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          <div className="mb-1 flex flex-wrap items-end justify-center gap-x-1 gap-y-2">
+            <div className="min-w-[3.25rem] flex-1">
+              <label htmlFor={`${fieldPrefix}-h`} className="sr-only">
+                Hora
+              </label>
+              <select
+                id={`${fieldPrefix}-h`}
+                value={hour}
+                onChange={(e) => setHour(e.target.value)}
+                className={selectClass}
+                aria-label="Hora"
               >
                 {HOURS_12.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    data-selected={h === hour ? true : undefined}
-                    onClick={() => setHour(h)}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition
-                      ${h === hour
-                        ? "bg-[#0ca6b2] text-white"
-                        : "text-[#18301d] dark:text-white hover:bg-gray-200 dark:hover:bg-[#333]"
-                      }
-                    `}
-                  >
+                  <option key={h} value={h}>
                     {h}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
-
-            {/* Minutes */}
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-2 font-medium">Minutos</p>
-              <div 
-                ref={minuteListRef}
-                className="h-40 overflow-y-auto rounded-xl bg-gray-50 dark:bg-[#252525] p-1 scrollbar-hide"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            <span
+              className="mb-2 shrink-0 select-none text-lg font-light leading-none text-gray-400 dark:text-gray-500"
+              aria-hidden
+            >
+              :
+            </span>
+            <div className="min-w-[3.25rem] flex-1">
+              <label htmlFor={`${fieldPrefix}-m`} className="sr-only">
+                Minutos
+              </label>
+              <select
+                id={`${fieldPrefix}-m`}
+                value={minute}
+                onChange={(e) => setMinute(e.target.value)}
+                className={selectClass}
+                aria-label="Minutos"
               >
                 {MINUTES.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    data-selected={m === minute ? true : undefined}
-                    onClick={() => setMinute(m)}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition
-                      ${m === minute
-                        ? "bg-[#0ca6b2] text-white"
-                        : "text-[#18301d] dark:text-white hover:bg-gray-200 dark:hover:bg-[#333]"
-                      }
-                    `}
-                  >
+                  <option key={m} value={m}>
                     {m}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
-
-            {/* AM/PM */}
-            <div className="w-20">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-2 font-medium">Período</p>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPeriod("AM")}
-                  className={`w-full py-4 rounded-xl text-sm font-bold transition
-                    ${period === "AM"
-                      ? "bg-[#0ca6b2] text-white"
-                      : "bg-gray-50 dark:bg-[#252525] text-[#18301d] dark:text-white hover:bg-gray-200 dark:hover:bg-[#333]"
-                    }
-                  `}
-                >
-                  AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPeriod("PM")}
-                  className={`w-full py-4 rounded-xl text-sm font-bold transition
-                    ${period === "PM"
-                      ? "bg-[#0ca6b2] text-white"
-                      : "bg-gray-50 dark:bg-[#252525] text-[#18301d] dark:text-white hover:bg-gray-200 dark:hover:bg-[#333]"
-                    }
-                  `}
-                >
-                  PM
-                </button>
-              </div>
+            <div className="min-w-[3.75rem] flex-1 basis-[3.75rem]">
+              <label htmlFor={`${fieldPrefix}-p`} className="sr-only">
+                Período
+              </label>
+              <select
+                id={`${fieldPrefix}-p`}
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as "AM" | "PM")}
+                className={selectClass}
+                aria-label="Antes o después del mediodía"
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-[#2a2a2a]">
+          <p className="mb-3 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{preview}</p>
+
+          <div className="flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-white/[0.08]">
             <button
               type="button"
               onClick={clearTime}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-[#18301d] dark:hover:text-white transition"
+              className="text-sm font-medium text-gray-500 transition hover:text-gray-800 dark:text-gray-500 dark:hover:text-gray-200"
             >
               Borrar
             </button>
             <button
               type="button"
               onClick={handleConfirm}
-              className="px-4 py-2 bg-[#0ca6b2] text-white text-sm font-semibold rounded-lg hover:bg-[#0a8f99] transition"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100"
             >
-              Confirmar
+              Listo
             </button>
           </div>
         </div>

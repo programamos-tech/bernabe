@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
-import { UserAvatar } from "@/components/UserAvatar";
+import { GrupoResumenCard } from "@/components/GrupoResumenCard";
 import { createClient } from "@/lib/supabase/client";
+import { tipoLabelGrupo } from "@/lib/grupo-tipo";
 
 type TipoGrupo = "parejas" | "jovenes" | "teens" | "hombres" | "mujeres" | "general";
 
@@ -14,8 +14,6 @@ interface GrupoRow {
   descripcion: string | null;
   tipo: string;
   miembros_count: number;
-  /** Conteo real desde personas (se rellena después de cargar) */
-  miembrosReales?: number;
   lider_id: string | null;
   dia: string | null;
   hora: string | null;
@@ -36,11 +34,6 @@ const FILTER_TIPOS: { value: TipoGrupo | "Todos"; label: string }[] = [
   { value: "general", label: "General" },
 ];
 
-function tipoLabel(t: string): string {
-  const f = FILTER_TIPOS.find((x) => x.value === t);
-  return f?.label ?? t;
-}
-
 function liderNombreFromRow(grupo: GrupoRow): string | null {
   if (grupo.lideres == null) return null;
   return Array.isArray(grupo.lideres) ? grupo.lideres[0]?.nombre ?? null : grupo.lideres.nombre;
@@ -48,119 +41,23 @@ function liderNombreFromRow(grupo: GrupoRow): string | null {
 
 function GrupoCard({ grupo }: { grupo: GrupoRow }) {
   const liderNombre = liderNombreFromRow(grupo);
-
   return (
-    <div className="group overflow-hidden rounded-3xl bg-gray-100/40 transition hover:bg-gray-100/55 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
-      <div className="relative bg-gradient-to-b from-gray-100/80 to-gray-100/30 dark:from-white/[0.06] dark:to-white/[0.02]">
-        <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
-          <span
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              grupo.activo
-                ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
-                : "bg-gray-500/10 text-gray-700 dark:text-gray-300"
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                grupo.activo ? "bg-emerald-400/80 dark:bg-emerald-400/55" : "bg-gray-400 dark:bg-gray-500"
-              }`}
-            />
-            {grupo.activo ? "Activo" : "Inactivo"}
-          </span>
-          <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-normal text-gray-600 shadow-sm shadow-black/[0.04] dark:bg-white/10 dark:text-gray-300 dark:shadow-none">
-            {tipoLabel(grupo.tipo)}
-          </span>
-        </div>
-        <div className="flex h-[8.5rem] items-end justify-center pb-5 pt-6">
-          <GrupoAvatarCluster nombreGrupo={grupo.nombre} />
-        </div>
-      </div>
-
-      <div className="px-5 pb-5 pt-1">
-        <h3 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">{grupo.nombre}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-          {grupo.descripcion || "Sin descripción"}
-        </p>
-
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <svg
-              className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <div>
-              <p className="text-base font-semibold tabular-nums text-gray-900 dark:text-white">
-                {grupo.miembrosReales ?? grupo.miembros_count}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Miembros</p>
-            </div>
-          </div>
-          <div className="h-10 w-px bg-gray-200/80 dark:bg-white/10" />
-          <div className="flex min-w-0 items-center gap-2">
-            <svg
-              className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{grupo.dia || "—"}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.hora || "—"}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <UserAvatar seed={liderNombre ?? `líder·${grupo.nombre}`} size={40} />
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Líder</p>
-            {grupo.lider_id ? (
-              <Link
-                href={`/lideres/${grupo.lider_id}`}
-                className="text-sm font-medium text-gray-900 hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
-              >
-                {liderNombre ?? "Sin asignar"}
-              </Link>
-            ) : (
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Sin asignar</p>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-gray-200/60 pt-4 dark:border-white/10">
-          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-            </svg>
-            <span className="truncate" title={grupo.ubicacion || undefined}>
-              {grupo.ubicacion || "Sin ubicación"}
-            </span>
-          </div>
-          <Link
-            href={`/grupos/${grupo.id}`}
-            className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            Ver grupo
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-        </div>
-      </div>
-    </div>
+    <GrupoResumenCard
+      grupo={{
+        id: grupo.id,
+        nombre: grupo.nombre,
+        descripcion: grupo.descripcion,
+        tipo: grupo.tipo,
+        activo: grupo.activo,
+        miembros_count: grupo.miembros_count,
+        lider_id: grupo.lider_id,
+        dia: grupo.dia,
+        hora: grupo.hora,
+        ubicacion: grupo.ubicacion,
+      }}
+      liderNombre={liderNombre}
+      miembrosCount={grupo.miembros_count}
+    />
   );
 }
 
@@ -172,31 +69,18 @@ export default function Page() {
 
   useEffect(() => {
     const supabase = createClient();
-    Promise.all([
-      supabase
-        .from("grupos")
-        .select("id, nombre, descripcion, tipo, miembros_count, lider_id, dia, hora, ubicacion, imagen, activo, lideres(nombre)")
-        .order("nombre"),
-      supabase.from("personas").select("grupo_id").not("grupo_id", "is", null),
-    ]).then(([gruposRes, personasRes]) => {
+    supabase
+      .from("grupos")
+      .select("id, nombre, descripcion, tipo, miembros_count, lider_id, dia, hora, ubicacion, imagen, activo, lideres(nombre)")
+      .order("nombre")
+      .then((gruposRes) => {
       if (gruposRes.error) {
         console.error(gruposRes.error);
         setGrupos([]);
         setLoading(false);
         return;
       }
-      const lista = (gruposRes.data ?? []) as GrupoRow[];
-      const personas = (personasRes.data ?? []) as { grupo_id: string }[];
-      const conteoPorGrupo: Record<string, number> = {};
-      for (const p of personas) {
-        conteoPorGrupo[p.grupo_id] = (conteoPorGrupo[p.grupo_id] ?? 0) + 1;
-      }
-      setGrupos(
-        lista.map((g) => ({
-          ...g,
-          miembrosReales: conteoPorGrupo[g.id] ?? 0,
-        }))
-      );
+      setGrupos((gruposRes.data ?? []) as GrupoRow[]);
       setLoading(false);
     });
   }, []);
@@ -213,7 +97,7 @@ export default function Page() {
         g.ubicacion ?? "",
         g.dia ?? "",
         g.hora ?? "",
-        tipoLabel(g.tipo),
+        tipoLabelGrupo(g.tipo),
         lider,
       ]
         .join(" ")
@@ -223,7 +107,7 @@ export default function Page() {
   }, [grupos, filterTipo, search]);
 
   return (
-    <div className="w-full max-w-none min-h-[calc(100vh-4rem)] px-4 py-8 md:px-6 lg:px-8">
+    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Grupos</h1>

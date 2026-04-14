@@ -52,9 +52,8 @@ export default function ArticuloComunidadPage({ params }: PageProps) {
     .filter(Boolean);
 
   return (
-    <div className="px-4 py-4 md:py-5 md:px-6 min-h-[calc(100vh-4rem)] pb-32 md:pb-20 lg:pb-28">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start pb-8 md:pb-12">
+    <div className="py-4 md:py-5 min-h-[calc(100vh-4rem)] pb-32 md:pb-20 lg:pb-28">
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start pb-8 md:pb-12">
           <div className="lg:col-span-2 min-w-0">
             <header className="mb-8">
               <div className="flex items-start gap-3 mb-4">
@@ -131,7 +130,6 @@ export default function ArticuloComunidadPage({ params }: PageProps) {
             </Link>
           </aside>
         </div>
-      </div>
     </div>
   );
 }

@@ -11,6 +11,8 @@ import {
   SITUACION_ACERCAMIENTO_OPTIONS,
   type SituacionAcercamiento,
 } from "@/lib/personas-situacion-acercamiento";
+import { type PersonaSexo } from "@/lib/persona-sexo";
+import { fechaHoyYYYYMMDD } from "@/lib/fecha-hoy-local";
 import { createClient } from "@/lib/supabase/client";
 import { PERSONA_NATIVE_SELECT_CLASS } from "@/lib/persona-form-ui";
 
@@ -59,7 +61,9 @@ export default function Page() {
   const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
   const [nombre, setNombre] = useState("");
   const [documentoId, setDocumentoId] = useState("");
+  const [sexo, setSexo] = useState<PersonaSexo | "">("");
   const [vieneDeOtraIglesia, setVieneDeOtraIglesia] = useState<"" | "true" | "false">("");
+  const [tieneParejaTri, setTieneParejaTri] = useState<"" | "true" | "false">("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -99,6 +103,13 @@ export default function Page() {
       situRaw && situacionesValidas.includes(situRaw as SituacionAcercamiento)
         ? (situRaw as SituacionAcercamiento)
         : null;
+    const tieneParejaVal = parseTriBoolForm(formData.get("tienePareja"));
+    const trabajaVal = parseTriBoolForm(formData.get("trabajaActualmente"));
+    const estudiaVal = parseTriBoolForm(formData.get("estudiaActualmente"));
+    const nombreParejaVal = (formData.get("nombrePareja") as string)?.trim() || null;
+    const condicionSaludVal = (formData.get("condicionSalud") as string)?.trim() || null;
+    const contactoEmergNombreVal = (formData.get("contactoEmergenciaNombre") as string)?.trim() || null;
+    const contactoEmergTelVal = (formData.get("contactoEmergenciaTelefono") as string)?.trim() || null;
 
     if (!nombreVal) {
       setError("El nombre es obligatorio.");
@@ -131,6 +142,7 @@ export default function Page() {
         .insert({
           organization_id: organizationId,
           nombre: nombreVal,
+          sexo: sexo === "" ? null : sexo,
           cedula: cedulaVal,
           telefono: telefonoVal,
           email: emailVal,
@@ -139,13 +151,22 @@ export default function Page() {
           ocupacion: ocupacionVal,
           direccion: direccionVal,
           grupo_id: grupoIdVal || null,
+          fecha_ingreso_grupo: grupoIdVal ? fechaHoyYYYYMMDD() : null,
+          co_lider_desde: null,
           notas: null,
-          estado: grupoIdVal ? "Activo" : "Visitante",
+          etapa: grupoIdVal ? "consolidado" : "visitante",
           rol: "Miembro",
           bautizado: bautizadoVal,
           viene_de_otra_iglesia: vieneOtraVal,
           nombre_iglesia_anterior: vieneOtraVal === true ? iglesiaAntVal : null,
           situacion_acercamiento: situacionVal,
+          tiene_pareja: tieneParejaVal,
+          nombre_pareja: tieneParejaVal === true ? nombreParejaVal : null,
+          trabaja_actualmente: trabajaVal,
+          estudia_actualmente: estudiaVal,
+          condicion_salud: condicionSaludVal,
+          contacto_emergencia_nombre: contactoEmergNombreVal,
+          contacto_emergencia_telefono: contactoEmergTelVal,
         })
         .select("id")
         .single();
@@ -181,11 +202,10 @@ export default function Page() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="bg-gradient-to-r from-[#18301d] to-[#2d4a35] dark:from-[#1a1a1a] dark:to-[#252525] py-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="w-28 h-28 rounded-2xl bg-white dark:bg-[#2a2a2a] p-1.5 shadow-xl">
-              <UserAvatar seed={nombre || "Nueva Persona"} size={100} />
+              <UserAvatar seed={nombre || "Nueva Persona"} sexo={sexo === "" ? null : sexo} size={100} />
             </div>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">Registrar nueva persona</h1>
@@ -199,12 +219,10 @@ export default function Page() {
               </svg>
             </Link>
           </div>
-        </div>
       </div>
 
       {/* Content */}
-      <form onSubmit={handleSubmit} className="px-4 py-6 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <form onSubmit={handleSubmit} className="py-6">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
               {error}
@@ -261,6 +279,22 @@ export default function Page() {
                       className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
                     />
                   </FormField>
+
+                  <FormField icon="user" label="Sexo (avatar ilustrado)">
+                    <select
+                      name="sexo"
+                      value={sexo}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setSexo(v === "masculino" || v === "femenino" ? v : "");
+                      }}
+                      className={PERSONA_NATIVE_SELECT_CLASS}
+                    >
+                      <option value="">Sin registrar</option>
+                      <option value="masculino">Masculino</option>
+                      <option value="femenino">Femenino</option>
+                    </select>
+                  </FormField>
                 </div>
               </div>
 
@@ -279,16 +313,49 @@ export default function Page() {
                     />
                   </div>
 
-                  <FormField icon="heart" label="Estado civil">
-                    <select name="estadoCivil" className={PERSONA_NATIVE_SELECT_CLASS}>
-                      <option value="">Seleccionar...</option>
-                      {estadosCiviles.map((estado) => (
-                        <option key={estado} value={estado}>
-                          {estado}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
+                  <div className="sm:col-span-2 rounded-2xl border border-gray-200 dark:border-[#333] bg-gray-50/80 dark:bg-[#252525]/80 p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Estado civil y pareja
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField icon="heart" label="Estado civil">
+                        <select name="estadoCivil" className={PERSONA_NATIVE_SELECT_CLASS}>
+                          <option value="">Seleccionar...</option>
+                          {estadosCiviles.map((estado) => (
+                            <option key={estado} value={estado}>
+                              {estado}
+                            </option>
+                          ))}
+                        </select>
+                      </FormField>
+
+                      <FormField icon="heart" label="¿Tiene pareja o relación estable?">
+                        <select
+                          name="tienePareja"
+                          value={tieneParejaTri}
+                          onChange={(e) => setTieneParejaTri(e.target.value as "" | "true" | "false")}
+                          className={PERSONA_NATIVE_SELECT_CLASS}
+                        >
+                          <option value="">Sin registrar</option>
+                          <option value="true">Sí</option>
+                          <option value="false">No</option>
+                        </select>
+                      </FormField>
+
+                      {tieneParejaTri === "true" && (
+                        <div className="sm:col-span-2">
+                          <FormField icon="heart" label="Nombre de la pareja">
+                            <input
+                              type="text"
+                              name="nombrePareja"
+                              placeholder="Opcional"
+                              className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                            />
+                          </FormField>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <FormField icon="work" label="Ocupación">
                     <select name="ocupacion" className={PERSONA_NATIVE_SELECT_CLASS}>
@@ -306,6 +373,51 @@ export default function Page() {
                       type="text"
                       name="direccion"
                       placeholder="Ej: Calle 45 #12-34, Bogotá"
+                      className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                    />
+                  </FormField>
+
+                  <FormField icon="work" label="¿Trabaja actualmente?">
+                    <select name="trabajaActualmente" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  <FormField icon="work" label="¿Estudia actualmente?">
+                    <select name="estudiaActualmente" className={PERSONA_NATIVE_SELECT_CLASS}>
+                      <option value="">Sin registrar</option>
+                      <option value="true">Sí</option>
+                      <option value="false">No</option>
+                    </select>
+                  </FormField>
+
+                  <div className="sm:col-span-2">
+                    <FormField icon="work" label="Condición de salud o cuidados (opcional)">
+                      <textarea
+                        name="condicionSalud"
+                        rows={3}
+                        placeholder="Alergias, medicación, etc. Visible para líderes con fines de cuidado pastoral."
+                        className="w-full resize-none bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField icon="phone" label="Contacto de emergencia — nombre">
+                    <input
+                      type="text"
+                      name="contactoEmergenciaNombre"
+                      placeholder="Ej: Familiar, cónyuge…"
+                      className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
+                    />
+                  </FormField>
+
+                  <FormField icon="phone" label="Contacto de emergencia — teléfono">
+                    <input
+                      type="tel"
+                      name="contactoEmergenciaTelefono"
+                      placeholder="+57…"
                       className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
                     />
                   </FormField>
@@ -370,7 +482,7 @@ export default function Page() {
               <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
                 <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-1">Notas</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Opcional. Se guarda como primera entrada del historial de notas de la persona.
+                  Opcional. Se guarda como primera nota pastoral en la ficha de la persona.
                 </p>
                 <textarea
                   name="notas"
@@ -460,7 +572,6 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </div>
       </form>
     </div>
   );

@@ -451,7 +451,7 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 md:px-6">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-8">
         <svg className="h-8 w-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -464,7 +464,7 @@ export default function Page() {
   const todayMutedClass = "bg-gray-200/70 dark:bg-white/10";
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full max-w-none px-4 py-8 md:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] w-full py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Calendario</h1>
