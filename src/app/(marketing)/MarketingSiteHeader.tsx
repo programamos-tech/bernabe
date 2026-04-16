@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -12,8 +13,23 @@ const navLinkActive =
 
 function Logo() {
   return (
-    <Link href="/" className="font-logo text-3xl text-gray-900 dark:text-white">
-      Bernabé
+    <Link
+      href="/"
+      className="group flex shrink-0 items-center self-stretch leading-none"
+      aria-label="Bernabé, inicio"
+    >
+      <span className="flex items-center gap-0.5 font-logo text-3xl leading-none text-gray-900 dark:text-white">
+        <Image
+          src="/ceiling.png"
+          alt=""
+          width={72}
+          height={104}
+          sizes="1.875rem"
+          className="block h-[1em] w-auto shrink-0 object-contain object-center opacity-95 transition-opacity group-hover:opacity-100 dark:opacity-90 dark:group-hover:opacity-100"
+          priority
+        />
+        Bernabé
+      </span>
     </Link>
   );
 }
