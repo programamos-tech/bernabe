@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { HowItWorksSection } from "@/app/(marketing)/LandingHowItWorks";
 import { MarketingSiteHeader } from "@/app/(marketing)/MarketingSiteHeader";
@@ -654,7 +655,23 @@ function Footer() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 grid gap-12 md:grid-cols-4">
           <div className="md:col-span-1">
-            <span className="font-logo text-3xl text-white">Bernabé</span>
+            <Link
+              href="/"
+              className="group inline-flex items-center gap-0.5 leading-none"
+              aria-label="Bernabé, inicio"
+            >
+              <span className="flex items-center gap-0.5 font-logo text-3xl leading-none text-white">
+                <Image
+                  src="/ceiling.png"
+                  alt=""
+                  width={72}
+                  height={104}
+                  sizes="1.875rem"
+                  className="block h-[1em] w-auto shrink-0 object-contain object-center opacity-95 transition-opacity group-hover:opacity-100"
+                />
+                Bernabé
+              </span>
+            </Link>
             <p className="mt-4 text-sm leading-relaxed text-gray-400">
               Bernabé Personas: el cuidado de quienes asisten a tu iglesia —miembros, grupos y líderes— en un solo lugar.
             </p>
