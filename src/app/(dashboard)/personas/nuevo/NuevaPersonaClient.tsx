@@ -15,6 +15,11 @@ import {
 } from "@/lib/personas-situacion-acercamiento";
 import { type PersonaSexo } from "@/lib/persona-sexo";
 import { fechaHoyYYYYMMDD } from "@/lib/fecha-hoy-local";
+import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
+import {
+  isLeaderIndividualPlan,
+  LEADER_INDIVIDUAL_MAX_PERSONAS,
+} from "@/lib/organization-plan";
 import { createClient } from "@/lib/supabase/client";
 import { labelParticipacionEnGrupo } from "../[id]/_lib/persona-detail-participacion";
 import { calcularEdad, fechaLocalToIso } from "../[id]/_lib/persona-detail-dates";
@@ -138,10 +143,13 @@ async function resolveAuthInsertContext(
 }
 
 export default function NuevaPersonaClient() {
+  const orgPlan = useDashboardOrgPlan();
+  const leaderFree = isLeaderIndividualPlan(orgPlan);
   const router = useRouter();
   const [grupos, setGrupos] = useState<GrupoOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [personasEnOrg, setPersonasEnOrg] = useState<number | null>(null);
 
   const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
   const [nombre, setNombre] = useState("");
@@ -189,6 +197,17 @@ export default function NuevaPersonaClient() {
         )
       );
   }, []);
+
+  useEffect(() => {
+    if (!leaderFree) return;
+    const supabase = createClient();
+    void supabase
+      .from("personas")
+      .select("id", { count: "exact", head: true })
+      .then(({ count, error }) => {
+        if (!error) setPersonasEnOrg(count ?? 0);
+      });
+  }, [leaderFree]);
 
   const etapaAlRegistrar: EtapaPersonaDb = grupoRadio ? "nuevo_creyente" : "visitante";
   const grupoNombre = grupoRadio ? grupos.find((g) => g.id === grupoRadio)?.nombre ?? "—" : "Sin grupo asignado";
@@ -257,6 +276,22 @@ export default function NuevaPersonaClient() {
         setError("Debes iniciar sesión para registrar una persona.");
         setIsSubmitting(false);
         return;
+      }
+
+      if (leaderFree) {
+        const { count, error: cErr } = await supabase
+          .from("personas")
+          .select("id", { count: "exact", head: true });
+        if (cErr) throw cErr;
+        const n = count ?? 0;
+        setPersonasEnOrg(n);
+        if (n >= LEADER_INDIVIDUAL_MAX_PERSONAS) {
+          setError(
+            `En el plan gratuito de líder alcanzaste el máximo de ${LEADER_INDIVIDUAL_MAX_PERSONAS} personas. Escríbenos por WhatsApp desde el menú «Me interesa para mi iglesia» para coordinar tu iglesia con precio justo.`
+          );
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       const insertPayload: Record<string, unknown> = {
@@ -341,8 +376,27 @@ export default function NuevaPersonaClient() {
     }
   };
 
+  const atPersonaCap =
+    leaderFree && personasEnOrg !== null && personasEnOrg >= LEADER_INDIVIDUAL_MAX_PERSONAS;
+
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] py-8">
+      {leaderFree ? (
+        <div className="mb-6 rounded-2xl border border-sky-200/80 bg-sky-50/90 px-4 py-3 text-sm text-sky-950 dark:border-sky-800/40 dark:bg-sky-950/30 dark:text-sky-100">
+          <p className="font-semibold">Líder individual — gratis</p>
+          <p className="mt-1 leading-snug text-sky-900/90 dark:text-sky-200/90">
+            Hasta {LEADER_INDIVIDUAL_MAX_PERSONAS} personas y hasta 3 grupos. Los módulos Líderes y Eventos no aplican en
+            este plan. Si tu iglesia necesita el producto completo, usa «Me interesa para mi iglesia» (WhatsApp) en la barra
+            superior.
+          </p>
+          {personasEnOrg !== null ? (
+            <p className="mt-2 text-xs font-semibold tabular-nums">
+              Personas en tu rebaño: {personasEnOrg} / {LEADER_INDIVIDUAL_MAX_PERSONAS}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="shrink-0 rounded-full bg-white/80 p-1 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:bg-white/[0.08] dark:shadow-none dark:ring-white/[0.08]">
@@ -873,7 +927,7 @@ export default function NuevaPersonaClient() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || atPersonaCap}
                   className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-300/90 bg-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-500 dark:text-neutral-950 dark:hover:bg-neutral-400"
                 >
                   {isSubmitting ? (

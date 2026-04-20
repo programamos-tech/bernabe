@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { HowItWorksSection } from "@/app/(marketing)/LandingHowItWorks";
 import { MarketingSiteHeader } from "@/app/(marketing)/MarketingSiteHeader";
-import { PricingSection } from "@/app/(marketing)/LandingPricing";
+import { ParaLideresSection } from "@/app/(marketing)/LandingParaLideres";
+import { LandingPropuestaAcceso } from "@/app/(marketing)/LandingPropuestaAcceso";
 import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
 import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -59,7 +59,9 @@ function LandingHeroPersonasPreview() {
     >
       <div className="mb-3 min-w-0">
         <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Personas</h2>
-        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">Quién es parte de la iglesia, en qué grupo está y cuándo fue el último cuidado.</p>
+        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">
+          Las personas a las que tú y tu equipo dan seguimiento, su grupo y cuándo fue el último cuidado.
+        </p>
       </div>
 
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -180,8 +182,8 @@ function SocialProofAvatars() {
   return (
     <div className="flex -space-x-3">
       {seeds.map((s) => (
-        <div key={s} className="relative ring-2 ring-white dark:ring-[#111111]">
-          <UserAvatar seed={s} size={40} />
+        <div key={s} className="relative">
+          <UserAvatar seed={s} size={40} className="!ring-0 shadow-none" />
         </div>
       ))}
     </div>
@@ -190,37 +192,30 @@ function SocialProofAvatars() {
 
 function HeroSection() {
   return (
-    <section className="bg-gradient-to-b from-gray-100/40 to-white px-4 pb-20 pt-32 dark:from-[#111111] dark:to-[#151515] sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)]">
+    <section className="flex min-h-dvh flex-col bg-gradient-to-b from-gray-100/40 to-white px-4 pb-12 pt-24 dark:from-[#111111] dark:to-[#151515] sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)] lg:gap-12">
           <div className="min-w-0">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-4 py-2 dark:bg-amber-400/10">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400/90 dark:bg-amber-300/80" />
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Bernabé Personas · cuidado en la iglesia local</span>
-            </div>
             <h1 className="text-3xl font-semibold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
-              El cuidado de las <span className="text-sky-700 dark:text-sky-300">personas</span>
-              <br />
-              en el corazón de <span className="text-violet-700 dark:text-violet-300">tu iglesia.</span>
+              Pastorea sin perder de vista a nadie.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              Bernabé está pensado para acompañar a quienes asisten: miembros, visitantes, grupos y líderes, con un seguimiento pastoral claro y accesible desde cualquier dispositivo.
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+              Para líderes de iglesia: seguimiento claro de las personas que acompañas, en un solo lugar, desde el celular
+              o la computadora.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link href="/register" className={btnPrimary}>
-                Prueba 15 días gratis
+                Crear cuenta
               </Link>
-              <a href="#precios" className={btnSecondary}>
-                Ver planes y precios
+              <a href="#propuesta" className={btnSecondary}>
+                Ver propuesta
               </a>
             </div>
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">
-              Acceso completo durante la prueba para ver cómo tu equipo cuida mejor a la gente. Luego elegís una licencia según el tamaño de tu iglesia.
-            </p>
             <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6">
               <SocialProofAvatars />
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-white">+50 iglesias</span> ya acompañan a su gente con Bernabé
+                <span className="font-semibold text-gray-900 dark:text-white">Menos listas sueltas</span>, más personas
+                vistas.
               </p>
             </div>
           </div>
@@ -431,10 +426,12 @@ function FeaturesSection() {
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto mb-16 max-w-3xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Hecho para <span className="text-sky-700 dark:text-sky-300">el cuidado de las personas</span> en la iglesia
+            Hecho para <span className="text-sky-700 dark:text-sky-300">líderes que pastorean personas</span>, no solo
+            para la planilla de la iglesia
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            Herramientas sencillas para pastores y líderes: cada grupo con contexto y cada persona con alguien que la acompaña.
+            Personas, grupos y último contacto en un solo lugar: ves a tu gente con contexto, tanto si pastoreas solo
+            como si coordinas a todo un equipo en la misma iglesia.
           </p>
         </div>
 
@@ -487,8 +484,8 @@ function RecursosLandingSection() {
             </h2>
             <p className="mt-4 max-w-lg text-lg leading-relaxed text-gray-600 dark:text-gray-400">
               La app ordena el acompañamiento en la iglesia; estos textos fortalecen a quienes pastorean y equipan. Artículos y reflexiones,{" "}
-              <strong className="font-medium text-gray-900 dark:text-white">disponibles gratis</strong> en la web. Con cuenta accedés además a la
-              comunidad dentro de la app.
+              <strong className="font-medium text-gray-900 dark:text-white">disponibles gratis</strong> en la web. Con
+              cuenta accedes además a la comunidad dentro de la app.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {CATEGORIAS_LIDERAZGO.map((cat) => (
@@ -505,7 +502,7 @@ function RecursosLandingSection() {
                 Ver todos los recursos
               </Link>
               <Link href="/register" className={`${btnSecondary} w-full sm:w-auto`}>
-                Crear cuenta (prueba 15 días)
+                Crear cuenta
               </Link>
               <Link
                 href="/login"
@@ -564,7 +561,7 @@ function TestimonialsSection() {
             Lo que dicen <span className="text-violet-700 dark:text-violet-300">nuestros usuarios</span>
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            Iglesias que priorizan el cuidado pastoral de miembros, visitantes y grupos.
+            Líderes que querían dejar de improvisar con el seguimiento de las personas que pastorean.
           </p>
         </div>
 
@@ -624,23 +621,27 @@ function CTASection() {
     <section className="bg-white px-4 py-24 dark:bg-[#111111] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">
         <h2 className="mb-6 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-          ¿Listo para poner el <span className="text-sky-700 dark:text-sky-300">cuidado de las personas</span> al centro?
+          ¿Quieres que <span className="text-sky-700 dark:text-sky-300">ninguna persona se pierda</span> en tu ministerio?
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-          Sumate a más de 50 iglesias que ya usan Bernabé Personas para acompañar miembros y visitantes, ordenar grupos y apoyar a sus líderes.
+          Crea tu cuenta y empieza a registrar a quienes pastoreas: el foco es el seguimiento sencillo, no vender licencias
+          desde esta página. Si tu iglesia necesita coordinar a varios líderes, puedes invitarlos cuando esté listo.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/register" className={btnPrimary}>
-            Empezar prueba de 15 días
+            Crear cuenta
           </Link>
-          <a href="#precios" className={btnSecondary}>
-            Ver planes y precios
+          <a href="#how-it-works" className={btnSecondary}>
+            Ver cómo funciona
           </a>
         </div>
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          ¿Más de 300 miembros en total (personas y líderes)?{" "}
-          <a href="mailto:hola@bernabe.app?subject=Licencia%20Bernab%C3%A9%20%28plan%20a%20medida%29" className="font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400">
-            Escribinos para un plan a medida
+          ¿Dudas o sugerencias para equipos de iglesia?{" "}
+          <a
+            href="mailto:hola@bernabe.app?subject=Bernab%C3%A9%20%28l%C3%ADderes%20y%20seguimiento%29"
+            className="font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
+          >
+            Escríbenos a hola@bernabe.app
           </a>
           .
         </p>
@@ -657,23 +658,30 @@ function Footer() {
           <div className="md:col-span-1">
             <Link
               href="/"
-              className="group inline-flex items-center gap-0.5 leading-none"
-              aria-label="Bernabé, inicio"
+              className="group inline-flex max-w-full items-center gap-2.5 leading-none"
+              aria-label="Bernabé, inicio. Que ninguna persona se pierda."
             >
-              <span className="flex items-center gap-0.5 font-logo text-3xl leading-none text-white">
-                <Image
-                  src="/ceiling.png"
-                  alt=""
-                  width={72}
-                  height={104}
-                  sizes="1.875rem"
-                  className="block h-[1em] w-auto shrink-0 object-contain object-center opacity-95 transition-opacity group-hover:opacity-100"
+              <div className="shrink-0" aria-hidden>
+                <UserAvatar
+                  seed="bernabe-nav-logo"
+                  sexo="femenino"
+                  size={40}
+                  className="!ring-0 shadow-none"
                 />
-                Bernabé
+              </div>
+              <span className="flex min-w-0 flex-col gap-0.5 text-left">
+                <span className="font-logo text-2xl leading-none text-white sm:text-3xl">Bernabé</span>
+                <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-400 sm:max-w-none sm:text-[10px]">
+                  Que ninguna persona se pierda
+                </span>
               </span>
             </Link>
+            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-emerald-800/50 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-100">
+              Gratis para líderes y para iglesias
+            </p>
             <p className="mt-4 text-sm leading-relaxed text-gray-400">
-              Bernabé Personas: el cuidado de quienes asisten a tu iglesia —miembros, grupos y líderes— en un solo lugar.
+              Seguimiento pastoral sencillo: personas, grupos y próximos pasos en un solo lugar. Sin presión comercial desde
+              esta página: el foco es que nadie se quede sin quien lo acompañe.
             </p>
             <div className="mt-6 flex items-center gap-4">
               <a
@@ -722,13 +730,8 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#testimonials" className="text-sm text-gray-400 transition hover:text-white">
-                  Testimonios
-                </a>
-              </li>
-              <li>
-                <a href="#precios" className="text-sm text-gray-400 transition hover:text-white">
-                  Precios
+                <a href="#propuesta" className="text-sm text-gray-400 transition hover:text-white">
+                  Propuesta
                 </a>
               </li>
             </ul>
@@ -800,11 +803,12 @@ export default function LandingPage() {
     <main className="min-h-screen bg-white dark:bg-[#111111]">
       <MarketingSiteHeader />
       <HeroSection />
+      <LandingPropuestaAcceso />
       <FeaturesSection />
       <RecursosLandingSection />
       <HowItWorksSection />
       <TestimonialsSection />
-      <PricingSection />
+      <ParaLideresSection />
       <CTASection />
       <Footer />
     </main>

@@ -168,7 +168,7 @@ export function HowItWorksSection() {
       number: "01",
       title: "Tu cuenta y tu iglesia",
       description:
-        "Regístrate en minutos, activa la prueba de 15 días con todo habilitado y deja lista la base para que tu equipo pueda cuidar personas con orden y confianza.",
+        "Regístrate en minutos, configura tu iglesia y empieza a invitar a otros líderes cuando quieras: todos con el mismo foco —personas vistas, seguimiento claro— sin complicarte con licencias en esta página.",
       preview: <LandingStepCuentaPreview />,
     },
     {

@@ -72,7 +72,7 @@ export function PricingSection() {
               <PricingCheck>Seguimiento pastoral y estados</PricingCheck>
               <PricingCheck>Roles para pastores y líderes</PricingCheck>
             </ul>
-            <p className="mt-4 text-xs text-gray-500 dark:text-gray-500">Al terminar, elegís un plan de pago o un plan a medida.</p>
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-500">Al terminar, eliges un plan de pago o un plan a medida.</p>
             <Link href="/register" className={`${btnPrimary} mt-6 w-full`}>
               Empezar prueba
             </Link>
@@ -85,7 +85,7 @@ export function PricingSection() {
               <span className="text-base font-normal text-gray-500">/mes</span>
             </p>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium text-gray-900 dark:text-white">{formatCop(PRECIO_COP.anual150)}/año</span> — ahorrás{" "}
+              <span className="font-medium text-gray-900 dark:text-white">{formatCop(PRECIO_COP.anual150)}/año</span> — ahorras{" "}
               <span className="tabular-nums">{formatCop(PRECIO_COP.ahorroAnual150)}</span> frente a 12 meses al precio mensual
             </p>
             <ul className="mt-4 flex flex-1 flex-col gap-2.5">
@@ -112,7 +112,7 @@ export function PricingSection() {
               <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mes</span>
             </p>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium text-gray-900 dark:text-white">{formatCop(PRECIO_COP.anual300)}/año</span> — ahorrás{" "}
+              <span className="font-medium text-gray-900 dark:text-white">{formatCop(PRECIO_COP.anual300)}/año</span> — ahorras{" "}
               <span className="tabular-nums">{formatCop(PRECIO_COP.ahorroAnual300)}</span> frente a 12 meses al precio mensual
             </p>
             <ul className="mt-4 flex flex-1 flex-col gap-2.5">

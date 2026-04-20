@@ -11,7 +11,9 @@ import {
   etapaDotClass,
   parseEtapaDb,
 } from "@/lib/persona-etapa";
+import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { createClient } from "@/lib/supabase/client";
+import { isLeaderIndividualPlan, LEADER_INDIVIDUAL_MAX_PERSONAS } from "@/lib/organization-plan";
 import { parsePersonaSexo } from "@/lib/persona-sexo";
 
 interface PersonaRow {
@@ -104,8 +106,11 @@ function PersonasPaginationBar({
 }
 
 export default function Page() {
+  const orgPlan = useDashboardOrgPlan();
+  const leaderFree = isLeaderIndividualPlan(orgPlan);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [orgPersonasTotal, setOrgPersonasTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filterEtapa, setFilterEtapa] = useState<EtapaPersonaDb | "Todos">("Todos");
@@ -119,6 +124,20 @@ export default function Page() {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 320);
     return () => window.clearTimeout(t);
   }, [search]);
+
+  useEffect(() => {
+    if (!leaderFree) {
+      setOrgPersonasTotal(null);
+      return;
+    }
+    const supabase = createClient();
+    void supabase
+      .from("personas")
+      .select("id", { count: "exact", head: true })
+      .then(({ count, error }) => {
+        if (!error) setOrgPersonasTotal(count ?? 0);
+      });
+  }, [leaderFree]);
 
   useEffect(() => {
     const listKey = `${filterEtapa}::${debouncedSearch}`;
@@ -202,6 +221,8 @@ export default function Page() {
   };
 
   const hasActiveFilters = filterEtapa !== "Todos" || debouncedSearch.length > 0;
+  const atPersonaCap =
+    leaderFree && orgPersonasTotal !== null && orgPersonasTotal >= LEADER_INDIVIDUAL_MAX_PERSONAS;
 
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] py-8">
@@ -214,16 +235,28 @@ export default function Page() {
             Etapa de discipulado, grupo y contacto de cada persona.
           </p>
         </div>
-        <Link
-          href="/personas/nuevo"
-          prefetch={false}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-full bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 transition sm:w-auto w-full shadow-sm shadow-black/10 dark:shadow-none"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Nueva persona
-        </Link>
+        {atPersonaCap ? (
+          <span
+            className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 opacity-80 dark:bg-white/20 dark:text-gray-300 sm:w-auto"
+            title={`Máximo ${LEADER_INDIVIDUAL_MAX_PERSONAS} personas en plan líder gratis`}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Límite alcanzado
+          </span>
+        ) : (
+          <Link
+            href="/personas/nuevo"
+            prefetch={false}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100 sm:w-auto"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva persona
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:items-center">
@@ -300,11 +333,11 @@ export default function Page() {
               ? "Aún no hay personas registradas. Agrega la primera desde el botón Nueva persona."
               : "Ninguna persona coincide con el filtro o la búsqueda."}
           </p>
-          {!hasActiveFilters ? (
+          {!hasActiveFilters && !atPersonaCap ? (
             <Link
               href="/personas/nuevo"
               prefetch={false}
-              className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-gray-900 dark:text-white hover:underline underline-offset-4"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
             >
               Nueva persona
             </Link>

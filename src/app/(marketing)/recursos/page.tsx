@@ -80,13 +80,13 @@ export default function RecursosPage() {
         </div>
 
         <div className="mx-auto mt-16 max-w-xl rounded-2xl border border-gray-200/80 bg-gray-50/80 p-8 text-center dark:border-white/[0.08] dark:bg-white/[0.04]">
-          <p className="text-base font-medium text-gray-900 dark:text-white">¿Querés la plataforma para tu iglesia?</p>
+          <p className="text-base font-medium text-gray-900 dark:text-white">¿Quieres llevar el seguimiento de tus personas?</p>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Con una cuenta accedés a personas, grupos, asistencia y, dentro de la app, la comunidad con interacciones.
+            Con una cuenta accedes a personas, grupos, asistencia y, dentro de la app, la comunidad con interacciones.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/register" className={btnPrimary}>
-              Prueba 15 días gratis
+              Crear cuenta
             </Link>
             <Link href="/" className={btnSecondary}>
               Volver al inicio

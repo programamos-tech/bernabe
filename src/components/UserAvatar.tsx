@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Avatar, { genConfig } from "react-nice-avatar";
 import type { AvatarFullConfig, Sex } from "react-nice-avatar";
 
@@ -31,7 +31,22 @@ function buildNiceAvatarConfig(seed: string, sexo?: "masculino" | "femenino" | n
  * Con `sexo` se recalcula pelo/cejas acorde al sexo sin perder el resto del retrato derivado del seed.
  */
 export function UserAvatar({ seed, sexo = null, size = 40, className = "" }: UserAvatarProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const config = useMemo(() => buildNiceAvatarConfig(seed, sexo), [seed, sexo]);
+
+  if (!mounted) {
+    return (
+      <div
+        className={`shrink-0 rounded-full bg-gray-200/90 dark:bg-white/[0.08] ${className}`}
+        style={{ width: size, height: size }}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <Avatar

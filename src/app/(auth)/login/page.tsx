@@ -12,37 +12,38 @@ const inputClass =
 
 function Logo() {
   return (
-    <Link href="/" className="font-logo text-3xl text-gray-900 dark:text-white">
-      Bernabé
+    <Link
+      href="/"
+      className="group inline-flex max-w-full items-center gap-2 self-start leading-none sm:gap-2.5"
+      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
+    >
+      <div className="shrink-0" aria-hidden>
+        <UserAvatar
+          seed="bernabe-nav-logo"
+          sexo="femenino"
+          size={40}
+          className="!ring-0 shadow-none"
+        />
+      </div>
+      <span className="flex min-w-0 flex-col gap-0.5 text-left">
+        <span className="font-logo text-2xl leading-none text-gray-900 dark:text-white sm:text-3xl">Bernabé</span>
+        <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[10px]">
+          Que ninguna persona se pierda
+        </span>
+      </span>
     </Link>
   );
 }
 
-/** Composición decorativa con react-nice-avatar (misma librería que Personas / Líderes). */
-function LoginCommunityAvatars() {
+function LoginHeroAvatar() {
   return (
-    <div className="relative mx-auto w-full max-w-[min(100%,20rem)] aspect-square">
-      <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-        <UserAvatar seed="bernabé·comunidad·centro" size={104} className="ring-4 ring-white/90 dark:ring-white/10" />
-      </div>
-      <div className="absolute left-[2%] top-[12%] z-10 sm:left-0">
-        <UserAvatar seed="bernabé·visita·1" size={72} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute right-[2%] top-[10%] z-10 sm:right-0">
-        <UserAvatar seed="bernabé·grupo·2" size={68} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[14%] left-[6%] z-10">
-        <UserAvatar seed="bernabé·seguimiento·3" size={64} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[12%] right-[8%] z-10">
-        <UserAvatar seed="bernabé·líder·4" size={70} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute left-[28%] top-[2%] z-[5] hidden sm:block">
-        <UserAvatar seed="bernabé·familia·5" size={52} className="opacity-90 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute right-[22%] bottom-[4%] z-[5] hidden sm:block">
-        <UserAvatar seed="bernabé·iglesia·6" size={54} className="opacity-90 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
+    <div className="flex justify-center">
+      <UserAvatar
+        seed="bernabe-login-panel"
+        sexo="femenino"
+        size={112}
+        className="!ring-0 shadow-none"
+      />
     </div>
   );
 }
@@ -178,9 +179,12 @@ export default function LoginPage() {
       <div className="hidden flex-1 flex-col items-center justify-center p-10 lg:flex lg:rounded-l-[2rem] lg:bg-gray-100/60 dark:lg:bg-white/[0.04] xl:rounded-l-3xl xl:p-14">
         <div className="w-full max-w-md text-center">
           <div className="mb-2 rounded-3xl bg-white/70 px-6 py-10 shadow-sm shadow-black/[0.04] dark:bg-white/[0.06] dark:shadow-none">
-            <LoginCommunityAvatars />
+            <LoginHeroAvatar />
           </div>
-          <h2 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+          <p className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/35 dark:text-emerald-100">
+            Gratis para líderes y para iglesias
+          </p>
+          <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
             Cuida a cada persona de tu iglesia
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">

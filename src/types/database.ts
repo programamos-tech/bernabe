@@ -29,6 +29,8 @@ export interface Database {
           objetivo_principal: string | null;
           /** RLS onboarding: quién creó la fila antes de enlazar profiles.organization_id */
           onboarding_user_id: string | null;
+          /** leader_individual: gratis con límites (50 personas, 3 grupos; sin Líderes/Eventos). church: producto completo. */
+          plan: "leader_individual" | "church";
           created_at: string;
           updated_at: string;
         };

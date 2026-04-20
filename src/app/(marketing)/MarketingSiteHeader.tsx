@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const navLink =
   "text-sm font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white";
@@ -15,20 +15,24 @@ function Logo() {
   return (
     <Link
       href="/"
-      className="group flex shrink-0 items-center self-stretch leading-none"
-      aria-label="Bernabé, inicio"
+      className="group flex shrink-0 items-center gap-2 self-stretch leading-none sm:gap-2.5"
+      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
     >
-      <span className="flex items-center gap-0.5 font-logo text-3xl leading-none text-gray-900 dark:text-white">
-        <Image
-          src="/ceiling.png"
-          alt=""
-          width={72}
-          height={104}
-          sizes="1.875rem"
-          className="block h-[1em] w-auto shrink-0 object-contain object-center opacity-95 transition-opacity group-hover:opacity-100 dark:opacity-90 dark:group-hover:opacity-100"
-          priority
+      <div className="shrink-0" aria-hidden>
+        <UserAvatar
+          seed="bernabe-nav-logo"
+          sexo="femenino"
+          size={36}
+          className="!ring-0 shadow-none"
         />
-        Bernabé
+      </div>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="font-logo text-2xl leading-none text-gray-900 dark:text-white sm:text-3xl">
+          Bernabé
+        </span>
+        <span className="max-w-[11rem] text-[8px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[9px]">
+          Que ninguna persona se pierda
+        </span>
       </span>
     </Link>
   );
@@ -41,26 +45,17 @@ export function MarketingSiteHeader() {
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200/60 bg-white/80 backdrop-blur-md dark:border-white/[0.08] dark:bg-[#111111]/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex min-h-16 items-center justify-between gap-3 py-2">
           <Logo />
           <nav className="hidden items-center gap-8 md:flex">
             <Link href="/#features" className={navLink}>
               Características
-            </Link>
-            <Link href="/#precios" className={navLink}>
-              Precios
-            </Link>
-            <Link href="/#recursos" className={navLink}>
-              Comunidad
             </Link>
             <Link href="/recursos" className={isRecursos ? navLinkActive : navLink}>
               Recursos
             </Link>
             <Link href="/#how-it-works" className={navLink}>
               Cómo funciona
-            </Link>
-            <Link href="/#testimonials" className={navLink}>
-              Testimonios
             </Link>
           </nav>
           <div className="flex items-center gap-3">
@@ -75,7 +70,7 @@ export function MarketingSiteHeader() {
               href="/register"
               className="inline-flex shrink-0 items-center justify-center rounded-full bg-gray-900 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
             >
-              Prueba 15 días
+              Crear cuenta
             </Link>
           </div>
         </div>

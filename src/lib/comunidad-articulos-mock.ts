@@ -61,7 +61,7 @@ Cerramos leyendo el versículo 26 como oración: que la fe que confesamos sea an
 
 Aquí va un esquema de quince minutos: lectura lenta de un pasaje corto, una pregunta que te deje mirar tu semana a la luz del texto, dos o tres minutos de silencio, y una oración breve que devuelve la palabra al corazón — confesión, petición, gratitud.
 
-Ejemplo con el Salmo 23: léelo en voz baja. Pregunta: ¿dónde sentís hoy “valle de sombra de muerte”? No para dramatizar, sino para nombrar. Deja que el Señor sea pastor en ese lugar concreto. Cierra con una frase de entrega. Mañana repetís el ritmo; la constancia humilde vence al heroísmo esporádico.`,
+Ejemplo con el Salmo 23: léelo en voz baja. Pregunta: ¿dónde sientes hoy “valle de sombra de muerte”? No para dramatizar, sino para nombrar. Deja que el Señor sea pastor en ese lugar concreto. Cierra con una frase de entrega. Mañana repites el ritmo; la constancia humilde vence al heroísmo esporádico.`,
     autor: "Ana García",
     fechaRelativa: "Hace 3 días",
     etiquetas: ["Vida devocional", "Sostenibilidad"],
@@ -146,12 +146,12 @@ Cuando el evangelio es centro, la uniformidad deja de ser ídolo y la diversidad
     categoria: "Apoyo a líderes",
     titulo: "Cuando el desánimo visita al líder: un texto para guardar en el teléfono",
     excerpt:
-      "Isaías 40,28–31 como ancla. Para quienes cargan reuniones, visitas y expectativas: recordar quién sostiene lo que no podés sostener solo.",
+      "Isaías 40,28–31 como ancla. Para quienes cargan reuniones, visitas y expectativas: recordar quién sostiene lo que no puedes sostener solo.",
     contenido: `Isaías 40,28–31 no es autoayuda; es ancla. ¿No has sabido? ¿No has oído que Jehová es el Dios eterno? Los que esperan a Jehová tendrán nuevas fuerzas.
 
-Antes de una reunión pesada o después de un domingo donde sentís que “no pasó nada”, leélo en voz alta. Dejad que la promesa sea más fuerte que el diagnóstico interno de fracaso. El desánimo del líder no te descalifica; te coloca frente a la gracia otra vez.
+Antes de una reunión pesada o después de un domingo donde sientes que “no pasó nada”, léelo en voz alta. Deja que la promesa sea más fuerte que el diagnóstico interno de fracaso. El desánimo del líder no te descalifica; te coloca frente a la gracia otra vez.
 
-Guardá este pasaje en el teléfono. No para esquivar el descanso físico que quizá necesitás, sino para recordar quién sostiene lo que no podés sostener solo.`,
+Guarda este pasaje en el teléfono. No para esquivar el descanso físico que quizá necesitas, sino para recordar quién sostiene lo que no puedes sostener solo.`,
     autor: "Ana García",
     fechaRelativa: "Hace 2 semanas",
     etiquetas: ["Salud emocional", "Descanso en Cristo"],

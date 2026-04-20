@@ -118,8 +118,8 @@ export default function RecursoArticuloPage({ params }: PageProps) {
 
               <div className="mt-10 rounded-2xl border border-gray-200/80 bg-gray-50/80 p-6 dark:border-white/[0.08] dark:bg-white/[0.04]">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Este contenido es <strong className="text-gray-900 dark:text-white">gratuito y abierto</strong>. Si creás una cuenta en Bernabé, además
-                  podés usar la plataforma para tu iglesia y participar en la comunidad dentro de la app (me gusta, comentarios y más).
+                  Este contenido es <strong className="text-gray-900 dark:text-white">gratuito y abierto</strong>. Si creas una cuenta en Bernabé, además
+                  puedes usar la plataforma para tu iglesia y participar en la comunidad dentro de la app (me gusta, comentarios y más).
                 </p>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                   <Link href="/register" className={`${btnPrimary} w-full justify-center sm:w-auto`}>

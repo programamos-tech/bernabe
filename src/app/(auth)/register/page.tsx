@@ -13,38 +13,40 @@ const inputClass =
 const btnPrimaryClass =
   "flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:focus:ring-white/30 dark:focus:ring-offset-[#111111]";
 
-const btnSecondaryClass =
-  "flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 font-semibold text-gray-900 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300/60 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:hover:bg-white/[0.1] dark:focus:ring-white/20";
-
 function Logo() {
   return (
-    <Link href="/" className="font-logo text-3xl text-gray-900 dark:text-white">
-      Bernabé
+    <Link
+      href="/"
+      className="group inline-flex max-w-full items-center gap-2 self-start leading-none sm:gap-2.5"
+      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
+    >
+      <div className="shrink-0" aria-hidden>
+        <UserAvatar
+          seed="bernabe-nav-logo"
+          sexo="femenino"
+          size={40}
+          className="!ring-0 shadow-none"
+        />
+      </div>
+      <span className="flex min-w-0 flex-col gap-0.5 text-left">
+        <span className="font-logo text-2xl leading-none text-gray-900 dark:text-white sm:text-3xl">Bernabé</span>
+        <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[10px]">
+          Que ninguna persona se pierda
+        </span>
+      </span>
     </Link>
   );
 }
 
-function RegisterCommunityAvatars() {
+function RegisterHeroAvatar() {
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[min(100%,20rem)]">
-      <div className="absolute left-[8%] top-1/2 z-20 -translate-y-1/2">
-        <UserAvatar seed="registro·iglesia·nueva" size={96} className="ring-4 ring-white/90 dark:ring-white/10" />
-      </div>
-      <div className="absolute right-[6%] top-[18%] z-10">
-        <UserAvatar seed="registro·equipo·1" size={76} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[16%] right-[12%] z-10">
-        <UserAvatar seed="registro·comunidad·2" size={68} className="ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute left-[22%] top-[8%] z-[8]">
-        <UserAvatar seed="registro·grupo·3" size={58} className="opacity-95 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute bottom-[8%] left-[18%] z-[8] hidden sm:block">
-        <UserAvatar seed="registro·visita·4" size={54} className="opacity-90 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
-      <div className="absolute right-[20%] bottom-[28%] z-[5] hidden sm:block">
-        <UserAvatar seed="registro·pastor·5" size={48} className="opacity-85 ring-2 ring-gray-100 dark:ring-white/[0.08]" />
-      </div>
+    <div className="flex justify-center">
+      <UserAvatar
+        seed="bernabe-register-panel"
+        sexo="femenino"
+        size={112}
+        className="!ring-0 shadow-none"
+      />
     </div>
   );
 }
@@ -54,10 +56,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [churchName, setChurchName] = useState("");
   const [tuNombre, setTuNombre] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleStartMvp = async () => {
@@ -86,60 +84,16 @@ export default function RegisterPage() {
     setIsLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    if (!email.trim() || !password || password.length < 8) {
-      setErrorMessage("Usa un correo válido y contraseña de al menos 8 caracteres.");
-      return;
-    }
-    setIsLoading(true);
-
-    const supabase = createClient();
-    const fullName = `${firstName} ${lastName}`.trim() || email.split("@")[0];
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          church_name: churchName,
-        },
-      },
-    });
-
-    if (error) {
-      setErrorMessage(translateSupabaseAuthMessage(error.message));
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      window.localStorage.setItem("bermabe_pending_church_name", churchName);
-      window.localStorage.setItem("bermabe_pending_pastor_full_name", fullName);
-      window.localStorage.setItem("bermabe_pending_pastor_email", email);
-    } catch {
-      // ignore
-    }
-
-    if (data.session) {
-      router.push("/onboarding");
-    } else {
-      router.push("/login?verifyEmail=1");
-    }
-    setIsLoading(false);
-  };
-
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-[#111111] lg:flex-row">
       <div className="scrollbar-brand flex flex-1 flex-col justify-center overflow-y-auto px-4 py-10 sm:px-6 lg:order-2 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-8">
             <Logo />
-            <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Prueba Bernabé</h1>
+            <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Únete a Bernabé</h1>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Comienza sin correo ni contraseña. En Supabase activa «Allow anonymous sign-ins» (Authentication → User Signups).
+              Gratis para líderes y para iglesias. Cuida a las personas que pastoreas con seguimiento claro, sin complicarte con
+              precios desde el primer día.
             </p>
           </div>
 
@@ -199,102 +153,7 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          <details className="mt-8 group">
-            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-gray-600 underline-offset-4 hover:underline dark:text-gray-400">
-              <span className="transition-transform group-open:rotate-90">▸</span>
-              Usar correo y contraseña (opcional)
-            </summary>
-            <form
-              onSubmit={handleSubmit}
-              className="mt-4 space-y-4 border-t border-gray-200/80 pt-4 dark:border-white/[0.08]"
-            >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-200">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    placeholder="Juan"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-200">
-                    Apellido
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    placeholder="Pérez"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-200">
-                  Correo electrónico
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="tu@correo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-200">
-                  Contraseña
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="flex items-start gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  name="terms"
-                  className="mt-1 h-4 w-4 rounded border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-gray-300/60 dark:border-white/20 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20"
-                />
-                <label htmlFor="terms" className="text-sm text-gray-600 dark:text-gray-400">
-                  Acepto los{" "}
-                  <a href="#" className="font-medium text-gray-800 underline-offset-4 hover:underline dark:text-gray-200">
-                    términos
-                  </a>{" "}
-                  y la{" "}
-                  <a href="#" className="font-medium text-gray-800 underline-offset-4 hover:underline dark:text-gray-200">
-                    privacidad
-                  </a>
-                </label>
-              </div>
-
-              <button type="submit" disabled={isLoading} className={btnSecondaryClass}>
-                {isLoading ? "Creando cuenta…" : "Crear cuenta con correo"}
-              </button>
-            </form>
-          </details>
-
-          <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
             ¿Ya tienes cuenta?{" "}
             <Link href="/login" className="font-semibold text-gray-800 underline-offset-4 hover:underline dark:text-gray-200">
               Inicia sesión
@@ -306,13 +165,17 @@ export default function RegisterPage() {
       <div className="hidden flex-1 flex-col items-center justify-center p-10 lg:order-1 lg:flex lg:rounded-r-[2rem] lg:bg-gray-100/60 dark:lg:bg-white/[0.04] xl:rounded-r-3xl xl:p-14">
         <div className="w-full max-w-md text-center">
           <div className="mb-2 rounded-3xl bg-white/70 px-6 py-10 shadow-sm shadow-black/[0.04] dark:bg-white/[0.06] dark:shadow-none">
-            <RegisterCommunityAvatars />
+            <RegisterHeroAvatar />
           </div>
-          <h2 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-            Organiza tu iglesia en minutos
+          <p className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/35 dark:text-emerald-100">
+            Gratis para líderes y para iglesias
+          </p>
+          <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+            Que ninguna persona se pierda
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            MVP: sin correo obligatorio. Puedes usar cuenta más adelante.
+            Personas, grupos y próximos pasos en un solo lugar. Bernabé es gratis para quien lidera solo y para la iglesia
+            entera: el enfoque es el ministerio, no la caja registradora.
           </p>
         </div>
       </div>

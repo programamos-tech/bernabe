@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { createClient } from "@/lib/supabase/client";
+import { isLeaderIndividualPlan, LEADER_INDIVIDUAL_MAX_GRUPOS } from "@/lib/organization-plan";
 
 type TipoGrupo = "parejas" | "jovenes" | "teens" | "hombres" | "mujeres" | "general";
 
@@ -41,10 +43,13 @@ interface LiderOption {
 }
 
 export default function Page() {
+  const orgPlan = useDashboardOrgPlan();
+  const leaderFree = isLeaderIndividualPlan(orgPlan);
   const router = useRouter();
   const [lideres, setLideres] = useState<LiderOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gruposCount, setGruposCount] = useState<number | null>(null);
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoGrupo>("general");
   const [hora, setHora] = useState<string | null>(null);
@@ -58,6 +63,17 @@ export default function Page() {
       .order("nombre")
       .then(({ data }) => setLideres((data as LiderOption[]) ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!leaderFree) return;
+    const supabase = createClient();
+    void supabase
+      .from("grupos")
+      .select("id", { count: "exact", head: true })
+      .then(({ count, error }) => {
+        if (!error) setGruposCount(count ?? 0);
+      });
+  }, [leaderFree]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,6 +113,22 @@ export default function Page() {
         return;
       }
 
+      if (leaderFree) {
+        const { count, error: cErr } = await supabase
+          .from("grupos")
+          .select("id", { count: "exact", head: true });
+        if (cErr) throw cErr;
+        const n = count ?? 0;
+        setGruposCount(n);
+        if (n >= LEADER_INDIVIDUAL_MAX_GRUPOS) {
+          setError(
+            `En el plan gratuito de líder puedes crear hasta ${LEADER_INDIVIDUAL_MAX_GRUPOS} grupos. Para tu iglesia completa, escríbenos por WhatsApp («Me interesa para mi iglesia»).`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const { error: insertErr } = await supabase.from("grupos").insert({
         organization_id: organizationId,
         nombre: nombreVal,
@@ -118,6 +150,9 @@ export default function Page() {
       setIsSubmitting(false);
     }
   };
+
+  const atGrupoCap =
+    leaderFree && gruposCount !== null && gruposCount >= LEADER_INDIVIDUAL_MAX_GRUPOS;
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
@@ -155,6 +190,16 @@ export default function Page() {
 
       {/* Content */}
       <form onSubmit={handleSubmit} className="py-6">
+          {leaderFree ? (
+            <div className="mb-6 rounded-2xl border border-sky-200/80 bg-sky-50/90 px-4 py-3 text-sm text-sky-950 dark:border-sky-800/40 dark:bg-sky-950/30 dark:text-sky-100">
+              <p className="font-semibold">Líder individual — hasta {LEADER_INDIVIDUAL_MAX_GRUPOS} grupos</p>
+              {gruposCount !== null ? (
+                <p className="mt-1 text-xs font-semibold tabular-nums">
+                  Grupos creados: {gruposCount} / {LEADER_INDIVIDUAL_MAX_GRUPOS}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
               {error}
@@ -340,7 +385,7 @@ export default function Page() {
                 <div className="space-y-3">
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || atGrupoCap}
                     className="w-full px-6 py-3 bg-[#0ca6b2] text-white font-semibold rounded-xl hover:bg-[#0a8f99] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:ring-offset-2 dark:focus:ring-offset-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 shadow-lg shadow-[#0ca6b2]/25"
                   >
                     {isSubmitting ? (

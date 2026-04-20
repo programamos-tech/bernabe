@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { createClient } from "@/lib/supabase/client";
+import { SHOW_PRODUCT_TOUR_SESSION_KEY } from "@/lib/product-tour";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -134,6 +136,47 @@ function mapCargoToRolLider(cargo: string): "Pastor" | "Coordinador" {
   return "Coordinador";
 }
 
+function OnboardingBrand({
+  compact = false,
+  tone = "dark",
+}: {
+  compact?: boolean;
+  /** dark: barra lateral negra. light: cabecera móvil sobre fondo claro. */
+  tone?: "dark" | "light";
+}) {
+  const onDark = tone === "dark";
+  return (
+    <Link
+      href="/"
+      className={`group inline-flex max-w-full items-center gap-2 leading-none ${compact ? "mb-0" : "mb-12"}`}
+      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
+    >
+      <UserAvatar
+        seed="bernabe-nav-logo"
+        sexo="femenino"
+        size={compact ? 36 : 44}
+        className="!ring-0 shadow-none shrink-0"
+      />
+      <span className="flex min-w-0 flex-col gap-0.5 text-left">
+        <span
+          className={`font-logo ${compact ? "text-2xl" : "text-3xl"} ${
+            onDark ? "text-white" : "text-gray-900 dark:text-white"
+          }`}
+        >
+          Bernabé
+        </span>
+        <span
+          className={`font-medium leading-tight tracking-wide ${
+            onDark ? "text-gray-400" : "text-gray-500 dark:text-gray-400"
+          } ${compact ? "max-w-[11rem] text-[8px] sm:max-w-none sm:text-[9px]" : "max-w-[12rem] text-[9px] sm:max-w-none sm:text-[10px]"}`}
+        >
+          Que ninguna persona se pierda
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -246,6 +289,7 @@ export default function OnboardingPage() {
           cantidad_grupos_aprox: cantidadGrupos ? parseInt(cantidadGrupos, 10) : null,
           objetivo_principal: objetivoPrincipal || null,
           onboarding_user_id: user.id,
+          plan: "leader_individual",
         })
         .select("id")
         .single();
@@ -279,11 +323,13 @@ export default function OnboardingPage() {
       });
       if (liderErr) throw liderErr;
 
-      const { error: defaultsErr } = await supabase.rpc("create_default_grupos_and_eventos", {
-        p_organization_id: org.id,
-      });
-      if (defaultsErr) throw defaultsErr;
+      // Líder individual (gratis): no grupos ni eventos de demostración —respeta cupos y módulos del plan.
 
+      try {
+        sessionStorage.setItem(SHOW_PRODUCT_TOUR_SESSION_KEY, "1");
+      } catch {
+        // ignore
+      }
       router.push("/home");
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Error creando la iglesia.");
@@ -314,52 +360,66 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#111111] flex">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-neutral-950">
       {/* Sidebar */}
-      <div className="hidden lg:flex lg:w-96 bg-[#18301d] dark:bg-[#0a1a0f] flex-col p-8">
-        <span className="font-logo text-3xl text-white mb-12">Bernabé</span>
+      <div className="hidden flex-col bg-neutral-950 p-8 dark:bg-black lg:flex lg:w-96">
+        <OnboardingBrand />
 
         <div className="flex-1">
-          <h2 className="text-xl font-semibold text-white mb-2">
-            Configura tu iglesia
-          </h2>
-          <p className="text-gray-400 text-sm mb-8">
-            Solo te tomará unos minutos tener todo listo.
-          </p>
+          <h2 className="mb-2 text-xl font-semibold text-white">Configura tu iglesia</h2>
+          <p className="mb-8 text-sm text-gray-400">Solo te tomará unos minutos tener todo listo.</p>
 
-          {/* Progress steps */}
-          <div className="space-y-4">
-            {[
-              { num: 1, title: "Información de la iglesia", desc: "Nombre y ubicación" },
-              { num: 2, title: "Datos del pastor", desc: "Contacto principal" },
-              { num: 3, title: "Estructura", desc: "Tamaño y grupos" },
-              { num: 4, title: "Objetivos", desc: "¿Qué quieres lograr?" },
-            ].map((s) => (
-              <div key={s.num} className="flex items-start gap-4">
+          <div className="space-y-5">
+            {(
+              [
+                {
+                  num: 1 as const,
+                  title: "Información de la iglesia",
+                  desc: "Nombre y ubicación",
+                  seed: "onboarding·paso·iglesia",
+                  sexo: "femenino" as const,
+                },
+                {
+                  num: 2 as const,
+                  title: "Datos del pastor",
+                  desc: "Contacto principal",
+                  seed: "onboarding·paso·pastor",
+                  sexo: "masculino" as const,
+                },
+                {
+                  num: 3 as const,
+                  title: "Estructura",
+                  desc: "Tamaño y grupos",
+                  seed: "onboarding·paso·estructura",
+                  sexo: "femenino" as const,
+                },
+                {
+                  num: 4 as const,
+                  title: "Objetivos",
+                  desc: "¿Qué quieres lograr?",
+                  seed: "onboarding·paso·objetivos",
+                  sexo: "masculino" as const,
+                },
+              ] as const
+            ).map((s) => (
+              <div key={s.num} className="flex items-start gap-3">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                    step === s.num
-                      ? "bg-[#0ca6b2] text-white"
-                      : step > s.num
-                      ? "bg-[#0ca6b2]/20 text-[#0ca6b2]"
-                      : "bg-white/10 text-white/50"
-                  }`}
+                  className={`relative shrink-0 rounded-full transition-all ${
+                    step === s.num ? "ring-2 ring-white ring-offset-2 ring-offset-neutral-950" : ""
+                  } ${step < s.num ? "opacity-40" : "opacity-100"}`}
                 >
+                  <UserAvatar seed={s.seed} sexo={s.sexo} size={44} className="!ring-0 shadow-none" />
                   {step > s.num ? (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    s.num
-                  )}
+                    <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                  ) : null}
                 </div>
-                <div>
-                  <p className={`font-medium ${step >= s.num ? "text-white" : "text-white/50"}`}>
-                    {s.title}
-                  </p>
-                  <p className={`text-sm ${step >= s.num ? "text-gray-400" : "text-white/30"}`}>
-                    {s.desc}
-                  </p>
+                <div className="min-w-0 pt-1">
+                  <p className={`font-medium ${step >= s.num ? "text-white" : "text-white/45"}`}>{s.title}</p>
+                  <p className={`text-sm ${step >= s.num ? "text-gray-400" : "text-white/35"}`}>{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -367,10 +427,10 @@ export default function OnboardingPage() {
         </div>
 
         <div className="mt-auto">
-          <div className="p-4 bg-white/5 rounded-xl">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm text-gray-400">
               ¿Necesitas ayuda? Escríbenos a{" "}
-              <a href="mailto:soporte@bernabe.app" className="text-[#0ca6b2] hover:underline">
+              <a href="mailto:soporte@bernabe.app" className="font-medium text-gray-200 underline-offset-2 hover:text-white hover:underline">
                 soporte@bernabe.app
               </a>
             </p>
@@ -381,14 +441,14 @@ export default function OnboardingPage() {
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Mobile header */}
-        <div className="lg:hidden bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-[#2a2a2a] p-4">
-          <span className="font-logo text-2xl text-[#18301d] dark:text-white">Bernabé</span>
-          <div className="flex items-center gap-2 mt-4">
+        <div className="border-b border-gray-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 lg:hidden">
+          <OnboardingBrand compact tone="light" />
+          <div className="mt-4 flex items-center gap-2">
             {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition-all ${
-                  step >= s ? "bg-[#0ca6b2]" : "bg-gray-200 dark:bg-[#333]"
+                  step >= s ? "bg-gray-900 dark:bg-white" : "bg-gray-200 dark:bg-neutral-700"
                 }`}
               />
             ))}
@@ -405,7 +465,7 @@ export default function OnboardingPage() {
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-[#18301d] dark:text-white">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     ¿Cómo se llama tu iglesia?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -417,17 +477,17 @@ export default function OnboardingPage() {
                   <div>
                     {nombreIglesia ? (
                       <>
-                        <p className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                        <p className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                           Tu iglesia
                         </p>
-                        <div className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white">
+                        <div className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">
                           {nombreIglesia}
                         </div>
                         <input type="hidden" name="nombreIglesia" value={nombreIglesia} />
                       </>
                     ) : (
                       <>
-                        <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                           Nombre de la iglesia *
                         </label>
                         <input
@@ -435,20 +495,20 @@ export default function OnboardingPage() {
                           value={nombreIglesia}
                           onChange={(e) => setNombreIglesia(e.target.value)}
                           placeholder="Ej: Iglesia Vida Nueva"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                         />
                       </>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                       Denominación *
                     </label>
                     <select
                       value={denominacion}
                       onChange={(e) => setDenominacion(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition cursor-pointer"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition cursor-pointer"
                     >
                       <option value="">Selecciona una opción</option>
                       {denominaciones.map((d) => (
@@ -459,7 +519,7 @@ export default function OnboardingPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         País *
                       </label>
                       <select
@@ -468,7 +528,7 @@ export default function OnboardingPage() {
                           setPais(e.target.value);
                           setCiudad("");
                         }}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition cursor-pointer"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition cursor-pointer"
                       >
                         <option value="">Selecciona un país</option>
                         {paises.map((p) => (
@@ -477,14 +537,14 @@ export default function OnboardingPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Ciudad *
                       </label>
                       <select
                         value={ciudad}
                         onChange={(e) => setCiudad(e.target.value)}
                         disabled={!pais}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="">{pais ? "Selecciona una ciudad" : "Primero selecciona un país"}</option>
                         {ciudadesDisponibles.map((c) => (
@@ -501,7 +561,7 @@ export default function OnboardingPage() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-[#18301d] dark:text-white">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     ¿Quién administrará Bernabé?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -511,7 +571,7 @@ export default function OnboardingPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                       Nombre completo *
                     </label>
                     <input
@@ -519,18 +579,18 @@ export default function OnboardingPage() {
                       value={nombrePastor}
                       onChange={(e) => setNombrePastor(e.target.value)}
                       placeholder="Ej: Carlos Rodríguez"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                       Cargo
                     </label>
                     <select
                       value={cargo}
                       onChange={(e) => setCargo(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition cursor-pointer"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition cursor-pointer"
                     >
                       <option value="Pastor principal">Pastor principal</option>
                       <option value="Co-pastor">Co-pastor</option>
@@ -541,7 +601,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                       Correo electrónico
                       {isAnonymous ? (
                         <span className="text-gray-400 font-normal"> (opcional en prueba sin correo)</span>
@@ -554,12 +614,12 @@ export default function OnboardingPage() {
                       value={emailPastor}
                       onChange={(e) => setEmailPastor(e.target.value)}
                       placeholder="pastor@iglesia.com"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                       Teléfono / WhatsApp
                     </label>
                     <input
@@ -567,7 +627,7 @@ export default function OnboardingPage() {
                       value={telefonoPastor}
                       onChange={(e) => setTelefonoPastor(e.target.value)}
                       placeholder="+57 300 123 4567"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                     />
                   </div>
                 </div>
@@ -578,7 +638,7 @@ export default function OnboardingPage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-[#18301d] dark:text-white">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     Cuéntanos sobre tu iglesia
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -588,7 +648,7 @@ export default function OnboardingPage() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-3">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                       ¿Cuál es el tamaño de tu congregación? *
                     </label>
                     <div className="grid grid-cols-2 gap-3">
@@ -599,11 +659,11 @@ export default function OnboardingPage() {
                           onClick={() => setTamano(t.value)}
                           className={`p-4 rounded-xl border-2 text-left transition-all ${
                             tamano === t.value
-                              ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                              : "border-gray-200 dark:border-[#333] hover:border-[#0ca6b2]/50"
+                              ? "border-gray-900 bg-gray-100 dark:border-white dark:bg-white/10"
+                              : "border-gray-200 hover:border-gray-400 dark:border-neutral-700 dark:hover:border-gray-500"
                           }`}
                         >
-                          <p className={`font-semibold ${tamano === t.value ? "text-[#0ca6b2]" : "text-[#18301d] dark:text-white"}`}>
+                          <p className={`font-semibold ${tamano === t.value ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"}`}>
                             {t.label}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">{t.desc}</p>
@@ -613,7 +673,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-3">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                       ¿Tienen grupos o células? *
                     </label>
                     <div className="flex gap-3">
@@ -622,11 +682,11 @@ export default function OnboardingPage() {
                         onClick={() => setTieneGrupos(true)}
                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                           tieneGrupos === true
-                            ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                            : "border-gray-200 dark:border-[#333] hover:border-[#0ca6b2]/50"
+                            ? "border-gray-900 bg-gray-100 dark:border-white dark:bg-white/10"
+                            : "border-gray-200 hover:border-gray-400 dark:border-neutral-700 dark:hover:border-gray-500"
                         }`}
                       >
-                        <p className={`font-semibold ${tieneGrupos === true ? "text-[#0ca6b2]" : "text-[#18301d] dark:text-white"}`}>
+                        <p className={`font-semibold ${tieneGrupos === true ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"}`}>
                           Sí, tenemos
                         </p>
                       </button>
@@ -635,11 +695,11 @@ export default function OnboardingPage() {
                         onClick={() => setTieneGrupos(false)}
                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                           tieneGrupos === false
-                            ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                            : "border-gray-200 dark:border-[#333] hover:border-[#0ca6b2]/50"
+                            ? "border-gray-900 bg-gray-100 dark:border-white dark:bg-white/10"
+                            : "border-gray-200 hover:border-gray-400 dark:border-neutral-700 dark:hover:border-gray-500"
                         }`}
                       >
-                        <p className={`font-semibold ${tieneGrupos === false ? "text-[#0ca6b2]" : "text-[#18301d] dark:text-white"}`}>
+                        <p className={`font-semibold ${tieneGrupos === false ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"}`}>
                           No, aún no
                         </p>
                       </button>
@@ -648,7 +708,7 @@ export default function OnboardingPage() {
 
                   {tieneGrupos && (
                     <div>
-                      <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         ¿Cuántos grupos tienen aproximadamente?
                       </label>
                       <input
@@ -656,13 +716,13 @@ export default function OnboardingPage() {
                         value={cantidadGrupos}
                         onChange={(e) => setCantidadGrupos(e.target.value)}
                         placeholder="Ej: 10"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] transition"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-[#18301d] dark:text-white mb-3">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                       ¿Qué días tienen servicios?
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -671,10 +731,10 @@ export default function OnboardingPage() {
                           key={dia}
                           type="button"
                           onClick={() => toggleDiaServicio(dia)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                             diasServicioSeleccionados.includes(dia)
-                              ? "bg-[#0ca6b2] text-white"
-                              : "bg-gray-100 dark:bg-[#252525] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333]"
+                              ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700"
                           }`}
                         >
                           {dia}
@@ -690,7 +750,7 @@ export default function OnboardingPage() {
             {step === 4 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-[#18301d] dark:text-white">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     ¿Qué quieres lograr con Bernabé?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -700,40 +760,65 @@ export default function OnboardingPage() {
 
                 <div className="space-y-3">
                   {[
-                    { 
-                      value: "seguimiento", 
-                      label: "Mejorar el seguimiento a visitantes", 
+                    {
+                      value: "seguimiento",
+                      label: "Mejorar el seguimiento a visitantes",
                       desc: "Que ninguna persona nueva se pierda",
-                      color: "#f9c70c",
-                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      icon: (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                        />
+                      ),
                     },
-                    { 
-                      value: "grupos", 
-                      label: "Organizar mis grupos y células", 
+                    {
+                      value: "grupos",
+                      label: "Organizar mis grupos y células",
                       desc: "Que cada líder cuide a su gente",
-                      color: "#0ca6b2",
-                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                      icon: (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+                        />
+                      ),
                     },
-                    { 
-                      value: "asistencia", 
-                      label: "Controlar asistencia", 
+                    {
+                      value: "asistencia",
+                      label: "Controlar asistencia",
                       desc: "Saber quién viene y quién falta",
-                      color: "#e64b27",
-                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                      icon: (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+                        />
+                      ),
                     },
-                    { 
-                      value: "comunicacion", 
-                      label: "Mejorar la comunicación", 
+                    {
+                      value: "comunicacion",
+                      label: "Mejorar la comunicación",
                       desc: "Mantener informada a la congregación",
-                      color: "#8b5cf6",
-                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                      icon: (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                        />
+                      ),
                     },
-                    { 
-                      value: "todo", 
-                      label: "Todo lo anterior", 
+                    {
+                      value: "todo",
+                      label: "Todo lo anterior",
                       desc: "Quiero aprovechar todas las funciones",
-                      color: "#0ca6b2",
-                      icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                      icon: (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
+                        />
+                      ),
                     },
                   ].map((objetivo) => (
                     <button
@@ -742,28 +827,33 @@ export default function OnboardingPage() {
                       onClick={() => setObjetivoPrincipal(objetivo.value)}
                       className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 ${
                         objetivoPrincipal === objetivo.value
-                          ? "border-[#0ca6b2] bg-[#0ca6b2]/5 dark:bg-[#0ca6b2]/10"
-                          : "border-gray-200 dark:border-[#333] hover:border-[#0ca6b2]/50"
+                          ? "border-gray-900 bg-gray-100 dark:border-white dark:bg-white/10"
+                          : "border-gray-200 hover:border-gray-400 dark:border-neutral-700 dark:hover:border-gray-500"
                       }`}
                     >
-                      <svg 
-                        className="w-6 h-6 flex-shrink-0" 
-                        style={{ color: objetivo.color }}
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor" 
+                      <svg
+                        className="h-6 w-6 shrink-0 text-gray-500 dark:text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                         strokeWidth={1.5}
                       >
                         {objetivo.icon}
                       </svg>
                       <div>
-                        <p className={`font-semibold ${objetivoPrincipal === objetivo.value ? "text-[#0ca6b2]" : "text-[#18301d] dark:text-white"}`}>
+                        <p className={`font-semibold ${objetivoPrincipal === objetivo.value ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"}`}>
                           {objetivo.label}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{objetivo.desc}</p>
                       </div>
                       {objetivoPrincipal === objetivo.value && (
-                        <svg className="w-6 h-6 text-[#0ca6b2] ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                          className="ml-auto h-6 w-6 shrink-0 text-gray-900 dark:text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -774,12 +864,12 @@ export default function OnboardingPage() {
             )}
 
             {/* Navigation buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-[#2a2a2a]">
+            <div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6 dark:border-neutral-800">
               {step > 1 ? (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-600 dark:text-gray-300 font-medium hover:text-[#18301d] dark:hover:text-white transition"
+                  className="flex items-center gap-2 px-6 py-3 font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -795,7 +885,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={nextStep}
                   disabled={!canProceed()}
-                  className="flex items-center gap-2 px-8 py-3 bg-[#0ca6b2] text-white font-semibold rounded-full hover:bg-[#0a8f99] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-[#0ca6b2]/25"
+                  className="flex items-center gap-2 rounded-full bg-gray-900 px-8 py-3 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
                 >
                   Continuar
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -807,7 +897,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!canProceed() || isSubmitting}
-                  className="flex items-center gap-2 px-8 py-3 bg-[#e64b27] text-white font-semibold rounded-full hover:bg-[#d4421f] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-[#e64b27]/25"
+                  className="flex items-center gap-2 rounded-full bg-gray-900 px-8 py-3 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
                 >
                   {isSubmitting ? (
                     <>

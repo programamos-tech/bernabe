@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { GrupoResumenCard } from "@/components/GrupoResumenCard";
+import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { createClient } from "@/lib/supabase/client";
+import { isLeaderIndividualPlan, LEADER_INDIVIDUAL_MAX_GRUPOS } from "@/lib/organization-plan";
 import { tipoLabelGrupo } from "@/lib/grupo-tipo";
 
 type TipoGrupo = "parejas" | "jovenes" | "teens" | "hombres" | "mujeres" | "general";
@@ -62,6 +64,8 @@ function GrupoCard({ grupo }: { grupo: GrupoRow }) {
 }
 
 export default function Page() {
+  const orgPlan = useDashboardOrgPlan();
+  const leaderFree = isLeaderIndividualPlan(orgPlan);
   const [grupos, setGrupos] = useState<GrupoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -106,6 +110,8 @@ export default function Page() {
     });
   }, [grupos, filterTipo, search]);
 
+  const atGrupoCap = leaderFree && grupos.length >= LEADER_INDIVIDUAL_MAX_GRUPOS;
+
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] py-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -115,15 +121,27 @@ export default function Page() {
             Comunidades de conexión y crecimiento de la iglesia.
           </p>
         </div>
-        <Link
-          href="/grupos/nuevo"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100 sm:w-auto"
-        >
-          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo grupo
-        </Link>
+        {atGrupoCap ? (
+          <span
+            className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full bg-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 opacity-80 dark:bg-white/20 dark:text-gray-300 sm:w-auto"
+            title={`Máximo ${LEADER_INDIVIDUAL_MAX_GRUPOS} grupos en plan líder gratis`}
+          >
+            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Límite alcanzado
+          </span>
+        ) : (
+          <Link
+            href="/grupos/nuevo"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100 sm:w-auto"
+          >
+            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo grupo
+          </Link>
+        )}
       </div>
 
       <div className="mb-6 flex min-w-0 flex-row flex-nowrap items-center gap-3">
@@ -187,12 +205,14 @@ export default function Page() {
                 ? "Aún no hay grupos. Crea el primero desde el botón Nuevo grupo."
                 : "Ningún grupo coincide con la búsqueda o el filtro."}
             </p>
-          <Link
-            href="/grupos/nuevo"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
-          >
-            Nuevo grupo
-          </Link>
+          {!atGrupoCap ? (
+            <Link
+              href="/grupos/nuevo"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
+            >
+              Nuevo grupo
+            </Link>
+          ) : null}
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -202,7 +222,7 @@ export default function Page() {
         </div>
       )}
 
-      {!loading && filtered.length > 0 && (
+      {!loading && filtered.length > 0 && !atGrupoCap && (
         <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
           ¿Necesitas crear más grupos?{" "}
           <Link href="/grupos/nuevo" className="font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white">

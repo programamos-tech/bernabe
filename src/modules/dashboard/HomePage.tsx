@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ProductWelcomeTour } from "@/components/ProductWelcomeTour";
 import { UserAvatar } from "@/components/UserAvatar";
+import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { ETAPA_LABELS, parseEtapaDb } from "@/lib/persona-etapa";
+import { isLeaderIndividualPlan } from "@/lib/organization-plan";
 import { createClient } from "@/lib/supabase/client";
 
 type StatId = "personas" | "grupos" | "visitantes" | "lideres";
@@ -99,6 +102,8 @@ const dayOrderKeys: Record<string, number> = {
 };
 
 export function HomePage() {
+  const orgPlan = useDashboardOrgPlan();
+  const leaderFree = isLeaderIndividualPlan(orgPlan);
   const [pastorName, setPastorName] = useState<string>("Pastor");
   const [stats, setStats] = useState<StatItem[]>([
     { id: "personas", label: "Personas", value: 0, change: "—" },
@@ -146,10 +151,9 @@ export function HomePage() {
           .select("id", { count: "exact", head: true })
           .eq("etapa", "visitante")
           .gte("created_at", sevenDaysAgo);
-        const lideresActivosCountRes = await supabase
-          .from("lideres")
-          .select("id", { count: "exact", head: true })
-          .eq("estado", "Activo");
+        const lideresActivosCountRes = leaderFree
+          ? { count: 0 as number | null }
+          : await supabase.from("lideres").select("id", { count: "exact", head: true }).eq("estado", "Activo");
 
         const personasCount = personasCountRes.count ?? 0;
         const gruposActivosCount = gruposActivosCountRes.count ?? 0;
@@ -157,12 +161,17 @@ export function HomePage() {
         const lideresActivosCount = lideresActivosCountRes.count ?? 0;
 
         if (alive) {
-          setStats([
+          const baseStats: StatItem[] = [
             {
               id: "personas",
               label: "Personas",
               value: personasCount,
-              change: personasCount === 0 ? "Sin registros" : "Total en tu iglesia",
+              change:
+                personasCount === 0
+                  ? "Sin registros"
+                  : leaderFree
+                    ? "Total en tu rebaño"
+                    : "Total en tu iglesia",
             },
             {
               id: "grupos",
@@ -171,13 +180,16 @@ export function HomePage() {
               change: gruposActivosCount === 0 ? "Aún no hay grupos" : "Reuniones activas",
             },
             { id: "visitantes", label: "Visitantes nuevos", value: visitantesNuevosCount, change: "Últimos 7 días" },
-            {
+          ];
+          if (!leaderFree) {
+            baseStats.push({
               id: "lideres",
               label: "Líderes",
               value: lideresActivosCount,
               change: lideresActivosCount === 0 ? "En formación" : "Activos",
-            },
-          ]);
+            });
+          }
+          setStats(baseStats);
         }
 
         const { data: recientes } = await supabase
@@ -293,7 +305,7 @@ export function HomePage() {
     return () => {
       alive = false;
     };
-  }, [weekLabels.todayKey, weekLabels.tomorrowKey]);
+  }, [weekLabels.todayKey, weekLabels.tomorrowKey, leaderFree]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] py-8">
@@ -303,11 +315,13 @@ export function HomePage() {
             ¡Hola, {pastorName}! 👋
           </h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
-            Aquí está el resumen de tu iglesia hoy.
+            {leaderFree ? "Aquí está el resumen de tu rebaño hoy." : "Aquí está el resumen de tu iglesia hoy."}
           </p>
         </div>
 
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          className={`mb-8 grid gap-4 sm:grid-cols-2 ${leaderFree ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+        >
           {stats.map((stat) => {
             const v = statVisual[stat.id];
             return (
@@ -434,7 +448,9 @@ export function HomePage() {
                 </svg>
               </div>
               <span className="block font-semibold text-gray-900 dark:text-white">Registrar visitante</span>
-              <span className="mt-1 block text-sm text-gray-500 dark:text-gray-400">Nuevo en la iglesia</span>
+              <span className="mt-1 block text-sm text-gray-500 dark:text-gray-400">
+                {leaderFree ? "Nuevo en tu rebaño" : "Nuevo en la iglesia"}
+              </span>
             </Link>
             <Link
               href="/grupos"
@@ -463,6 +479,8 @@ export function HomePage() {
           </div>
         </div>
       </div>
+
+      <ProductWelcomeTour leaderIndividual={leaderFree} />
     </div>
   );
 }
