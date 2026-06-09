@@ -16,7 +16,7 @@ function stepsForLeader(leader: boolean): TourStep[] {
   const base: TourStep[] = [
     {
       title: "¡Listo, ya tienes tu espacio!",
-      body: "Este es tu inicio en Bernabé: un resumen de personas, grupos y actividad. Te mostramos en qué orden conviene empezar.",
+      body: "Este es tu inicio en Berea: un resumen de personas, grupos y actividad. Te mostramos en qué orden conviene empezar.",
     },
     {
       title: "1. Crea tu primer grupo",

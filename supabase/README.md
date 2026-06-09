@@ -1,4 +1,4 @@
-# Supabase – Bernabé SaaS multi-tenant
+# Supabase – Berea SaaS multi-tenant
 
 Cada **iglesia** es una **organización** (tenant). Los usuarios se registran, crean su iglesia en el onboarding y solo ven los datos de su organización.
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { EventoAvatarCluster } from "@/components/EventoAvatarCluster";
 import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
+import { FEATURE_EVENTOS_VISIBLE } from "@/lib/feature-flags";
 import { createClient } from "@/lib/supabase/client";
 
 type TipoEvento = "reunion" | "grupo" | "clase" | "servicio" | "especial";
@@ -149,39 +150,60 @@ function isToday(date: Date): boolean {
   return isSameDay(date, new Date());
 }
 
-/** Parsea hora "08:00", "17:00", "07:00 PM", "06:45 PM" a minutos desde medianoche (0-1439). */
-function parseTimeToMinutes(timeStr: string | null | undefined): number | null {
-  if (!timeStr || timeStr === "—") return null;
-  const s = timeStr.trim();
-  const hasAmPm = /\d\s*(am|pm)\b/i.test(s);
-  if (hasAmPm) {
-    const match12 = /^(\d{1,2}):(\d{2})\s*(am|pm)/i.exec(s);
-    if (match12) {
-      let h = parseInt(match12[1], 10);
-      const m = Math.min(59, Math.max(0, parseInt(match12[2], 10)));
-      const pm = match12[3].toLowerCase() === "pm";
-      if (h === 12) h = pm ? 12 : 0;
-      else if (pm) h += 12;
-      return Math.min(23 * 60 + 59, Math.max(0, h * 60 + m));
-    }
-  }
-  const match24 = /^(\d{1,2}):(\d{2})/.exec(s);
-  if (match24) {
-    const h = Math.min(23, Math.max(0, parseInt(match24[1], 10)));
-    const m = Math.min(59, Math.max(0, parseInt(match24[2], 10)));
-    return h * 60 + m;
-  }
-  return null;
+function formatDiaProximo(date: Date): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  if (diffDays === 0) return "Hoy";
+  if (diffDays === 1) return "Mañana";
+  return DIAS_SEMANA_COMPLETO[date.getDay()];
 }
 
-const SEMANA_HORA_INICIO = 0;
-const SEMANA_HORA_FIN = 23;
-const SEMANA_PIXELS_POR_HORA = 40;
-const SEMANA_ALTURA_TOTAL = (SEMANA_HORA_FIN - SEMANA_HORA_INICIO + 1) * SEMANA_PIXELS_POR_HORA;
-/** Hora con la que empieza la vista por defecto (scroll inicial para ver "horario de día"). */
-const SEMANA_SCROLL_INICIAL_HORA = 6;
-const SEMANA_HEADER_ALTURA = 48;
-const SEMANA_SCROLL_INICIAL_PX = SEMANA_HEADER_ALTURA + SEMANA_SCROLL_INICIAL_HORA * SEMANA_PIXELS_POR_HORA;
+function EventoAgendaRow({ evento }: { evento: Evento }) {
+  const style = tipoEventoStyles[evento.tipo];
+  const isGroup = !!evento.grupoId;
+  const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
+
+  const rowInner = (
+    <div
+      className={`flex items-center gap-3 rounded-2xl border border-gray-200/50 bg-white/60 p-3.5 transition hover:bg-white/90 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] ${style.compactBg}`}
+    >
+      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className={`text-[15px] font-medium leading-snug ${style.text}`}>{evento.titulo}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${style.pill}`}>{style.label}</span>
+        </div>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {evento.horaInicio}
+          {evento.horaInicio !== evento.horaFin && evento.horaFin !== "—" ? ` – ${evento.horaFin}` : ""}
+          {evento.ubicacion && evento.ubicacion !== "—" ? ` · ${evento.ubicacion}` : ""}
+        </p>
+      </div>
+      <svg className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </div>
+  );
+
+  if (isGroup && evento.grupoId) {
+    return (
+      <Link href={`/grupos/${evento.grupoId}`} className="block">
+        {rowInner}
+      </Link>
+    );
+  }
+  if (isEventFromDb) {
+    return (
+      <Link href={`/eventos/${evento.id}`} className="block">
+        {rowInner}
+      </Link>
+    );
+  }
+  return rowInner;
+}
 
 function EventoBadge({ evento, compact = false }: { evento: Evento; compact?: boolean }) {
   const style = tipoEventoStyles[evento.tipo];
@@ -264,7 +286,6 @@ export default function Page() {
   const [currentDate, setCurrentDate] = useState(today);
   const [vista, setVista] = useState<VistaCalendario>("semana");
   const [selectedDate, setSelectedDate] = useState<Date | null>(today);
-  const semanaScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -365,6 +386,18 @@ export default function Page() {
 
   const weekDates = getWeekDates(currentDate);
 
+  const weekAgenda = useMemo(() => {
+    return weekDates.map((date) => ({
+      date,
+      events: getEventsForDate(date),
+    }));
+  }, [weekDates, eventosDb, gruposDb]);
+
+  const weekEventCount = useMemo(
+    () => weekAgenda.reduce((sum, day) => sum + day.events.length, 0),
+    [weekAgenda]
+  );
+
   const upcomingEvents = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -430,13 +463,21 @@ export default function Page() {
         }
       }
     }
-    return out.sort((a, b) => a.fecha.getTime() - b.fecha.getTime()).slice(0, 8);
+    return out.sort((a, b) => a.fecha.getTime() - b.fecha.getTime()).slice(0, 12);
   }, [currentDate, eventosDb, gruposDb]);
 
-  useEffect(() => {
-    if (vista !== "semana" || !semanaScrollRef.current) return;
-    semanaScrollRef.current.scrollTop = SEMANA_SCROLL_INICIAL_PX;
-  }, [vista, currentDate]);
+  const upcomingByDay = useMemo(() => {
+    const groups: { date: Date; events: Evento[] }[] = [];
+    for (const evento of upcomingEvents) {
+      const last = groups[groups.length - 1];
+      if (last && isSameDay(last.date, evento.fecha)) {
+        last.events.push(evento);
+      } else {
+        groups.push({ date: evento.fecha, events: [evento] });
+      }
+    }
+    return groups;
+  }, [upcomingEvents]);
 
   // Build calendar days array for month view
   const calendarDays: (number | null)[] = [];
@@ -464,26 +505,28 @@ export default function Page() {
   const todayMutedClass = "bg-gray-200/70 dark:bg-white/10";
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-[calc(100vh-4rem)] w-full">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Calendario</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Calendario</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
             Eventos, reuniones y actividades de la iglesia.
           </p>
         </div>
-        <Link
-          href="/eventos/nuevo"
-          className="flex w-fit items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo evento
-        </Link>
+        {FEATURE_EVENTOS_VISIBLE ? (
+          <Link
+            href="/eventos/nuevo"
+            className="flex w-fit items-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo evento
+          </Link>
+        ) : null}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] lg:col-span-2">
           <div className="border-b border-gray-200/60 p-4 dark:border-white/10">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -615,112 +658,79 @@ export default function Page() {
               </div>
             )}
 
-            {/* Week View con guía de horas */}
+            {/* Week View — agenda enfocada en eventos */}
             {vista === "semana" && (
               <div className="p-4 pb-6">
-                <div
-                  ref={semanaScrollRef}
-                  className="scrollbar-brand max-h-[70vh] overflow-y-auto overflow-x-auto rounded-2xl border border-gray-200/60 dark:border-white/10"
-                >
-                  <div className="flex gap-2 min-w-0">
-                    {/* Columna de horas */}
-                    <div
-                      className="flex-shrink-0 w-12 flex flex-col text-right pr-2"
-                      style={{ height: SEMANA_ALTURA_TOTAL + SEMANA_HEADER_ALTURA }}
-                    >
-                      <div className="h-12 flex-shrink-0" />
-                    {Array.from({ length: SEMANA_HORA_FIN - SEMANA_HORA_INICIO + 1 }, (_, i) => (
-                      <div
-                        key={i}
-                        className="flex-shrink-0 border-t border-gray-200/50 pt-0.5 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"
-                        style={{ height: SEMANA_PIXELS_POR_HORA }}
-                      >
-                        {String(SEMANA_HORA_INICIO + i).padStart(2, "0")}:00
-                      </div>
-                    ))}
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  {weekEventCount === 0
+                    ? "No hay actividades programadas esta semana."
+                    : `${weekEventCount} ${weekEventCount === 1 ? "actividad" : "actividades"} esta semana`}
+                </p>
+
+                {weekEventCount === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200/80 py-12 text-center dark:border-white/10">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Tu semana está libre por ahora.</p>
                   </div>
-                  {/* Columnas de días */}
-                  <div className="grid grid-cols-7 gap-2 flex-1 min-w-0">
-                    {weekDates.map((date, i) => {
-                      const dayEvents = getEventsForDate(date);
+                ) : (
+                  <div className="space-y-5">
+                    {weekAgenda.map(({ date, events }) => {
+                      if (events.length === 0) return null;
+
                       const isSelectedDay = selectedDate && isSameDay(date, selectedDate);
                       const isTodayDay = isToday(date);
+                      const dayIndex = date.getDay();
 
                       return (
-                        <div key={i} className="flex flex-col min-w-0">
+                        <section key={date.toISOString()}>
                           <button
+                            type="button"
                             onClick={() => setSelectedDate(date)}
-                            className={`mb-2 w-full flex-shrink-0 rounded-xl px-1 py-2 transition ${
+                            className={`mb-3 flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition ${
                               isSelectedDay
                                 ? selectedDayClass
                                 : isTodayDay
                                   ? todayMutedClass
-                                  : "hover:bg-gray-200/50 dark:hover:bg-white/[0.06]"
+                                  : "hover:bg-gray-200/40 dark:hover:bg-white/[0.06]"
                             }`}
                           >
-                            <p
-                              className={`truncate text-xs ${
-                                isSelectedDay ? "text-white/85 dark:text-gray-600" : "text-gray-500 dark:text-gray-400"
-                              }`}
-                            >
-                              {DIAS_SEMANA_COMPLETO[i]}
-                            </p>
-                            <p
-                              className={`truncate text-base font-semibold ${
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`text-xs font-medium uppercase tracking-wide ${
+                                  isSelectedDay ? "text-white/80 dark:text-gray-600" : "text-gray-500 dark:text-gray-400"
+                                }`}
+                              >
+                                {DIAS_SEMANA_COMPLETO[dayIndex]}
+                                {isTodayDay ? " · Hoy" : ""}
+                              </p>
+                              <p
+                                className={`text-base font-semibold ${
+                                  isSelectedDay ? "text-white dark:text-gray-900" : "text-gray-900 dark:text-white"
+                                }`}
+                              >
+                                {date.getDate()} {MESES[date.getMonth()]}
+                              </p>
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                                 isSelectedDay
-                                  ? "text-white dark:text-gray-900"
-                                  : "text-gray-900 dark:text-white"
+                                  ? "bg-white/20 text-white dark:bg-gray-900/10 dark:text-gray-900"
+                                  : "bg-gray-200/60 text-gray-700 dark:bg-white/10 dark:text-gray-300"
                               }`}
                             >
-                              {date.getDate()}
-                            </p>
+                              {events.length}
+                            </span>
                           </button>
-                          <div
-                            className="relative flex-1 overflow-hidden rounded-xl border border-gray-200/60 bg-gray-100/30 dark:border-white/10 dark:bg-white/[0.03]"
-                            style={{ height: SEMANA_ALTURA_TOTAL }}
-                          >
-                            {Array.from({ length: SEMANA_HORA_FIN - SEMANA_HORA_INICIO }, (_, j) => (
-                              <div
-                                key={j}
-                                className="absolute left-0 right-0 border-t border-gray-200/50 dark:border-white/10"
-                                style={{ top: (j + 1) * SEMANA_PIXELS_POR_HORA }}
-                              />
-                            ))}
-                            {(() => {
-                              const slotCount: Record<number, number> = {};
-                              return dayEvents.map((evento) => {
-                                const mins = parseTimeToMinutes(evento.horaInicio);
-                                const topMinutes = mins != null
-                                  ? Math.max(0, mins - SEMANA_HORA_INICIO * 60)
-                                  : 0;
-                                let topPx = (topMinutes / 60) * SEMANA_PIXELS_POR_HORA;
-                                const slotKey = Math.floor(topPx / SEMANA_PIXELS_POR_HORA) * SEMANA_PIXELS_POR_HORA;
-                                const indexInSlot = slotCount[slotKey] ?? 0;
-                                slotCount[slotKey] = indexInSlot + 1;
-                                if (indexInSlot > 0) topPx += indexInSlot * 48;
-                                topPx = Math.min(topPx, SEMANA_ALTURA_TOTAL - 48);
 
-                                return (
-                                  <div
-                                    key={evento.id}
-                                    className="absolute left-1 right-1 rounded-lg overflow-hidden shadow-sm min-h-[44px] max-h-[96px]"
-                                    style={{
-                                      top: topPx,
-                                      width: "calc(100% - 8px)",
-                                    }}
-                                  >
-                                    <EventoBadge evento={evento} compact />
-                                  </div>
-                                );
-                              });
-                            })()}
+                          <div className="space-y-2">
+                            {events.map((evento) => (
+                              <EventoAgendaRow key={evento.id} evento={evento} />
+                            ))}
                           </div>
-                        </div>
+                        </section>
                       );
                     })}
                   </div>
-                </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -760,92 +770,79 @@ export default function Page() {
                     </svg>
                   </div>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">No hay eventos este día</p>
-                  <Link
-                    href="/eventos/nuevo"
-                    className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
-                  >
-                    Crear evento
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </Link>
+                  {FEATURE_EVENTOS_VISIBLE ? (
+                    <Link
+                      href="/eventos/nuevo"
+                      className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
+                    >
+                      Crear evento
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </Link>
+                  ) : null}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {selectedDateEvents.map((evento) => (
-                    <EventoBadge key={evento.id} evento={evento} />
+                    <EventoAgendaRow key={evento.id} evento={evento} />
                   ))}
                 </div>
               )}
             </div>
 
             {/* Upcoming events */}
-            <div className="border-t border-gray-200/60 p-4 dark:border-white/10">
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
-                Próximos eventos
-              </h4>
-              <div className="space-y-2">
-                {upcomingEvents.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No hay eventos próximos.</p>
-                ) : (
-                  upcomingEvents.map((evento) => {
-                    const style = tipoEventoStyles[evento.tipo];
-                    const isGroup = !!evento.grupoId;
-                    const isEventFromDb = Boolean(evento.id && !evento.id.startsWith("grupo-"));
-                    const rowClass =
-                      "flex cursor-pointer items-center gap-3 rounded-xl border border-transparent p-2 transition hover:bg-gray-200/40 dark:hover:bg-white/[0.06]";
-                    const key = `${evento.id}-${evento.fecha.toISOString()}`;
-
-                    const upcomingEvId =
-                      evento.id && !evento.id.startsWith("grupo-")
-                        ? evento.id
-                        : `${evento.titulo}|${evento.grupoId ?? evento.id}`;
-
-                    const rowInner = (
-                      <>
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-gray-100/90 to-gray-100/45 dark:from-white/[0.08] dark:to-white/[0.03]">
-                          <div className="absolute inset-0 flex items-center justify-center scale-[0.38]">
-                            {evento.grupoId ? (
-                              <GrupoAvatarCluster nombreGrupo={evento.titulo} sizeCenter={72} sizeSide={44} />
-                            ) : (
-                              <EventoAvatarCluster titulo={evento.titulo} eventoId={upcomingEvId} sizeCenter={72} sizeSide={44} />
-                            )}
-                          </div>
-                          <div className="absolute bottom-0 left-0 right-0 flex justify-center bg-black/45 py-0.5 dark:bg-black/50">
-                            <span className="text-[10px] font-bold text-white">{evento.fecha.getDate()}</span>
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wide ${style.text}`}>{style.label}</span>
-                          <p className="mt-0.5 truncate text-sm font-medium text-gray-900 dark:text-white">{evento.titulo}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{evento.horaInicio}</p>
-                        </div>
-                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`} title={style.label} />
-                      </>
-                    );
-
-                    if (isGroup && evento.grupoId) {
-                      return (
-                        <Link key={key} href={`/grupos/${evento.grupoId}`} className={rowClass}>
-                          {rowInner}
-                        </Link>
-                      );
-                    }
-                    if (isEventFromDb) {
-                      return (
-                        <Link key={key} href={`/eventos/${evento.id}`} className={rowClass}>
-                          {rowInner}
-                        </Link>
-                      );
-                    }
-                    return (
-                      <div key={key} className={rowClass}>
-                        {rowInner}
-                      </div>
-                    );
-                  })
-                )}
+            <div className="border-t border-gray-200/60 px-4 py-5 dark:border-white/10">
+              <div className="mb-4 flex items-baseline justify-between gap-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Próximos eventos</h4>
+                {upcomingEvents.length > 0 ? (
+                  <span className="rounded-full bg-gray-200/70 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                    {upcomingEvents.length}
+                  </span>
+                ) : null}
               </div>
+
+              {upcomingEvents.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No hay eventos próximos.</p>
+              ) : (
+                <div className="space-y-5">
+                  {upcomingByDay.map(({ date, events }) => {
+                    const isTodayDay = isToday(date);
+
+                    return (
+                      <section key={date.toISOString()}>
+                        <div className="mb-2.5 flex items-center gap-3">
+                          <div
+                            className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl ${
+                              isTodayDay
+                                ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                                : "bg-gray-200/70 text-gray-900 dark:bg-white/10 dark:text-white"
+                            }`}
+                          >
+                            <span className="text-[9px] font-semibold uppercase leading-none tracking-wide opacity-80">
+                              {DIAS_SEMANA[date.getDay()]}
+                            </span>
+                            <span className="text-base font-bold leading-tight">{date.getDate()}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatDiaProximo(date)}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {DIAS_SEMANA_COMPLETO[date.getDay()]} {date.getDate()} {MESES[date.getMonth()]} ·{" "}
+                              {events.length} {events.length === 1 ? "actividad" : "actividades"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {events.map((evento) => (
+                            <EventoAgendaRow key={`${evento.id}-${evento.fecha.toISOString()}`} evento={evento} />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
       </div>

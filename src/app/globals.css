@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Damion&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -52,6 +54,11 @@
 }
 
 @layer components {
+  .font-bernabe-logo {
+    font-family: "Damion", cursive;
+    font-weight: 400;
+  }
+
   .font-logo {
     font-family: var(--font-logo), cursive;
     font-weight: 400;
@@ -278,7 +285,7 @@
 }
 
 /**
- * Lista Personas: aro tipo “historia” IG alrededor del avatar (apoyo / co-líder).
+ * Lista Personas: aro tipo “historia” IG alrededor del avatar (líder de grupo / apoyo → morado; co-líder → teal).
  * Brillo suave en la esfera + gradiente que gira detrás del recorte.
  */
 @keyframes avatar-story-ring-glow-violet {

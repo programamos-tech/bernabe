@@ -78,7 +78,7 @@ function LandingStepGrupoDetallePreview() {
             </span>
           </div>
           <h3 className="mt-1 text-center text-sm font-semibold tracking-tight text-gray-900 dark:text-white">Zona Norte</h3>
-          <p className="mt-0.5 line-clamp-2 text-center text-[9px] text-gray-500 dark:text-gray-400">Encuentro semanal y seguimiento pastoral.</p>
+          <p className="mt-0.5 line-clamp-2 text-center text-[9px] text-gray-500 dark:text-gray-400">Encuentro semanal y seguimiento claro.</p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5 text-center">
@@ -166,9 +166,9 @@ export function HowItWorksSection() {
   const steps = [
     {
       number: "01",
-      title: "Tu cuenta y tu iglesia",
+      title: "Empieza a cuidar",
       description:
-        "Regístrate en minutos, configura tu iglesia y empieza a invitar a otros líderes cuando quieras: todos con el mismo foco —personas vistas, seguimiento claro— sin complicarte con licencias en esta página.",
+        "Regístrate en minutos y registra a las primeras personas que acompañas. Invita a otros líderes cuando quieras: todos con el mismo foco —personas vistas, cuidado claro—.",
       preview: <LandingStepCuentaPreview />,
     },
     {
@@ -180,7 +180,7 @@ export function HowItWorksSection() {
     {
       number: "03",
       title: "El perfil de cada persona",
-      description: "Desde el perfil: contacto, grupo, estado e información para un seguimiento pastoral concreto, persona por persona.",
+      description: "Desde el perfil: contacto, grupo, estado e información para un seguimiento concreto, persona por persona.",
       preview: <LandingStepPersonaDetallePreview />,
     },
   ];
@@ -196,7 +196,7 @@ export function HowItWorksSection() {
             Comienza en <span className="text-amber-700 dark:text-amber-200/90">3 simples pasos</span>
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            El foco es el cuidado en la iglesia, no la técnica. Si puedes usar WhatsApp, puedes usar Bernabé Personas.
+            El foco es el cuidado de las personas, no la técnica. Si puedes usar WhatsApp, puedes usar Bernabé.
           </p>
         </div>
 

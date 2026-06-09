@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AvatarHistoriasServicioGrupo } from "@/components/AvatarHistoriasServicioGrupo";
 import { soloDigitosDocumentoId } from "@/lib/documento-id";
 import {
@@ -15,6 +16,7 @@ import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { createClient } from "@/lib/supabase/client";
 import { isLeaderIndividualPlan, LEADER_INDIVIDUAL_MAX_PERSONAS } from "@/lib/organization-plan";
 import { parsePersonaSexo } from "@/lib/persona-sexo";
+import { RegistrarPersonaModal } from "./_components/RegistrarPersonaModal";
 
 interface PersonaRow {
   id: string;
@@ -73,7 +75,7 @@ function PersonasPaginationBar({
 }) {
   if (totalCount === 0) return null;
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-2">
       <p className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
         Mostrando <span className="font-medium text-gray-800 dark:text-gray-200">{rangeFrom}</span>
         {" — "}
@@ -106,8 +108,10 @@ function PersonasPaginationBar({
 }
 
 export default function Page() {
+  const router = useRouter();
   const orgPlan = useDashboardOrgPlan();
   const leaderFree = isLeaderIndividualPlan(orgPlan);
+  const [registrarOpen, setRegistrarOpen] = useState(false);
   const [personas, setPersonas] = useState<PersonaRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [orgPersonasTotal, setOrgPersonasTotal] = useState<number | null>(null);
@@ -225,10 +229,10 @@ export default function Page() {
     leaderFree && orgPersonasTotal !== null && orgPersonasTotal >= LEADER_INDIVIDUAL_MAX_PERSONAS;
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+    <div className="w-full min-h-[calc(100vh-4rem)]">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">
             Personas
           </h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
@@ -246,20 +250,20 @@ export default function Page() {
             Límite alcanzado
           </span>
         ) : (
-          <Link
-            href="/personas/nuevo"
-            prefetch={false}
+          <button
+            type="button"
+            onClick={() => setRegistrarOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100 sm:w-auto"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
             Nueva persona
-          </Link>
+          </button>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center md:mb-5">
         <div className="relative min-w-0 flex-1">
           <svg
             className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
@@ -334,20 +338,26 @@ export default function Page() {
               : "Ninguna persona coincide con el filtro o la búsqueda."}
           </p>
           {!hasActiveFilters && !atPersonaCap ? (
-            <Link
-              href="/personas/nuevo"
-              prefetch={false}
+            <button
+              type="button"
+              onClick={() => setRegistrarOpen(true)}
               className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
             >
               Nueva persona
-            </Link>
+            </button>
           ) : null}
         </div>
       ) : (
         <>
-          <div className="md:hidden space-y-3">
-            {personas.map((persona) => (
-              <div key={persona.id} className="rounded-2xl bg-gray-100/60 p-4 dark:bg-white/[0.05]">
+          <div className="lg:hidden">
+            <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+            {personas.map((persona) => {
+              const detailHref = `/personas/${persona.id}`;
+              return (
+              <div
+                key={persona.id}
+                className="group relative cursor-pointer rounded-2xl bg-gray-100/60 p-4 transition hover:bg-gray-100/80 dark:bg-white/[0.05] dark:hover:bg-white/[0.08] md:flex md:h-full md:flex-col"
+              >
                 <div className="flex items-start gap-3">
                   <AvatarHistoriasServicioGrupo
                     seed={persona.nombre}
@@ -355,20 +365,17 @@ export default function Page() {
                     size={44}
                     participacion={persona.participacion_en_grupo}
                     grupoId={persona.grupo_id}
+                    etapa={persona.etapa}
                   />
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      href={`/personas/${persona.id}`}
-                      prefetch={false}
-                      className="font-medium text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition"
-                    >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 transition group-hover:text-gray-600 dark:text-white dark:group-hover:text-gray-300">
                       {persona.nombre}
-                    </Link>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{persona.telefono ?? "—"}</p>
-                    {persona.cedula && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">ID: {persona.cedula}</p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                    </p>
+                    <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{persona.telefono ?? "—"}</p>
+                    {persona.cedula ? (
+                      <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">ID: {persona.cedula}</p>
+                    ) : null}
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-white/70 px-2.5 py-0.5 text-xs font-normal text-gray-600 dark:bg-white/10 dark:text-gray-400">
                         {nombreGrupoLabel(persona)}
                       </span>
@@ -379,15 +386,17 @@ export default function Page() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between pt-3">
+                <div className="mt-4 flex items-center justify-between border-t border-gray-200/50 pt-3 dark:border-white/[0.06] md:mt-auto">
                   <span className="text-xs text-gray-400">Contacto: {persona.ultimo_contacto ?? "—"}</span>
-                  <div className="flex items-center gap-1">
+                  <div className="relative z-[2] flex items-center gap-1">
                     <Link
-                      href={`/personas/${persona.id}`}
+                      href={detailHref}
                       prefetch={false}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded-full p-2 text-gray-400 transition hover:bg-white/80 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                      title="Ver perfil"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -396,20 +405,27 @@ export default function Page() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </Link>
-                    {persona.telefono && (
+                    {persona.telefono ? (
                       <a
                         href={`https://wa.me/${persona.telefono.replace(/\D/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="rounded-full p-2 text-gray-400 transition hover:bg-white/80 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                        title="WhatsApp"
                       >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                         </svg>
                       </a>
-                    )}
-                    <button className="rounded-full p-2 text-gray-400 transition hover:bg-white/80 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded-full p-2 text-gray-400 transition hover:bg-white/80 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                      title="Más opciones"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -419,12 +435,21 @@ export default function Page() {
                     </button>
                   </div>
                 </div>
+
+                <Link
+                  href={detailHref}
+                  prefetch={false}
+                  className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/80 dark:focus-visible:ring-white/25"
+                  aria-label={`Ver perfil de ${persona.nombre}`}
+                />
               </div>
-            ))}
+            );
+            })}
+            </div>
             <PersonasPaginationBar {...paginationProps} />
           </div>
 
-          <div className="hidden md:block overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04]">
+          <div className="hidden overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] lg:block">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -455,6 +480,7 @@ export default function Page() {
                             size={36}
                             participacion={persona.participacion_en_grupo}
                             grupoId={persona.grupo_id}
+                            etapa={persona.etapa}
                           />
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white group-hover:text-gray-600 dark:group-hover:text-gray-300 transition">
@@ -529,6 +555,15 @@ export default function Page() {
           </div>
         </>
       )}
+
+      <RegistrarPersonaModal
+        open={registrarOpen}
+        onClose={() => setRegistrarOpen(false)}
+        onRegistered={(personaId) => {
+          router.push(`/personas/${personaId}`);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

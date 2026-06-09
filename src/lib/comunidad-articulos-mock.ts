@@ -43,7 +43,7 @@ La fe sin obras está muerta: no es un slogan para culpar a otros, sino un espej
 
 Propongo tres preguntas prácticas para evaluar si nuestra doctrina se traduce en compasión visible. Primera: ¿hay evidencia de misericordia en nuestras agendas esta semana? Segunda: ¿estamos dispuestos a ajustar comodidad por el bien de alguien frágil? Tercera: ¿nuestro lenguaje sobre “gracia” se acompaña de pasos concretos?
 
-Cerramos leyendo el versículo 26 como oración: que la fe que confesamos sea animada por el mismo Dios que justificó a Abraham y recibió a Rahab. Que nuestras iglesias locales — Bernabé incluida — sean lugares donde el evangelio se vea en pan compartido, tiempo dado y verdad dicha con ternura.`,
+Cerramos leyendo el versículo 26 como oración: que la fe que confesamos sea animada por el mismo Dios que justificó a Abraham y recibió a Rahab. Que nuestras iglesias locales — Berea incluida — sean lugares donde el evangelio se vea en pan compartido, tiempo dado y verdad dicha con ternura.`,
     autor: "Pastor Carlos Mendoza",
     fechaRelativa: "Hace 2 días",
     etiquetas: ["Integridad", "Modelo ante el grupo"],

@@ -3,50 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserAvatar } from "@/components/UserAvatar";
+import { btnPrimaryForm, marketingCta } from "@/app/(marketing)/landing-shared";
+import { AuthHeroGrupoCluster } from "@/components/AuthHeroGrupoCluster";
+import { BernabeLogo } from "@/components/BernabeLogo";
 import { createClient } from "@/lib/supabase/client";
 import { translateSupabaseAuthMessage } from "@/lib/supabase-auth-messages";
 
 const inputClass =
   "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-300/60 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20";
 
-const btnPrimaryClass =
-  "flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:focus:ring-white/30 dark:focus:ring-offset-[#111111]";
-
 function Logo() {
   return (
-    <Link
-      href="/"
-      className="group inline-flex max-w-full items-center gap-2 self-start leading-none sm:gap-2.5"
-      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
-    >
-      <div className="shrink-0" aria-hidden>
-        <UserAvatar
-          seed="bernabe-nav-logo"
-          sexo="femenino"
-          size={40}
-          className="!ring-0 shadow-none"
-        />
-      </div>
-      <span className="flex min-w-0 flex-col gap-0.5 text-left">
-        <span className="font-logo text-2xl leading-none text-gray-900 dark:text-white sm:text-3xl">Bernabé</span>
-        <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[10px]">
-          Que ninguna persona se pierda
-        </span>
-      </span>
-    </Link>
-  );
-}
-
-function RegisterHeroAvatar() {
-  return (
-    <div className="flex justify-center">
-      <UserAvatar
-        seed="bernabe-register-panel"
-        sexo="femenino"
-        size={112}
-        className="!ring-0 shadow-none"
-      />
+    <div className="py-1 sm:py-2">
+      <Link
+        href="/"
+        className="group inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90"
+        aria-label="Bernabé — inicio"
+      >
+        <BernabeLogo variant="auth" />
+      </Link>
     </div>
   );
 }
@@ -90,10 +65,9 @@ export default function RegisterPage() {
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-8">
             <Logo />
-            <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Únete a Bernabé</h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Gratis para líderes y para iglesias. Cuida a las personas que pastoreas con seguimiento claro, sin complicarte con
-              precios desde el primer día.
+            <p className="mt-8 text-sm text-gray-500 dark:text-gray-400 sm:mt-9">
+              Crea tu espacio para cuidar con claridad: cada persona, su grupo y el próximo paso de acompañamiento en un
+              solo lugar.
             </p>
           </div>
 
@@ -134,7 +108,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <button type="button" onClick={handleStartMvp} disabled={isLoading} className={btnPrimaryClass}>
+            <button type="button" onClick={handleStartMvp} disabled={isLoading} className={btnPrimaryForm}>
               {isLoading ? (
                 <>
                   <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -148,12 +122,12 @@ export default function RegisterPage() {
                   Entrando…
                 </>
               ) : (
-                "Comenzar sin correo"
+                marketingCta.start
               )}
             </button>
           </div>
 
-          <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-8 text-left text-sm text-gray-500 dark:text-gray-400">
             ¿Ya tienes cuenta?{" "}
             <Link href="/login" className="font-semibold text-gray-800 underline-offset-4 hover:underline dark:text-gray-200">
               Inicia sesión
@@ -165,17 +139,13 @@ export default function RegisterPage() {
       <div className="hidden flex-1 flex-col items-center justify-center p-10 lg:order-1 lg:flex lg:rounded-r-[2rem] lg:bg-gray-100/60 dark:lg:bg-white/[0.04] xl:rounded-r-3xl xl:p-14">
         <div className="w-full max-w-md text-center">
           <div className="mb-2 rounded-3xl bg-white/70 px-6 py-10 shadow-sm shadow-black/[0.04] dark:bg-white/[0.06] dark:shadow-none">
-            <RegisterHeroAvatar />
+            <AuthHeroGrupoCluster />
           </div>
-          <p className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/35 dark:text-emerald-100">
-            Gratis para líderes y para iglesias
-          </p>
           <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-            Que ninguna persona se pierda
+            Cuida a cada persona de tu iglesia
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            Personas, grupos y próximos pasos en un solo lugar. Bernabé es gratis para quien lidera solo y para la iglesia
-            entera: el enfoque es el ministerio, no la caja registradora.
+            Cuida con seguimiento claro: conoce a cada persona, su etapa y cuándo fue el último contacto.
           </p>
         </div>
       </div>

@@ -30,7 +30,7 @@ type Props = {
 };
 
 /**
- * Misma “cara” que las tarjetas del listado `/grupos`: badges, cluster, metadatos, líder, ubicación y enlace.
+ * Misma “cara” que las tarjetas del listado `/grupos`: badges, cluster, metadatos, líder y ubicación. Toda la tarjeta es clicable.
  */
 export function GrupoResumenCard({
   grupo,
@@ -40,7 +40,7 @@ export function GrupoResumenCard({
   rolEnGrupo,
 }: Props) {
   return (
-    <div className="group overflow-hidden rounded-3xl bg-gray-100/40 transition hover:bg-gray-100/55 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
+    <div className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gray-100/40 transition hover:bg-gray-100/55 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]">
       <div className="relative bg-gradient-to-b from-gray-100/80 to-gray-100/30 dark:from-white/[0.06] dark:to-white/[0.02]">
         <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
           <span
@@ -126,7 +126,7 @@ export function GrupoResumenCard({
             {grupo.lider_id ? (
               <Link
                 href={`/lideres/${grupo.lider_id}`}
-                className="text-sm font-medium text-gray-900 hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
+                className="relative z-[2] text-sm font-medium text-gray-900 hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
               >
                 {liderNombre ?? "Sin asignar"}
               </Link>
@@ -136,31 +136,26 @@ export function GrupoResumenCard({
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-gray-200/60 pt-4 dark:border-white/10">
-          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-              />
-            </svg>
-            <span className="truncate" title={grupo.ubicacion || undefined}>
-              {grupo.ubicacion || "Sin ubicación"}
-            </span>
-          </div>
-          <Link
-            href={`/grupos/${grupo.id}`}
-            className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            Ver grupo
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
+        <div className="mt-4 flex items-center gap-2 border-t border-gray-200/60 pt-4 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+            />
+          </svg>
+          <span className="truncate" title={grupo.ubicacion || undefined}>
+            {grupo.ubicacion || "Sin ubicación"}
+          </span>
         </div>
       </div>
+
+      <Link
+        href={`/grupos/${grupo.id}`}
+        className="absolute inset-0 z-[1] rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/80 dark:focus-visible:ring-white/25"
+        aria-label={`Ir al grupo ${grupo.nombre}`}
+      />
     </div>
   );
 }

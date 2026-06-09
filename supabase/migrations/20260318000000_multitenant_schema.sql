@@ -1,5 +1,5 @@
 -- ============================================
--- Bernabé: Multi-tenant SaaS schema
+-- Berea: Multi-tenant SaaS schema
 -- Cada iglesia = 1 organización (tenant)
 -- ============================================
 

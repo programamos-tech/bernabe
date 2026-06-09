@@ -32,17 +32,20 @@ function buildNiceAvatarConfig(seed: string, sexo?: "masculino" | "femenino" | n
  */
 export function UserAvatar({ seed, sexo = null, size = 40, className = "" }: UserAvatarProps) {
   const [mounted, setMounted] = useState(false);
+  const config = useMemo(() => buildNiceAvatarConfig(seed, sexo), [seed, sexo]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const config = useMemo(() => buildNiceAvatarConfig(seed, sexo), [seed, sexo]);
+  const sharedClassName = `shrink-0 overflow-hidden shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:shadow-none dark:ring-white/[0.08] ${className}`;
+  const sharedStyle = { width: size, height: size, minWidth: size, minHeight: size };
 
   if (!mounted) {
     return (
       <div
-        className={`shrink-0 rounded-full bg-gray-200/90 dark:bg-white/[0.08] ${className}`}
-        style={{ width: size, height: size }}
+        className={`rounded-full bg-gray-200/90 dark:bg-white/10 ${sharedClassName}`}
+        style={sharedStyle}
         aria-hidden
       />
     );
@@ -50,8 +53,8 @@ export function UserAvatar({ seed, sexo = null, size = 40, className = "" }: Use
 
   return (
     <Avatar
-      className={`shrink-0 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:shadow-none dark:ring-white/[0.08] ${className}`}
-      style={{ width: size, height: size }}
+      className={sharedClassName}
+      style={sharedStyle}
       shape="circle"
       {...config}
     />

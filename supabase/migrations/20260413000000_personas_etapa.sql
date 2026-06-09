@@ -3,16 +3,27 @@
 ALTER TABLE public.personas
   ADD COLUMN IF NOT EXISTS etapa TEXT;
 
-UPDATE public.personas
-SET etapa = CASE estado
-  WHEN 'Visitante' THEN 'visitante'
-  WHEN 'En seguimiento' THEN 'en_proceso'
-  WHEN 'En servicio' THEN 'en_servicio'
-  WHEN 'Inactivo' THEN 'inactivo'
-  WHEN 'Activo' THEN CASE WHEN grupo_id IS NOT NULL THEN 'consolidado' ELSE 'en_proceso' END
-  ELSE 'en_proceso'
-END
-WHERE etapa IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'personas'
+      AND column_name = 'estado'
+  ) THEN
+    UPDATE public.personas
+    SET etapa = CASE estado
+      WHEN 'Visitante' THEN 'visitante'
+      WHEN 'En seguimiento' THEN 'en_proceso'
+      WHEN 'En servicio' THEN 'en_servicio'
+      WHEN 'Inactivo' THEN 'inactivo'
+      WHEN 'Activo' THEN CASE WHEN grupo_id IS NOT NULL THEN 'consolidado' ELSE 'en_proceso' END
+      ELSE 'en_proceso'
+    END
+    WHERE etapa IS NULL;
+  END IF;
+END $$;
 
 ALTER TABLE public.personas
   ALTER COLUMN etapa SET DEFAULT 'visitante';

@@ -4,11 +4,9 @@ import Link from "next/link";
 import { HowItWorksSection } from "@/app/(marketing)/LandingHowItWorks";
 import { MarketingSiteHeader } from "@/app/(marketing)/MarketingSiteHeader";
 import { ParaLideresSection } from "@/app/(marketing)/LandingParaLideres";
-import { LandingPropuestaAcceso } from "@/app/(marketing)/LandingPropuestaAcceso";
-import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
-import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
+import { btnPrimaryFull, btnSecondaryFull, marketingCta } from "@/app/(marketing)/landing-shared";
+import { BernabeLogo } from "@/components/BernabeLogo";
 import { UserAvatar } from "@/components/UserAvatar";
-import { ARTICULOS_COMUNIDAD_MOCK, CATEGORIAS_LIDERAZGO } from "@/lib/comunidad-articulos-mock";
 import { ETAPA_LABELS, type EtapaPersonaDb, etapaDotClass } from "@/lib/persona-etapa";
 
 const LANDING_PERSONAS_DEMO: { nombre: string; telefono: string; grupo: string; etapa: EtapaPersonaDb; contacto: string }[] =
@@ -55,7 +53,7 @@ function LandingHeroPersonasPreview() {
     <div
       className="pointer-events-none select-none"
       role="img"
-      aria-label="Vista previa de la pantalla Personas en Bernabé: tabla para el cuidado pastoral, con nombre, grupo, etapa y último contacto."
+      aria-label="Vista previa de la pantalla Personas en Bernabé: tabla para el cuidado de personas, con nombre, grupo, etapa y último contacto."
     >
       <div className="mb-3 min-w-0">
         <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Personas</h2>
@@ -197,18 +195,18 @@ function HeroSection() {
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)] lg:gap-12">
           <div className="min-w-0">
             <h1 className="text-3xl font-semibold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
-              Pastorea sin perder de vista a nadie.
+              Cuida sin perder de vista a nadie.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
-              Para líderes de iglesia: seguimiento claro de las personas que acompañas, en un solo lugar, desde el celular
-              o la computadora.
+              Para líderes de iglesia: cada persona que acompañas, con seguimiento claro en un solo lugar, desde el
+              celular o la computadora.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link href="/register" className={btnPrimary}>
-                Crear cuenta
+              <Link href="/register" className={btnPrimaryFull}>
+                {marketingCta.start}
               </Link>
-              <a href="#propuesta" className={btnSecondary}>
-                Ver propuesta
+              <a href="#how-it-works" className={btnSecondaryFull}>
+                {marketingCta.howItWorks}
               </a>
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6">
@@ -230,392 +228,6 @@ function HeroSection() {
   );
 }
 
-const LANDING_GRUPOS_DEMO = [
-  {
-    nombre: "Zona Norte",
-    tipo: "Jóvenes",
-    descripcion: "Encuentro semanal y seguimiento pastoral.",
-    miembros: 12,
-    dia: "Sábado",
-    hora: "18:00",
-  },
-  {
-    nombre: "Matrimonios",
-    tipo: "Parejas",
-    descripcion: "Espacio para parejas de la congregación.",
-    miembros: 8,
-    dia: "Viernes",
-    hora: "20:00",
-  },
-  {
-    nombre: "Teens Centro",
-    tipo: "Teens",
-    descripcion: "Enseñanza y comunidad para adolescentes.",
-    miembros: 15,
-    dia: "Domingo",
-    hora: "10:00",
-  },
-  {
-    nombre: "Intercesión",
-    tipo: "General",
-    descripcion: "Oración y apoyo espiritual de la iglesia.",
-    miembros: 22,
-    dia: "Miércoles",
-    hora: "19:30",
-  },
-] as const;
-
-const LANDING_GRUPOS_FILTROS = ["Todos", "Parejas", "Jóvenes", "Teens"] as const;
-
-/** Vista previa de la pantalla Grupos (misma estructura que /grupos), estilo hero Personas. */
-function LandingGruposScreenPreview() {
-  return (
-    <div
-      className="pointer-events-none select-none min-w-0"
-      role="img"
-      aria-label="Vista previa de la pantalla Grupos: búsqueda, filtros y tarjetas para el cuidado por comunidades y líderes."
-    >
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-base font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight sm:text-lg">Grupos</h2>
-          <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400 leading-snug">
-            Cada grupo como espacio de pastoreo: quién pertenece y quién lidera el cuidado.
-          </p>
-        </div>
-        <div className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-gray-900 px-3 text-xs font-medium text-white dark:bg-white dark:text-gray-900 sm:h-10 sm:px-4">
-          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo grupo
-        </div>
-      </div>
-
-      <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <div className="relative min-w-0 flex-1">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <div className="rounded-full bg-gray-100/90 py-2 pl-9 pr-3 text-xs text-gray-400 dark:bg-white/[0.06] dark:text-gray-500">
-            Buscar grupo…
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
-          {LANDING_GRUPOS_FILTROS.map((label) => (
-            <span
-              key={label}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-medium sm:text-xs ${
-                label === "Todos"
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                  : "bg-gray-100/90 text-gray-700 dark:bg-white/[0.08] dark:text-gray-200"
-              }`}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {LANDING_GRUPOS_DEMO.map((g) => (
-          <div
-            key={g.nombre}
-            className="min-w-0 overflow-hidden rounded-2xl bg-gray-100/40 dark:bg-white/[0.04] sm:rounded-3xl"
-          >
-            <div className="relative bg-gradient-to-b from-gray-100/80 to-gray-100/30 dark:from-white/[0.06] dark:to-white/[0.02]">
-              <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-0.5rem)] flex-wrap items-center gap-1">
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-900 dark:text-emerald-200 sm:px-2 sm:text-[10px]">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/80" />
-                  Activo
-                </span>
-                <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] font-normal text-gray-600 shadow-sm dark:bg-white/10 dark:text-gray-300 dark:shadow-none sm:px-2 sm:text-[10px]">
-                  {g.tipo}
-                </span>
-              </div>
-              <div className="flex h-[5.75rem] items-end justify-center pb-2 pt-6 sm:h-[6.25rem] sm:pb-3 sm:pt-7">
-                <GrupoAvatarCluster nombreGrupo={g.nombre} sizeCenter={48} sizeSide={30} />
-              </div>
-            </div>
-            <div className="px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
-              <h3 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white sm:text-base">{g.nombre}</h3>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-500 dark:text-gray-400 sm:text-xs">{g.descripcion}</p>
-              <div className="mt-3 flex items-center gap-3 border-t border-gray-200/60 pt-2.5 dark:border-white/10">
-                <div className="flex items-center gap-1.5">
-                  <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{g.miembros}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">Miembros</p>
-                  </div>
-                </div>
-                <div className="h-8 w-px bg-gray-200/80 dark:bg-white/10" />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-gray-900 dark:text-white">{g.dia}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">{g.hora}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FeaturesSection() {
-  const features = [
-    {
-      id: "personas" as const,
-      icon: (
-        <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-        </svg>
-      ),
-      title: "Cada persona vista",
-      description: "Conoce quién forma parte de la iglesia, su estado y el último contacto: del visitante nuevo al miembro de años.",
-      iconClass: "text-sky-600/90 dark:text-sky-400/90",
-    },
-    {
-      id: "grupos" as const,
-      icon: (
-        <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z" />
-        </svg>
-      ),
-      title: "Grupos con pastoreo",
-      description: "Crea grupos por zona o ministerio: cada líder ve a su gente y puede acompañar con contexto, no solo listas.",
-      iconClass: "text-orange-600/85 dark:text-orange-400/85",
-    },
-    {
-      id: "seguimiento" as const,
-      icon: (
-        <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-        </svg>
-      ),
-      title: "Seguimiento que sostiene",
-      description: "Que ningún visitante ni miembro quede invisible: responsables claros y pasos concretos de cuidado.",
-      iconClass: "text-amber-600/90 dark:text-amber-400/90",
-    },
-    {
-      id: "vision" as const,
-      icon: (
-        <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-        </svg>
-      ),
-      title: "Panorama pastoral",
-      description: "Una lectura humana de tu iglesia: personas, grupos activos y dónde hace falta acercarse.",
-      iconClass: "text-violet-600/90 dark:text-violet-400/90",
-    },
-  ];
-
-  return (
-    <section id="features" className="bg-white px-4 py-24 dark:bg-[#111111] sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mx-auto mb-16 max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Hecho para <span className="text-sky-700 dark:text-sky-300">líderes que pastorean personas</span>, no solo
-            para la planilla de la iglesia
-          </h2>
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            Personas, grupos y último contacto en un solo lugar: ves a tu gente con contexto, tanto si pastoreas solo
-            como si coordinas a todo un equipo en la misma iglesia.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <div
-              key={feature.id}
-              className="group rounded-3xl border border-transparent bg-gray-100/40 p-6 transition-all hover:bg-gray-100/70 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
-            >
-              <div className={`mb-4 ${feature.iconClass}`}>{feature.icon}</div>
-              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 lg:mt-14">
-          <p className="mb-4 mx-auto max-w-2xl text-center text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            Los grupos no son solo calendario: son el lugar donde la iglesia cuida en comunidad. Asigna líderes, registra reuniones y
-            consulta cuántas personas integran cada equipo, siempre con el foco en el acompañamiento.
-          </p>
-          <div className="mx-auto w-full max-w-7xl">
-            <div className="rounded-3xl border border-gray-200/70 bg-white/90 p-3 shadow-lg shadow-black/[0.06] dark:border-white/[0.08] dark:bg-[#181818]/95 dark:shadow-none sm:p-4">
-              <LandingGruposScreenPreview />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function RecursosLandingSection() {
-  const preview = ARTICULOS_COMUNIDAD_MOCK.slice(0, 2);
-
-  return (
-    <section
-      id="recursos"
-      className="scroll-mt-24 border-y border-gray-200/60 bg-gradient-to-b from-sky-50/90 to-white px-4 py-24 dark:border-white/[0.06] dark:from-sky-950/25 dark:to-[#111111] sm:px-6 lg:px-8"
-    >
-      <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
-              Gratis, sin cuenta
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              <span className="font-logo-soft font-medium">Recursos</span> que respaldan el{" "}
-              <span className="text-sky-700 dark:text-sky-300">cuidado de las personas</span>
-            </h2>
-            <p className="mt-4 max-w-lg text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              La app ordena el acompañamiento en la iglesia; estos textos fortalecen a quienes pastorean y equipan. Artículos y reflexiones,{" "}
-              <strong className="font-medium text-gray-900 dark:text-white">disponibles gratis</strong> en la web. Con
-              cuenta accedes además a la comunidad dentro de la app.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {CATEGORIAS_LIDERAZGO.map((cat) => (
-                <span
-                  key={cat}
-                  className="rounded-full border border-sky-200/80 bg-white/80 px-3 py-1 text-xs font-medium text-sky-900 dark:border-sky-500/25 dark:bg-white/[0.06] dark:text-sky-100"
-                >
-                  {cat}
-                </span>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/recursos" className={`${btnPrimary} w-full sm:w-auto`}>
-                Ver todos los recursos
-              </Link>
-              <Link href="/register" className={`${btnSecondary} w-full sm:w-auto`}>
-                Crear cuenta
-              </Link>
-              <Link
-                href="/login"
-                className="text-center text-sm font-medium text-sky-800 underline-offset-4 hover:underline dark:text-sky-300 sm:ml-1"
-              >
-                Ya tengo cuenta
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div
-              className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-sky-400/10 blur-2xl dark:bg-sky-500/10"
-              aria-hidden
-            />
-            <div className="relative space-y-3 rounded-2xl border border-gray-200/80 bg-white/90 p-4 shadow-lg shadow-sky-900/5 dark:border-white/[0.08] dark:bg-[#1a1a1a]/95 dark:shadow-none">
-              <p className="px-1 text-xs font-medium text-gray-500 dark:text-gray-400">Ejemplos de artículos (leé gratis en la web)</p>
-              {preview.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/recursos/${a.id}`}
-                  className="block rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 outline-none transition hover:border-sky-200/80 hover:bg-white dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-sky-500/30 dark:hover:bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-sky-500/40"
-                >
-                  <div className="flex gap-2.5">
-                    <UserAvatar seed={a.autor} size={36} className="shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:text-sky-200">
-                          {a.categoria}
-                        </span>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{a.autor}</span>
-                      </div>
-                      <p className="mt-1 font-logo-soft text-sm font-normal leading-snug text-gray-900 dark:text-white line-clamp-2">
-                        {a.titulo}
-                      </p>
-                      <p className="mt-1 text-xs leading-snug text-gray-600 dark:text-gray-400 line-clamp-2">{a.excerpt}</p>
-                      <p className="mt-2 text-[11px] font-medium text-sky-700 dark:text-sky-300">Leer artículo →</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TestimonialsSection() {
-  return (
-    <section id="testimonials" className="bg-gray-100/50 px-4 py-24 dark:bg-white/[0.03] sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mx-auto mb-16 max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Lo que dicen <span className="text-violet-700 dark:text-violet-300">nuestros usuarios</span>
-          </h2>
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            Líderes que querían dejar de improvisar con el seguimiento de las personas que pastorean.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              quote:
-                "Ahora cada líder puede ver su grupo y darle seguimiento. Ya no se nos pierde nadie entre tantas personas.",
-              author: "Pastor Carlos",
-              church: "Iglesia Vida Nueva",
-              seed: "testimonio·carlos",
-            },
-            {
-              quote:
-                "El seguimiento a visitantes cambió completamente. Antes se nos escapaban, ahora cada persona nueva tiene un responsable asignado.",
-              author: "María González",
-              church: "Centro Cristiano Fe",
-              seed: "testimonio·maría",
-            },
-            {
-              quote:
-                "Mis líderes de célula están felices. Pueden ver sus miembros, registrar asistencia y reportar todo desde su celular.",
-              author: "David Ramírez",
-              church: "Iglesia Gracia",
-              seed: "testimonio·david",
-            },
-          ].map((testimonial) => (
-            <div
-              key={testimonial.seed}
-              className="rounded-3xl border border-gray-200/60 bg-white p-8 shadow-sm shadow-black/[0.04] transition hover:shadow-md dark:border-white/[0.08] dark:bg-white/[0.05] dark:shadow-none"
-            >
-              <div className="mb-4 flex items-center gap-3">
-                <UserAvatar seed={testimonial.seed} size={48} />
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="h-5 w-5 text-amber-400/90" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-              <p className="mb-6 leading-relaxed text-gray-600 dark:text-gray-300">&ldquo;{testimonial.quote}&rdquo;</p>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.church}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function CTASection() {
   return (
     <section className="bg-white px-4 py-24 dark:bg-[#111111] sm:px-6 lg:px-8">
@@ -624,24 +236,24 @@ function CTASection() {
           ¿Quieres que <span className="text-sky-700 dark:text-sky-300">ninguna persona se pierda</span> en tu ministerio?
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-          Crea tu cuenta y empieza a registrar a quienes pastoreas: el foco es el seguimiento sencillo, no vender licencias
-          desde esta página. Si tu iglesia necesita coordinar a varios líderes, puedes invitarlos cuando esté listo.
+          Empieza a registrar a quienes cuidas con seguimiento sencillo, persona por persona. Si varios líderes
+          acompañan la misma congregación, puedes invitarlos cuando esté listo.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link href="/register" className={btnPrimary}>
-            Crear cuenta
+          <Link href="/register" className={btnPrimaryFull}>
+            {marketingCta.start}
           </Link>
-          <a href="#how-it-works" className={btnSecondary}>
-            Ver cómo funciona
+          <a href="#how-it-works" className={btnSecondaryFull}>
+            {marketingCta.howItWorks}
           </a>
         </div>
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           ¿Dudas o sugerencias para equipos de iglesia?{" "}
           <a
-            href="mailto:hola@bernabe.app?subject=Bernab%C3%A9%20%28l%C3%ADderes%20y%20seguimiento%29"
+            href="mailto:andrewjruss7@gmail.com?subject=Bernab%C3%A9%20%28cuidado%20y%20seguimiento%29"
             className="font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
           >
-            Escríbenos a hola@bernabe.app
+            Escríbeme a andrewjruss7@gmail.com
           </a>
           .
         </p>
@@ -658,51 +270,35 @@ function Footer() {
           <div className="md:col-span-1">
             <Link
               href="/"
-              className="group inline-flex max-w-full items-center gap-2.5 leading-none"
-              aria-label="Bernabé, inicio. Que ninguna persona se pierda."
+              className="group inline-flex max-w-full flex-col items-start gap-1.5 leading-none"
+              aria-label="Bernabé. Cuida sin perder de vista a nadie."
             >
-              <div className="shrink-0" aria-hidden>
-                <UserAvatar
-                  seed="bernabe-nav-logo"
-                  sexo="femenino"
-                  size={40}
-                  className="!ring-0 shadow-none"
-                />
-              </div>
-              <span className="flex min-w-0 flex-col gap-0.5 text-left">
-                <span className="font-logo text-2xl leading-none text-white sm:text-3xl">Bernabé</span>
-                <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-400 sm:max-w-none sm:text-[10px]">
-                  Que ninguna persona se pierda
-                </span>
+              <BernabeLogo variant="footer" />
+              <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-400 sm:max-w-none sm:text-[10px]">
+                Cuida sin perder de vista a nadie
               </span>
             </Link>
-            <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-emerald-800/50 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-100">
-              Gratis para líderes y para iglesias
-            </p>
             <p className="mt-4 text-sm leading-relaxed text-gray-400">
-              Seguimiento pastoral sencillo: personas, grupos y próximos pasos en un solo lugar. Sin presión comercial desde
-              esta página: el foco es que nadie se quede sin quien lo acompañe.
+              Herramienta sencilla para líderes: cada persona, su grupo y el próximo paso de cuidado en un solo lugar.
             </p>
             <div className="mt-6 flex items-center gap-4">
               <a
-                href="#"
+                href="https://instagram.com/andrewjruss7"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-400 transition hover:bg-white/20 hover:text-white"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-400 transition hover:bg-white/20 hover:text-white"
+                aria-label="Instagram de Andrew Russ (@andrewjruss7)"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://wa.me/573152802343"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-400 transition hover:bg-white/20 hover:text-white"
+                aria-label="WhatsApp de Andrew Russ"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
@@ -715,8 +311,8 @@ function Footer() {
             <h4 className="mb-4 font-semibold text-white">Producto</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#features" className="text-sm text-gray-400 transition hover:text-white">
-                  Características
+                <a href="#para-lideres" className="text-sm text-gray-400 transition hover:text-white">
+                  Para líderes
                 </a>
               </li>
               <li>
@@ -727,11 +323,6 @@ function Footer() {
               <li>
                 <a href="#how-it-works" className="text-sm text-gray-400 transition hover:text-white">
                   Cómo funciona
-                </a>
-              </li>
-              <li>
-                <a href="#propuesta" className="text-sm text-gray-400 transition hover:text-white">
-                  Propuesta
                 </a>
               </li>
             </ul>
@@ -766,24 +357,67 @@ function Footer() {
           <div>
             <h4 className="mb-4 font-semibold text-white">Contacto</h4>
             <ul className="space-y-3">
-              <li className="flex items-center gap-2 text-sm text-gray-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                </svg>
-                hola@bernabe.app
+              <li className="text-sm text-gray-400">
+                <span className="font-medium text-gray-300">Andrew Russ</span>
+              </li>
+              <li>
+                <a
+                  href="mailto:andrewjruss7@gmail.com"
+                  className="flex items-center gap-2 text-sm text-gray-400 transition hover:text-white"
+                >
+                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                  </svg>
+                  andrewjruss7@gmail.com
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://wa.me/573152802343"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-gray-400 transition hover:text-white"
+                >
+                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                  </svg>
+                  +57 315 280 2343
+                </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-gray-400">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                 </svg>
-                Bogotá, Colombia
+                Medellín, Colombia
               </li>
             </ul>
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 md:flex-row">
-          <p className="text-sm text-gray-500">© 2026 Bernabé. Todos los derechos reservados.</p>
+          <div className="flex flex-col items-center gap-1 text-center md:items-start md:text-left">
+            <p className="text-sm text-gray-500">© 2026 Bernabé. Todos los derechos reservados.</p>
+            <p className="text-sm text-gray-500">
+              Medellín, Colombia · By{" "}
+              <a
+                href="https://instagram.com/andrewjruss7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-gray-400 transition hover:text-white"
+              >
+                Andrew Russ
+              </a>
+              {" · "}
+              <a
+                href="https://wa.me/573152802343"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 transition hover:text-white"
+              >
+                WhatsApp
+              </a>
+            </p>
+          </div>
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-500 transition hover:text-white">
               Política de privacidad
@@ -803,11 +437,7 @@ export default function LandingPage() {
     <main className="min-h-screen bg-white dark:bg-[#111111]">
       <MarketingSiteHeader />
       <HeroSection />
-      <LandingPropuestaAcceso />
-      <FeaturesSection />
-      <RecursosLandingSection />
       <HowItWorksSection />
-      <TestimonialsSection />
       <ParaLideresSection />
       <CTASection />
       <Footer />

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { UserAvatar } from "@/components/UserAvatar";
+import { NOTIFICACION_CATEGORIAS } from "@/lib/dashboard-notifications";
 
 const inputClass =
   "w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-300/60 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/20";
@@ -41,7 +40,6 @@ export type IglesiaCuenta = {
   pastorEmail: string;
   pastorCargo: string;
   pastorTelefono: string;
-  diasServicio: string;
   logoUrl: string | null;
   miembros: number;
   grupos: number;
@@ -55,24 +53,20 @@ export default function CuentaClient({
   initialUsuario: UsuarioCuenta | null;
   initialIglesia: IglesiaCuenta | null;
 }) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"perfil" | "iglesia" | "notificaciones" | "seguridad">("perfil");
-  const [loggingOut, setLoggingOut] = useState(false);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab =
+    tabParam === "notificaciones" || tabParam === "iglesia" || tabParam === "seguridad" ? tabParam : "perfil";
+  const [activeTab, setActiveTab] = useState<"perfil" | "iglesia" | "notificaciones" | "seguridad">(initialTab);
+
+  useEffect(() => {
+    if (tabParam === "notificaciones" || tabParam === "iglesia" || tabParam === "seguridad") {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const usuario = initialUsuario;
   const iglesia = initialIglesia;
-
-  const handleCerrarSesion = async () => {
-    setLoggingOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      router.push("/login");
-      router.refresh();
-    } catch {
-      setLoggingOut(false);
-    }
-  };
 
   const tabs = [
     {
@@ -122,10 +116,10 @@ export default function CuentaClient({
   ] as const;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] py-4 md:py-5 pb-24 md:pb-6">
+    <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
       <div className="w-full">
         <div className="mb-3 md:mb-4">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Mi cuenta</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Mi cuenta</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
             Administra tu perfil y la configuración de tu iglesia.
           </p>
@@ -285,10 +279,6 @@ export default function CuentaClient({
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Teléfono / WhatsApp</label>
                       <input type="tel" defaultValue={iglesia?.pastorTelefono ?? ""} className={inputClass} />
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Días de servicio</label>
-                      <input type="text" defaultValue={iglesia?.diasServicio ?? ""} className={inputClass} />
-                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end border-t border-gray-200/60 pt-4 dark:border-white/[0.08]">
@@ -304,13 +294,7 @@ export default function CuentaClient({
                 <div>
                   <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Preferencias de notificaciones</h3>
                   <div className="space-y-3">
-                    {[
-                      { id: "nuevos_miembros", label: "Nuevos miembros", desc: "Recibir notificación cuando se registre un nuevo miembro" },
-                      { id: "cumpleanos", label: "Cumpleaños", desc: "Recordatorios de cumpleaños de los miembros" },
-                      { id: "reuniones", label: "Reuniones", desc: "Recordatorios de reuniones y eventos programados" },
-                      { id: "seguimientos", label: "Seguimientos pendientes", desc: "Alertas de seguimientos que necesitan atención" },
-                      { id: "reportes", label: "Reportes semanales", desc: "Resumen semanal de actividad de la iglesia" },
-                    ].map((item) => (
+                    {NOTIFICACION_CATEGORIAS.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between gap-4 rounded-2xl bg-white/60 p-4 dark:bg-white/[0.06]"
@@ -367,52 +351,6 @@ export default function CuentaClient({
               </div>
             )}
           </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
-          <Link
-            href="/lideres"
-            className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 transition-colors hover:border-gray-200 hover:bg-gray-50/80 dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-[#3a3a3a] dark:hover:bg-white/[0.03] sm:gap-4 sm:p-5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-[#252525] dark:text-gray-400 sm:h-12 sm:w-12 sm:rounded-2xl">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl md:text-2xl font-medium leading-snug text-[#18301d] dark:text-white font-logo-soft tracking-tight">
-                Gestionar líderes
-              </p>
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 leading-snug">Administra tu equipo de liderazgo</p>
-            </div>
-          </Link>
-
-          <button
-            type="button"
-            onClick={handleCerrarSesion}
-            disabled={loggingOut}
-            className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 text-left transition-colors hover:border-red-200 hover:bg-red-50/40 dark:border-[#2a2a2a] dark:bg-[#141414] dark:hover:border-red-500/20 dark:hover:bg-red-500/5 disabled:opacity-50 sm:gap-4 sm:p-5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-red-600/90 dark:bg-[#252525] dark:text-red-400/90 sm:h-12 sm:w-12 sm:rounded-2xl">
-              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
-                />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl md:text-2xl font-medium leading-snug text-[#18301d] dark:text-white font-logo-soft tracking-tight">
-                Cerrar sesión
-              </p>
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 leading-snug">{loggingOut ? "Saliendo..." : "Salir de tu cuenta"}</p>
-            </div>
-          </button>
         </div>
       </div>
     </div>

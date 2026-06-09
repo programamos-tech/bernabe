@@ -228,10 +228,10 @@ export default function Page() {
   }, [eventos, filterTipo, search]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-h-[calc(100vh-4rem)] w-full">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Eventos</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Eventos</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
             Todos los eventos y actividades de nuestra iglesia.
           </p>
@@ -247,7 +247,7 @@ export default function Page() {
         </Link>
       </div>
 
-      <div className="mb-6 flex min-w-0 flex-row flex-nowrap items-center gap-3">
+      <div className="mb-4 flex min-w-0 flex-row flex-nowrap items-center gap-2 md:mb-5">
         <div className="relative min-w-0 min-w-[8rem] flex-1">
           <svg
             className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"

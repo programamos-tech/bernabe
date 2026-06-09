@@ -5,9 +5,28 @@ import type { PersonaSexo } from "@/lib/persona-sexo";
 
 export type ParticipacionServicioGrupo = "apoyo" | "colider" | string | null | undefined;
 
+type AroServicioGrupo = "lider" | "colider" | "apoyo";
+
+function esLiderDeGrupo(etapa?: string | null, rol?: string | null): boolean {
+  return etapa === "lider_grupo" || rol === "Líder";
+}
+
+export function resolveAroServicioGrupo(
+  grupoId: string | null | undefined,
+  participacion: ParticipacionServicioGrupo,
+  etapa?: string | null,
+  rol?: string | null,
+): AroServicioGrupo | null {
+  if (!grupoId) return null;
+  if (esLiderDeGrupo(etapa, rol)) return "lider";
+  if (participacion === "colider") return "colider";
+  if (participacion === "apoyo") return "apoyo";
+  return null;
+}
+
 /**
- * Aro tipo historias (gradiente + brillo) cuando la persona sirve en grupo de apoyo o como co-líder.
- * Sin rol de servicio, renderiza solo `UserAvatar`.
+ * Aro tipo historias (gradiente + brillo) para líder de grupo, co-líder o grupo de apoyo.
+ * Líder de grupo → morado; co-líder → teal; apoyo → morado suave.
  */
 export function AvatarHistoriasServicioGrupo({
   seed,
@@ -15,31 +34,32 @@ export function AvatarHistoriasServicioGrupo({
   size,
   participacion,
   grupoId,
+  etapa,
+  rol,
 }: {
   seed: string;
   sexo: PersonaSexo | null;
   size: number;
   participacion: ParticipacionServicioGrupo;
   grupoId: string | null | undefined;
+  etapa?: string | null;
+  rol?: string | null;
 }) {
-  const rol =
-    grupoId && participacion === "apoyo"
-      ? "apoyo"
-      : grupoId && participacion === "colider"
-        ? "colider"
-        : null;
+  const aro = resolveAroServicioGrupo(grupoId, participacion, etapa, rol);
 
-  if (!rol) {
+  if (!aro) {
     return <UserAvatar seed={seed} sexo={sexo} size={size} />;
   }
 
-  const gradientClass =
-    rol === "apoyo"
-      ? "bg-[conic-gradient(from_0deg,#5b21b6,#a78bfa,#e9d5ff,#c4b5fd,#7c3aed,#5b21b6)]"
-      : "bg-[conic-gradient(from_0deg,#0f766e,#0ca6b2,#5eead4,#22d3ee,#14b8a6,#0ca6b2)]";
+  const gradientViolet =
+    "bg-[conic-gradient(from_0deg,#5b21b6,#a78bfa,#e9d5ff,#c4b5fd,#7c3aed,#5b21b6)]";
+  const gradientTeal =
+    "bg-[conic-gradient(from_0deg,#0f766e,#0ca6b2,#5eead4,#22d3ee,#14b8a6,#0ca6b2)]";
 
-  const glowClass = rol === "apoyo" ? "animate-avatar-story-ring-violet" : "animate-avatar-story-ring-teal";
-  const label = rol === "apoyo" ? "Sirve en grupo de apoyo" : "Co-líder del grupo";
+  const gradientClass = aro === "colider" ? gradientTeal : gradientViolet;
+  const glowClass = aro === "colider" ? "animate-avatar-story-ring-teal" : "animate-avatar-story-ring-violet";
+  const label =
+    aro === "lider" ? "Líder de grupo" : aro === "apoyo" ? "Sirve en grupo de apoyo" : "Co-líder del grupo";
 
   return (
     <span

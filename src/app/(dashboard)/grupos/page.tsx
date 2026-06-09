@@ -27,13 +27,21 @@ interface GrupoRow {
 }
 
 const FILTER_TIPOS: { value: TipoGrupo | "Todos"; label: string }[] = [
-  { value: "Todos", label: "Todos" },
+  { value: "Todos", label: "Todos los tipos" },
   { value: "parejas", label: "Parejas" },
   { value: "jovenes", label: "Jóvenes" },
   { value: "teens", label: "Teens" },
   { value: "hombres", label: "Hombres" },
   { value: "mujeres", label: "Mujeres" },
   { value: "general", label: "General" },
+];
+
+type FiltroEstadoGrupo = "Todos" | "activo" | "inactivo";
+
+const FILTER_ESTADO: { value: FiltroEstadoGrupo; label: string }[] = [
+  { value: "Todos", label: "Todos los estados" },
+  { value: "activo", label: "Activos" },
+  { value: "inactivo", label: "Inactivos" },
 ];
 
 function liderNombreFromRow(grupo: GrupoRow): string | null {
@@ -70,6 +78,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterTipo, setFilterTipo] = useState<TipoGrupo | "Todos">("Todos");
+  const [filterEstado, setFilterEstado] = useState<FiltroEstadoGrupo>("Todos");
 
   useEffect(() => {
     const supabase = createClient();
@@ -91,6 +100,8 @@ export default function Page() {
 
   const filtered = useMemo(() => {
     let list = filterTipo === "Todos" ? grupos : grupos.filter((g) => g.tipo === filterTipo);
+    if (filterEstado === "activo") list = list.filter((g) => g.activo);
+    if (filterEstado === "inactivo") list = list.filter((g) => !g.activo);
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((g) => {
@@ -108,15 +119,15 @@ export default function Page() {
         .toLowerCase();
       return blob.includes(q);
     });
-  }, [grupos, filterTipo, search]);
+  }, [grupos, filterTipo, filterEstado, search]);
 
   const atGrupoCap = leaderFree && grupos.length >= LEADER_INDIVIDUAL_MAX_GRUPOS;
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="w-full min-h-[calc(100vh-4rem)]">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Grupos</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Grupos</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
             Comunidades de conexión y crecimiento de la iglesia.
           </p>
@@ -144,7 +155,7 @@ export default function Page() {
         )}
       </div>
 
-      <div className="mb-6 flex min-w-0 flex-row flex-nowrap items-center gap-3">
+      <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-nowrap sm:items-center md:mb-5">
         <div className="relative min-w-0 min-w-[8rem] flex-1">
           <svg
             className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
@@ -169,21 +180,59 @@ export default function Page() {
             className="w-full rounded-full bg-gray-100/80 py-2.5 pl-11 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15"
           />
         </div>
-        <div className="flex shrink-0 items-center justify-end gap-2 overflow-x-auto overflow-y-hidden pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
-          {FILTER_TIPOS.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFilterTipo(value)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
-                filterTipo === value
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                  : "bg-gray-100/90 text-gray-700 hover:bg-gray-200/80 dark:bg-white/[0.08] dark:text-gray-200 dark:hover:bg-white/[0.12]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="relative w-full shrink-0 sm:w-44 md:w-48">
+          <label htmlFor="grupos-filtro-tipo" className="sr-only">
+            Filtrar por tipo
+          </label>
+          <select
+            id="grupos-filtro-tipo"
+            value={filterTipo}
+            onChange={(e) => setFilterTipo(e.target.value as TipoGrupo | "Todos")}
+            className="w-full cursor-pointer appearance-none rounded-full bg-gray-100/80 py-2.5 pl-4 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/15"
+          >
+            {FILTER_TIPOS.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div className="relative w-full shrink-0 sm:w-44 md:w-48">
+          <label htmlFor="grupos-filtro-estado" className="sr-only">
+            Filtrar por estado
+          </label>
+          <select
+            id="grupos-filtro-estado"
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value as FiltroEstadoGrupo)}
+            className="w-full cursor-pointer appearance-none rounded-full bg-gray-100/80 py-2.5 pl-4 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/15"
+          >
+            {FILTER_ESTADO.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </div>
 
@@ -215,7 +264,7 @@ export default function Page() {
           ) : null}
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((grupo) => (
             <GrupoCard key={grupo.id} grupo={grupo} />
           ))}
@@ -223,7 +272,7 @@ export default function Page() {
       )}
 
       {!loading && filtered.length > 0 && !atGrupoCap && (
-        <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           ¿Necesitas crear más grupos?{" "}
           <Link href="/grupos/nuevo" className="font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white">
             Crear nuevo grupo

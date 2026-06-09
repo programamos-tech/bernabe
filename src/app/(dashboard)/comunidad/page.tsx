@@ -67,7 +67,7 @@ function ArticuloCard({
           </div>
         </div>
 
-        <h2 className="text-base sm:text-lg font-normal text-[#18301d] dark:text-white leading-snug tracking-tight font-logo-soft mb-1.5 group-hover:underline underline-offset-2">
+        <h2 className="text-base sm:text-lg font-normal text-[#18301d] dark:text-white leading-snug tracking-tight mb-1.5 group-hover:underline underline-offset-2">
           {articulo.titulo}
         </h2>
 
@@ -194,9 +194,9 @@ export default function Page() {
   const destacados = useMemo(() => ARTICULOS_COMUNIDAD_MOCK.slice(0, 3), []);
 
   return (
-    <div className="py-4 md:py-5 min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
+    <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
         <div className="mb-3 md:mb-4">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Comunidad</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Comunidad</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-xl leading-snug">
             Para líderes: liderazgo, discipulado, apoyo mutuo y guía de personas.
           </p>
@@ -291,7 +291,7 @@ export default function Page() {
                       className="block w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-[#252525] transition"
                     >
                       <span className="text-[11px] font-medium text-[#0ca6b2]">{i + 1}</span>
-                      <p className="mt-0.5 font-normal text-xs text-[#18301d] dark:text-white leading-snug line-clamp-2 font-logo-soft">{a.titulo}</p>
+                      <p className="mt-0.5 font-normal text-xs text-[#18301d] dark:text-white leading-snug line-clamp-2">{a.titulo}</p>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{a.autor}</p>
                     </Link>
                   </li>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import CuentaClient, { type IglesiaCuenta, type UsuarioCuenta } from "./CuentaClient";
 
@@ -16,7 +17,11 @@ export default async function Page() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <CuentaClient initialUsuario={null} initialIglesia={null} />;
+    return (
+      <Suspense fallback={null}>
+        <CuentaClient initialUsuario={null} initialIglesia={null} />
+      </Suspense>
+    );
   }
 
   const { data: profile } = await supabase
@@ -32,7 +37,7 @@ export default async function Page() {
   if (profile?.organization_id) {
     const { data: orgData } = await supabase
       .from("organizations")
-      .select("name, country, city, denomination, size, pastor_name, pastor_email, pastor_role, pastor_phone, service_days, logo_url")
+      .select("name, country, city, denomination, size, pastor_name, pastor_email, pastor_role, pastor_phone, logo_url")
       .eq("id", profile.organization_id)
       .single();
 
@@ -54,7 +59,6 @@ export default async function Page() {
       pastorEmail: orgData?.pastor_email ?? "",
       pastorCargo: orgData?.pastor_role ?? "",
       pastorTelefono: orgData?.pastor_phone ?? "",
-      diasServicio: Array.isArray(orgData?.service_days) ? orgData.service_days.join(", ") : "",
       logoUrl: orgData?.logo_url ?? null,
       miembros: miembrosRes.count ?? 0,
       grupos: gruposRes.count ?? 0,
@@ -78,5 +82,9 @@ export default async function Page() {
     miembroDesde: formatEsMonthYear(profile?.created_at ?? user.created_at),
   };
 
-  return <CuentaClient initialUsuario={initialUsuario} initialIglesia={initialIglesia} />;
+  return (
+    <Suspense fallback={null}>
+      <CuentaClient initialUsuario={initialUsuario} initialIglesia={initialIglesia} />
+    </Suspense>
+  );
 }

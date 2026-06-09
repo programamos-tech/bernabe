@@ -11,7 +11,7 @@ export function parseOrganizationPlan(value: string | null | undefined): Organiz
   return value === "leader_individual" ? "leader_individual" : "church";
 }
 
-const WA_IGLESIA_TEXT = "Hola, me interesa Bernabé para mi iglesia.";
+const WA_IGLESIA_TEXT = "Hola, me interesa Berea para mi iglesia.";
 
 /** URL de WhatsApp para contacto “iglesia”; configurable por entorno. */
 export function whatsappIglesiaHref(): string {

@@ -21,10 +21,7 @@ import type {
   ResultadoSeguimientoActivo,
   ResultadoSeguimientoVisitante,
 } from "../_lib/persona-seguimiento-labels";
-
-/** Primario en modales de grupo/apoyo/co-líder: mismo criterio que CTAs de la ficha (sin cyan). */
-const BTN_MODAL_ACCION_PRIMARIA =
-  "flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200/80 bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:focus-visible:ring-white/25";
+import { BTN_FICHA_PRIMARIO, BTN_FICHA_PRIMARIO_FLEX } from "../_lib/persona-detail-buttons";
 
 type TipoSeguimientoItem = {
   value: string;
@@ -388,7 +385,7 @@ function SeguimientoModal({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={!tipo || !resultado || isSubmitting}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-[#0ca6b2] px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition hover:bg-[#0a8f99] disabled:cursor-not-allowed disabled:opacity-50"
+            className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition disabled:cursor-not-allowed disabled:opacity-50 ${BTN_FICHA_PRIMARIO}`}
           >
             {isSubmitting ? (
               <>
@@ -640,7 +637,7 @@ function PasarAGrupoApoyoModal({
               type="button"
               onClick={() => void confirmar()}
               disabled={loading}
-              className={BTN_MODAL_ACCION_PRIMARIA}
+              className={BTN_FICHA_PRIMARIO_FLEX}
             >
               {loading ? "Guardando…" : "Pasar a apoyo"}
             </button>
@@ -766,7 +763,7 @@ function DesignarColiderModal({
               type="button"
               onClick={() => void confirmar()}
               disabled={loading}
-              className={BTN_MODAL_ACCION_PRIMARIA}
+              className={BTN_FICHA_PRIMARIO_FLEX}
             >
               {loading ? "Guardando…" : "Designar co-líder"}
             </button>
@@ -1162,7 +1159,7 @@ function CambiarEtapaModal({
               type="button"
               onClick={() => void guardar()}
               disabled={loading}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0ca6b2] py-3 font-semibold text-white transition hover:bg-[#0a8f99] disabled:cursor-not-allowed disabled:opacity-50"
+              className={BTN_FICHA_PRIMARIO_FLEX}
             >
               {loading ? (
                 <>
@@ -1332,7 +1329,7 @@ function RegistrarBautismoModal({
           >
             Cancelar
           </button>
-          <button type="button" onClick={() => void guardar()} disabled={loading} className={BTN_MODAL_ACCION_PRIMARIA}>
+          <button type="button" onClick={() => void guardar()} disabled={loading} className={BTN_FICHA_PRIMARIO_FLEX}>
             {loading ? "Guardando…" : "Guardar bautismo"}
           </button>
         </div>

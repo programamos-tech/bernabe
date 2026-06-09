@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BernabeLogo } from "@/components/BernabeLogo";
 import { UserAvatar } from "@/components/UserAvatar";
 import { createClient } from "@/lib/supabase/client";
 import { SHOW_PRODUCT_TOUR_SESSION_KEY } from "@/lib/product-tour";
@@ -144,35 +145,22 @@ function OnboardingBrand({
   /** dark: barra lateral negra. light: cabecera móvil sobre fondo claro. */
   tone?: "dark" | "light";
 }) {
-  const onDark = tone === "dark";
+  const sizeClass = compact
+    ? "!text-[2rem] sm:!text-[2.375rem]"
+    : "!text-[2.5rem] sm:!text-[3.25rem]";
+
   return (
     <Link
       href="/"
-      className={`group inline-flex max-w-full items-center gap-2 leading-none ${compact ? "mb-0" : "mb-12"}`}
-      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
+      className={`group inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90 ${
+        compact ? "mb-0 py-1" : "mb-14 py-2"
+      }`}
+      aria-label="Bernabé — inicio"
     >
-      <UserAvatar
-        seed="bernabe-nav-logo"
-        sexo="femenino"
-        size={compact ? 36 : 44}
-        className="!ring-0 shadow-none shrink-0"
+      <BernabeLogo
+        variant="auth"
+        className={`${sizeClass} ${tone === "dark" ? "!text-white" : ""}`}
       />
-      <span className="flex min-w-0 flex-col gap-0.5 text-left">
-        <span
-          className={`font-logo ${compact ? "text-2xl" : "text-3xl"} ${
-            onDark ? "text-white" : "text-gray-900 dark:text-white"
-          }`}
-        >
-          Bernabé
-        </span>
-        <span
-          className={`font-medium leading-tight tracking-wide ${
-            onDark ? "text-gray-400" : "text-gray-500 dark:text-gray-400"
-          } ${compact ? "max-w-[11rem] text-[8px] sm:max-w-none sm:text-[9px]" : "max-w-[12rem] text-[9px] sm:max-w-none sm:text-[10px]"}`}
-        >
-          Que ninguna persona se pierda
-        </span>
-      </span>
     </Link>
   );
 }
@@ -186,8 +174,13 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAnonymous(Boolean(user?.is_anonymous));
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      const anonymous = Boolean(user?.is_anonymous);
+      setIsAnonymous(anonymous);
+      const authEmail = user?.email?.trim();
+      if (authEmail) {
+        setEmailPastor((prev) => (prev.trim() ? prev : authEmail));
+      }
     });
   }, []);
 
@@ -429,9 +422,9 @@ export default function OnboardingPage() {
         <div className="mt-auto">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <p className="text-sm text-gray-400">
-              ¿Necesitas ayuda? Escríbenos a{" "}
-              <a href="mailto:soporte@bernabe.app" className="font-medium text-gray-200 underline-offset-2 hover:text-white hover:underline">
-                soporte@bernabe.app
+              ¿Necesitas ayuda? Escríbeme a{" "}
+              <a href="mailto:andrewjruss7@gmail.com" className="font-medium text-gray-200 underline-offset-2 hover:text-white hover:underline">
+                andrewjruss7@gmail.com
               </a>
             </p>
           </div>
@@ -565,7 +558,7 @@ export default function OnboardingPage() {
                     ¿Quién administrará Bernabé?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Datos del pastor o administrador principal.
+                    Datos de quien administra la iglesia en Bernabé.
                   </p>
                 </div>
 
@@ -601,21 +594,23 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                      Correo electrónico
-                      {isAnonymous ? (
-                        <span className="text-gray-400 font-normal"> (opcional en prueba sin correo)</span>
-                      ) : (
-                        " *"
-                      )}
+                    <label htmlFor="onboarding-email" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Correo electrónico{isAnonymous ? "" : " *"}
                     </label>
                     <input
+                      id="onboarding-email"
                       type="email"
                       value={emailPastor}
                       onChange={(e) => setEmailPastor(e.target.value)}
-                      placeholder="pastor@iglesia.com"
+                      placeholder="tu@correo.com"
+                      autoComplete="email"
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                     />
+                    <p className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                      {isAnonymous
+                        ? "Opcional mientras pruebas sin cuenta. Si lo pones aquí, puede ser el mismo que uses después para iniciar sesión."
+                        : "Es el correo de tu cuenta y de contacto para la iglesia."}
+                    </p>
                   </div>
 
                   <div>

@@ -10,6 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { GrupoResumenCard, type GrupoResumenCardModel } from "@/components/GrupoResumenCard";
 import { AvatarHistoriasServicioGrupo } from "@/components/AvatarHistoriasServicioGrupo";
 import {
@@ -47,6 +48,8 @@ import { RachasCabeceraPersona } from "./_components/RachasCabeceraPersona";
 import { PersonalInfoCard, ProcesoYCaminoCard } from "./_components/PersonaDetailPersonalProcesoCards";
 import type { GrupoParaAsignar } from "./_components/PersonaPageModals";
 import { labelParticipacionEnGrupo, type ParticipacionEnGrupo, type Rol } from "./_lib/persona-detail-participacion";
+import { BTN_FICHA_PRIMARIO } from "./_lib/persona-detail-buttons";
+import { LiderLeadershipPanel, type LiderVinculado } from "./_components/LiderLeadershipPanel";
 import {
   resultadoSeguimientoLabelsCorto,
   tipoSeguimientoLabelsCorto,
@@ -255,12 +258,19 @@ export default function PersonaDetailClient({
   personaId,
   initialNombre,
   initialEtapaLabel,
+  liderIdHint,
+  promoverLider,
 }: {
   personaId: string;
   initialNombre?: string | null;
   initialEtapaLabel?: string | null;
+  /** Si llegamos desde /lideres/[id], refuerza la carga del registro de liderazgo. */
+  liderIdHint?: string;
+  /** Abre el flujo de promover a líder al cargar (desde /personas?promover=lider). */
+  promoverLider?: boolean;
 }) {
   const id = personaId;
+  const router = useRouter();
 
   /** Sesión + org para inserts sin repetir getUser() + profile en cada guardado */
   const authInsertCtxRef = useRef<AuthInsertContext | null>(null);
@@ -302,6 +312,9 @@ export default function PersonaDetailClient({
   const [detalleIncludesInfoLider, setDetalleIncludesInfoLider] = useState(true);
   /** Incluye bautismo, situación de acercamiento y otra iglesia (SELECT sin columnas espirituales = false). */
   const [detalleIncludesSpiritual, setDetalleIncludesSpiritual] = useState(true);
+  const [liderVinculado, setLiderVinculado] = useState<LiderVinculado | null>(null);
+  const [promoviendoLider, setPromoviendoLider] = useState(false);
+  const promoverIntentadoRef = useRef(false);
 
   const rachaSeguimiento = useMemo(() => {
     if (!persona) return 0;
@@ -314,6 +327,116 @@ export default function PersonaDetailClient({
     if (persona.bautizado === true) return false;
     return rachaAsistencia >= 1 && persona.registrosSeguimiento.length >= 1;
   }, [persona, rachaAsistencia]);
+
+  const cargarLiderVinculado = useCallback(async () => {
+    if (!id) return;
+    const supabase = createClient();
+    let liderRow: Record<string, unknown> | null = null;
+
+    if (liderIdHint) {
+      const { data } = await supabase
+        .from("lideres")
+        .select("id, rol, estado, fecha_inicio_liderazgo, grupo_asignado, auth_user_id, persona_id")
+        .eq("id", liderIdHint)
+        .maybeSingle();
+      if (data && (data.persona_id as string | null) === id) liderRow = data as Record<string, unknown>;
+    }
+
+    if (!liderRow) {
+      const { data } = await supabase
+        .from("lideres")
+        .select("id, rol, estado, fecha_inicio_liderazgo, grupo_asignado, auth_user_id")
+        .eq("persona_id", id)
+        .maybeSingle();
+      liderRow = (data as Record<string, unknown> | null) ?? null;
+    }
+
+    if (!liderRow?.id) {
+      setLiderVinculado(null);
+      return;
+    }
+
+    const liderId = liderRow.id as string;
+    const { data: grupoRow } = await supabase
+      .from("grupos")
+      .select("id, nombre, miembros_count")
+      .eq("lider_id", liderId)
+      .maybeSingle();
+
+    setLiderVinculado({
+      id: liderId,
+      rol: (liderRow.rol as string | null) ?? null,
+      estado: (liderRow.estado as string) ?? "Activo",
+      fechaInicioLiderazgo: (liderRow.fecha_inicio_liderazgo as string | null) ?? null,
+      grupoAsignado: (liderRow.grupo_asignado as string | null) ?? null,
+      authUserId: (liderRow.auth_user_id as string | null) ?? null,
+      grupoId: (grupoRow?.id as string | null) ?? null,
+      grupoNombre: (grupoRow?.nombre as string | null) ?? null,
+      miembrosCount: (grupoRow?.miembros_count as number | null) ?? 0,
+    });
+  }, [id, liderIdHint]);
+
+  useEffect(() => {
+    if (loading || !persona) return;
+    void cargarLiderVinculado();
+  }, [loading, persona, cargarLiderVinculado]);
+
+  const promoverALider = useCallback(async () => {
+    if (!persona || liderVinculado || promoviendoLider || persona.etapa !== "lider_en_formacion") return;
+    const ctx = authInsertCtxRef.current;
+    if (!ctx?.organizationId) {
+      showAppToast("No se pudo obtener la organización. Recarga la página.", "error");
+      return;
+    }
+    if (!window.confirm(`¿Promover a ${persona.nombre} como líder de la iglesia?`)) return;
+
+    setPromoviendoLider(true);
+    const supabase = createClient();
+
+    const { data: newLider, error: insertErr } = await supabase
+      .from("lideres")
+      .insert({
+        organization_id: ctx.organizationId,
+        persona_id: id,
+        nombre: persona.nombre.trim(),
+        cedula: persona.cedula.trim() || null,
+        telefono: persona.telefono.trim() || null,
+        email: persona.email.trim() || null,
+        fecha_nacimiento: persona.fechaNacimientoIso,
+        estado_civil: persona.estadoCivil.trim() || null,
+        ocupacion: persona.ocupacion.trim() || null,
+        direccion: persona.direccion.trim() || null,
+        rol: "Líder de grupo",
+        estado: "En formación",
+        grupo_asignado: persona.grupoResumen?.nombre ?? (persona.grupo !== "Sin asignar" ? persona.grupo : null),
+      })
+      .select("id")
+      .single();
+
+    if (insertErr || !newLider?.id) {
+      setPromoviendoLider(false);
+      showAppToast(insertErr?.message ?? "No se pudo promover a líder.", "error");
+      return;
+    }
+
+    if (persona.grupoId) {
+      await supabase.from("grupos").update({ lider_id: newLider.id }).eq("id", persona.grupoId);
+    }
+
+    await supabase.from("personas").update({ rol: "Líder" }).eq("id", id);
+    setPersona((prev) => (prev ? { ...prev, rol: "Líder" } : prev));
+    setPromoviendoLider(false);
+    showAppToast("Promovido a líder", "success");
+    router.replace(`/personas/${id}?lider=${newLider.id}`);
+    void cargarLiderVinculado();
+  }, [persona, liderVinculado, promoviendoLider, id, showAppToast, router, cargarLiderVinculado]);
+
+  useEffect(() => {
+    if (!promoverLider || loading || !persona || liderVinculado || promoverIntentadoRef.current) return;
+    if (persona.etapa !== "lider_en_formacion") return;
+    promoverIntentadoRef.current = true;
+    void promoverALider();
+  }, [promoverLider, loading, persona, liderVinculado, promoverALider]);
 
   useEffect(() => {
     if (!id) return;
@@ -1211,11 +1334,11 @@ export default function PersonaDetailClient({
           </div>
         </div>
       )}
-    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
+    <div className="w-full min-h-[calc(100vh-4rem)]">
       {/* Cabecera — misma familia visual que la tabla (superficie suave, sin gradiente). */}
-      <div className="mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
+      <div className="mb-5 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
+        <div className="flex flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-5 md:flex-row md:items-start md:gap-6">
             <div
               className={
                 persona.grupoId &&
@@ -1230,60 +1353,23 @@ export default function PersonaDetailClient({
                 size={104}
                 participacion={persona.participacionEnGrupo}
                 grupoId={persona.grupoId}
+                etapa={persona.etapa}
+                rol={persona.rol}
               />
             </div>
             <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-                <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-2xl">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="min-w-0 text-xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-2xl">
                   {persona.nombre}
                 </h1>
-                {persona.rol !== "Visitante" && (
-                  <span className="rounded-full bg-gray-200/90 px-3 py-1 text-xs font-medium text-gray-800 dark:bg-white/[0.12] dark:text-gray-200">
-                    {persona.rol}
-                  </span>
-                )}
-                <span
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${etapaVisual.badge}`}
-                >
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${etapaVisual.dot}`} />
-                  {ETAPA_LABELS[etapaCabecera]}
-                </span>
-                {persona.grupoId && persona.participacionEnGrupo === "apoyo" ? (
-                  <span
-                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/12 px-3 py-1 text-xs font-semibold text-violet-900 shadow-sm shadow-violet-900/5 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-100 dark:shadow-none"
-                    title="Participación actual en este grupo"
-                  >
-                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Sirve en grupo de apoyo
-                    {persona.grupo ? (
-                      <span className="max-w-[10rem] truncate font-medium opacity-95 sm:max-w-[14rem]">«{persona.grupo}»</span>
-                    ) : null}
-                  </span>
-                ) : null}
-                {persona.grupoId && persona.participacionEnGrupo === "colider" ? (
-                  <span
-                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#0ca6b2]/40 bg-[#0ca6b2]/12 px-3 py-1 text-xs font-semibold text-teal-950 shadow-sm shadow-teal-900/10 dark:border-[#0ca6b2]/35 dark:bg-[#0ca6b2]/18 dark:text-teal-50 dark:shadow-none"
-                    title="Participación actual en este grupo"
-                  >
-                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                    </svg>
-                    Co-líder del grupo
-                    {persona.grupo ? (
-                      <span className="max-w-[10rem] truncate font-medium opacity-95 sm:max-w-[14rem]">«{persona.grupo}»</span>
-                    ) : null}
-                  </span>
-                ) : null}
-                <div className="ml-1 flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1.5">
                   {whatsappLink && (
                     <a
                       href={whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                      className="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
                       title="WhatsApp"
                     >
                       <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1294,7 +1380,7 @@ export default function PersonaDetailClient({
                   {persona.telefono && (
                     <a
                       href={`tel:${persona.telefono}`}
-                      className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                      className="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
                       title="Llamar"
                     >
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -1304,7 +1390,7 @@ export default function PersonaDetailClient({
                   )}
                   <Link
                     href="/personas"
-                    className="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                    className="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
                     title="Volver"
                   >
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1313,7 +1399,55 @@ export default function PersonaDetailClient({
                   </Link>
                 </div>
               </div>
-              <div className="w-full shrink-0 text-right sm:w-auto">
+
+              <div className="flex flex-wrap items-center gap-2">
+                {persona.rol !== "Visitante" && (
+                  <span className="rounded-full bg-gray-200/90 px-3 py-1 text-xs font-medium text-gray-800 dark:bg-white/[0.12] dark:text-gray-200">
+                    {persona.rol}
+                  </span>
+                )}
+                {liderVinculado ? (
+                  <span className="rounded-full bg-sky-500/12 px-3 py-1 text-xs font-semibold text-sky-900 dark:text-sky-200">
+                    Liderazgo · {liderVinculado.rol ?? "Líder"}
+                  </span>
+                ) : null}
+                <span
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${etapaVisual.badge}`}
+                >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${etapaVisual.dot}`} />
+                  {ETAPA_LABELS[etapaCabecera]}
+                </span>
+                {persona.grupoId && persona.participacionEnGrupo === "apoyo" ? (
+                  <span
+                    className="inline-flex w-full max-w-full items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/12 px-3 py-1.5 text-xs font-semibold text-violet-900 shadow-sm shadow-violet-900/5 dark:border-violet-400/25 dark:bg-violet-500/15 dark:text-violet-100 dark:shadow-none md:w-auto"
+                    title="Participación actual en este grupo"
+                  >
+                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="min-w-0">Sirve en grupo de apoyo</span>
+                    {persona.grupo ? (
+                      <span className="min-w-0 truncate font-medium opacity-95">«{persona.grupo}»</span>
+                    ) : null}
+                  </span>
+                ) : null}
+                {persona.grupoId && persona.participacionEnGrupo === "colider" ? (
+                  <span
+                    className="inline-flex w-full max-w-full items-center gap-1.5 rounded-full border border-[#0ca6b2]/40 bg-[#0ca6b2]/12 px-3 py-1.5 text-xs font-semibold text-teal-950 shadow-sm shadow-teal-900/10 dark:border-[#0ca6b2]/35 dark:bg-[#0ca6b2]/18 dark:text-teal-50 dark:shadow-none md:w-auto"
+                    title="Participación actual en este grupo"
+                  >
+                    <svg className="h-3.5 w-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                    </svg>
+                    <span className="min-w-0">Co-líder del grupo</span>
+                    {persona.grupo ? (
+                      <span className="min-w-0 truncate font-medium opacity-95">«{persona.grupo}»</span>
+                    ) : null}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-gray-200/50 bg-white/50 px-3 py-2.5 dark:border-white/[0.08] dark:bg-white/[0.03] lg:border-0 lg:bg-transparent lg:p-0">
                 <RachasCabeceraPersona
                   variante="header"
                   tieneGrupo={!!persona.grupoId}
@@ -1324,6 +1458,10 @@ export default function PersonaDetailClient({
                 />
               </div>
             </div>
+            </div>
+          </div>
+
+          <div className="w-full min-w-0">
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
               {persona.grupoId ? (
                 <Link
@@ -1389,9 +1527,7 @@ export default function PersonaDetailClient({
                 Bautismo registrado. Acompaña hacia la consolidación.
               </p>
             )}
-            </div>
           </div>
-
         </div>
       </div>
 
@@ -1438,8 +1574,8 @@ export default function PersonaDetailClient({
                   <button
                     type="button"
                     onClick={() => void handleAgregarNota()}
+                    className={`w-full ${BTN_FICHA_PRIMARIO}`}
                     disabled={guardandoNota || !nuevaNota.trim()}
-                    className="rounded-xl border border-gray-200/70 bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                   >
                     {guardandoNota ? "Guardando…" : "Agregar nota pastoral"}
                   </button>
@@ -1483,8 +1619,8 @@ export default function PersonaDetailClient({
                   <button
                     type="button"
                     onClick={() => void handleAgregarPeticion()}
+                    className={`w-full ${BTN_FICHA_PRIMARIO}`}
                     disabled={guardandoPeticion || !nuevaPeticion.trim()}
-                    className="w-full rounded-xl border border-gray-200/70 bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                   >
                     {guardandoPeticion ? "Guardando…" : "Agregar petición"}
                   </button>
@@ -1560,12 +1696,22 @@ export default function PersonaDetailClient({
                     <button
                       type="button"
                       onClick={() => setShowAsignarGrupoModal(true)}
-                      className="mt-4 w-full rounded-full bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                      className={`mt-4 w-full ${BTN_FICHA_PRIMARIO}`}
                     >
                       Asignar a un grupo
                     </button>
                   </div>
                 )}
+
+              {liderVinculado ? (
+                <LiderLeadershipPanel
+                  lider={liderVinculado}
+                  personaEmail={persona.email}
+                  onAuthUserIdChange={(userId) =>
+                    setLiderVinculado((prev) => (prev ? { ...prev, authUserId: userId } : prev))
+                  }
+                />
+              ) : null}
 
               {/* Acciones rápidas — justo después del grupo (prioridad en móvil y desktop) */}
               <div className="rounded-3xl bg-gray-100/40 p-6 dark:bg-white/[0.04]">
@@ -1573,6 +1719,21 @@ export default function PersonaDetailClient({
                   Acciones rápidas
                 </h3>
                 <div className="space-y-2">
+                  {!liderVinculado && persona.etapa === "lider_en_formacion" ? (
+                    <button
+                      type="button"
+                      onClick={() => void promoverALider()}
+                      disabled={promoviendoLider}
+                      className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-gray-200/40 disabled:opacity-50 dark:hover:bg-white/[0.06]"
+                    >
+                      <svg className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {promoviendoLider ? "Promoviendo…" : "Promover a líder"}
+                      </span>
+                    </button>
+                  ) : null}
                   {persona.grupoId && persona.etapa === "nuevo_creyente" ? (
                     <button
                       type="button"

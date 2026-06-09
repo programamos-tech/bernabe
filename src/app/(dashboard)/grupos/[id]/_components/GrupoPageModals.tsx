@@ -902,7 +902,7 @@ export function AgregarPersonasModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-full py-3 px-4 font-medium text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.08]"
+              className="w-full rounded-full bg-gray-900 py-3 px-4 font-semibold text-white shadow-sm transition hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
             >
               Cerrar
             </button>

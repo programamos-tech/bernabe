@@ -462,8 +462,8 @@ export default function Page() {
   }
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] py-8">
-      <div className="mb-8 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
+    <div className="w-full min-h-[calc(100vh-4rem)]">
+      <div className="mb-5 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="shrink-0 rounded-full bg-white/80 p-1 shadow-sm shadow-black/[0.06] ring-1 ring-black/[0.04] dark:bg-white/[0.08] dark:shadow-none dark:ring-white/[0.08]">
             <UserAvatar seed={nombre || "Persona"} sexo={sexo === "" ? null : sexo} size={104} />

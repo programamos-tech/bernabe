@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  defaultPathForGroupLeader,
+  redirectPathForGroupLeader,
+  resolveDashboardLeaderScope,
+} from "@/lib/auth/dashboard-leader-scope";
 import { needsPrimerAcceso } from "@/lib/auth/must-change-password";
 
 export async function updateSession(request: NextRequest) {
@@ -70,9 +75,20 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && !mustChange && path.startsWith("/primer-acceso")) {
+    const scope = await resolveDashboardLeaderScope(supabase, user);
     const url = request.nextUrl.clone();
-    url.pathname = "/home";
+    url.pathname = scope.isGroupLeaderOnly ? defaultPathForGroupLeader(scope) : "/home";
     return NextResponse.redirect(url);
+  }
+
+  if (user && !mustChange) {
+    const scope = await resolveDashboardLeaderScope(supabase, user);
+    const redirectTo = redirectPathForGroupLeader(path, scope);
+    if (redirectTo) {
+      const url = request.nextUrl.clone();
+      url.pathname = redirectTo;
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;

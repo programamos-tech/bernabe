@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { BernabeLogo } from "@/components/BernabeLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserAvatar } from "@/components/UserAvatar";
+import { useDashboardLeaderScope } from "@/contexts/DashboardLeaderScopeContext";
 import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
+import { defaultPathForGroupLeader, grupoPathForScope } from "@/lib/auth/dashboard-leader-scope";
+import { FEATURE_COMUNIDAD_VISIBLE, FEATURE_EVENTOS_VISIBLE } from "@/lib/feature-flags";
 import { isLeaderIndividualPlan, whatsappIglesiaHref } from "@/lib/organization-plan";
 import { createClient } from "@/lib/supabase/client";
+import { DashboardNotifications } from "@/modules/dashboard/components/DashboardNotifications";
 
 const BASE_NAV = [
   { href: "/home", label: "Mi iglesia" },
@@ -43,82 +48,173 @@ const MOBILE_ICONS: Record<string, JSX.Element> = {
   ),
 };
 
+async function resolveUserRoleLabel(
+  supabase: ReturnType<typeof createClient>,
+  userEmail: string | undefined,
+  profileRole: string | null | undefined,
+  organizationId: string | null | undefined,
+  leaderPlan: boolean,
+): Promise<string> {
+  if (organizationId && userEmail) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("pastor_email, pastor_role")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (org?.pastor_email === userEmail) {
+      return org.pastor_role?.trim() || "Pastor";
+    }
+  }
+  if (profileRole === "admin") return "Administrador";
+  if (leaderPlan) return "Líder";
+  return "Miembro";
+}
+
 export function DashboardNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const plan = useDashboardOrgPlan();
+  const leaderScope = useDashboardLeaderScope();
   const leader = isLeaderIndividualPlan(plan);
+  const groupLeaderOnly = leaderScope.isGroupLeaderOnly;
+  const homeHref = groupLeaderOnly ? defaultPathForGroupLeader(leaderScope) : "/home";
+  const miGrupoHref = grupoPathForScope(leaderScope);
+  const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
   const [userSeed, setUserSeed] = useState<string>("Usuario");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleNotificationsOpenChange = (open: boolean) => {
+    setNotificationsOpen(open);
+    if (open) setMenuOpen(false);
+  };
 
   const navItems = useMemo(() => {
-    return BASE_NAV.filter((item) => !leader || !("churchOnly" in item && item.churchOnly)).map((item) => ({
+    if (groupLeaderOnly) {
+      if (miGrupoHref) {
+        return [{ href: miGrupoHref, label: "Mi grupo" }];
+      }
+      return [{ href: "/cuenta", label: "Mi cuenta" }];
+    }
+    return BASE_NAV.filter((item) => {
+      if (!FEATURE_EVENTOS_VISIBLE && item.href === "/eventos") return false;
+      if (!FEATURE_COMUNIDAD_VISIBLE && item.href === "/comunidad") return false;
+      if (leader && "churchOnly" in item && item.churchOnly) return false;
+      return true;
+    }).map((item) => ({
       href: item.href,
       label: item.href === "/home" ? (leader ? "Mi rebaño" : "Mi iglesia") : item.label,
     }));
-  }, [leader]);
+  }, [groupLeaderOnly, leader, miGrupoHref]);
 
   const mobileNavItems = useMemo(
     () =>
       navItems.map((item) => ({
         href: item.href,
         label: item.label,
-        icon: MOBILE_ICONS[item.href] ?? MOBILE_ICONS["/home"],
+        icon:
+          item.href.startsWith("/grupos/") ? MOBILE_ICONS["/grupos"] : (MOBILE_ICONS[item.href] ?? MOBILE_ICONS["/home"]),
       })),
-    [navItems]
+    [navItems],
   );
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserSeed(user?.email ?? user?.user_metadata?.full_name ?? "Usuario");
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, role, organization_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const name = profile?.full_name ?? meta.full_name ?? meta.name ?? user.email?.split("@")[0] ?? "Usuario";
+      const role = groupLeaderOnly
+        ? "Líder de grupo"
+        : await resolveUserRoleLabel(
+            supabase,
+            user.email,
+            profile?.role,
+            profile?.organization_id,
+            leader,
+          );
+      setUserName(name);
+      setUserRole(role);
+      setUserSeed(user.email ?? name);
     });
-  }, []);
+  }, [groupLeaderOnly, leader]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const handleCerrarSesion = async () => {
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setMenuOpen(false);
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setLoggingOut(false);
+    }
+  };
 
   const waHref = whatsappIglesiaHref();
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95">
+      <header className="sticky top-0 z-50 bg-white backdrop-blur-sm dark:bg-[#111111]">
         <div className="flex h-14 w-full items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-          <Link
-            href="/home"
-            className="group flex min-w-0 shrink-0 items-center gap-1.5 leading-none sm:gap-2"
-            aria-label="Bernabé, inicio. Que ninguna persona se pierda."
-          >
-            <div className="shrink-0" aria-hidden>
-              <UserAvatar seed="bernabe-nav-logo" sexo="femenino" size={32} className="!ring-0 shadow-none" />
-            </div>
-            <span className="flex min-w-0 flex-col gap-px">
-              <span className="font-logo text-lg leading-none text-gray-900 dark:text-white sm:text-xl">Bernabé</span>
-              <span className="max-w-[10rem] text-[7px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[8px]">
-                Que ninguna persona se pierda
-              </span>
-            </span>
+          <Link href={homeHref} className="group flex shrink-0 items-center leading-none" aria-label="Bernabé — inicio">
+            <BernabeLogo variant="header" />
           </Link>
 
-          {leader ? (
+          {leader && !groupLeaderOnly ? (
             <a
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden shrink-0 items-center rounded-full border border-emerald-200/90 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-100/90 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60 md:inline-flex lg:px-3 lg:text-xs"
+              className="hidden shrink-0 items-center rounded-full border border-emerald-200/90 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-100/90 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60 lg:inline-flex xl:px-3 xl:text-xs"
               title="Contactar por WhatsApp"
             >
-              <span className="hidden lg:inline">Me interesa para mi iglesia</span>
-              <span className="lg:hidden">WhatsApp</span>
+              <span className="hidden xl:inline">Me interesa para mi iglesia</span>
+              <span className="xl:hidden">WhatsApp</span>
             </a>
           ) : null}
 
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:gap-2 lg:flex">
             {navItems.map(({ href, label }) => {
-              const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href));
+              const isActive =
+                pathname === href ||
+                (href.startsWith("/grupos/") && pathname.startsWith(href)) ||
+                (href !== "/home" && !href.startsWith("/grupos/") && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`rounded-md px-2.5 py-2 text-sm transition-colors lg:px-3 ${
+                  className={`whitespace-nowrap px-2 py-2 text-sm transition-colors xl:px-3 ${
                     isActive
-                      ? "bg-gray-100 font-medium text-gray-900 dark:bg-white/[0.06] dark:text-white"
-                      : "font-normal text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                      ? "font-medium text-gray-900 dark:text-white"
+                      : "font-normal text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
                   }`}
                 >
                   {label}
@@ -128,12 +224,12 @@ export function DashboardNavbar() {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            {leader ? (
+            {leader && !groupLeaderOnly ? (
               <a
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex rounded-md p-2 text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 md:hidden"
+                className="inline-flex rounded-md p-2 text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 lg:hidden"
                 aria-label="Me interesa para mi iglesia (WhatsApp)"
                 title="WhatsApp"
               >
@@ -142,66 +238,124 @@ export function DashboardNavbar() {
                 </svg>
               </a>
             ) : null}
+            <DashboardNotifications
+              leaderFree={leader}
+              open={notificationsOpen}
+              onOpenChange={handleNotificationsOpenChange}
+            />
             <ThemeToggle />
-            <button
-              type="button"
-              className="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-              </svg>
-            </button>
-            <Link
-              href="/cuenta"
-              className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.06]"
-            >
-              <UserAvatar seed={userSeed} size={36} />
-            </Link>
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setNotificationsOpen(false);
+                  setMenuOpen((isOpen) => !isOpen);
+                }}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                aria-label="Menú de cuenta"
+                className="flex max-w-[3rem] items-center gap-2 rounded-md py-1 pl-1 pr-1 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/[0.06] lg:max-w-[14rem] lg:pr-2"
+              >
+                <UserAvatar seed={userSeed} size={36} />
+                {userName ? (
+                  <span className="hidden min-w-0 flex-1 flex-col lg:flex">
+                    <span className="truncate text-sm font-medium leading-tight text-gray-900 dark:text-white">
+                      {userName}
+                    </span>
+                    {userRole ? (
+                      <span className="truncate text-xs leading-tight text-gray-500 dark:text-gray-400">{userRole}</span>
+                    ) : null}
+                  </span>
+                ) : null}
+                <svg
+                  className={`hidden h-4 w-4 shrink-0 text-gray-400 transition-transform lg:block ${menuOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {menuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-1.5 w-56 overflow-hidden rounded-xl border border-gray-200/80 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[#1a1a1a]"
+                >
+                  <div className="border-b border-gray-100 px-4 py-3 dark:border-white/10 lg:hidden">
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{userName || "Usuario"}</p>
+                    {userRole ? <p className="truncate text-xs text-gray-500 dark:text-gray-400">{userRole}</p> : null}
+                  </div>
+                  <Link
+                    href="/cuenta"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm font-medium text-gray-900 transition hover:bg-gray-50 dark:text-white dark:hover:bg-white/[0.06]"
+                  >
+                    Mi cuenta
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={loggingOut}
+                    onClick={() => void handleCerrarSesion()}
+                    className="block w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                  >
+                    {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/80 bg-white/95 pb-safe backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#111111]/95 md:hidden">
-        <div className="scrollbar-hide flex h-14 items-center overflow-x-auto">
-          <div className="flex min-w-max items-center gap-0.5 px-2">
-            {mobileNavItems.map(({ href, label, icon }) => {
-              const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href));
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 transition-colors ${
-                    isActive ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"
-                  }`}
-                >
-                  <svg
-                    className={`h-5 w-5 ${isActive ? "stroke-[1.75]" : "stroke-[1.5]"}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    {icon}
-                  </svg>
-                  <span className={`whitespace-nowrap text-[10px] ${isActive ? "font-semibold" : "font-medium"}`}>
-                    {label}
-                  </span>
-                </Link>
-              );
-            })}
-            {leader ? (
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 text-emerald-700 dark:text-emerald-400"
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200/80 bg-white pb-safe backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#111111] lg:hidden">
+        <div className="flex h-14 w-full items-stretch px-1 sm:px-2">
+          {mobileNavItems.map(({ href, label, icon }) => {
+            const isActive =
+              pathname === href ||
+              (href.startsWith("/grupos/") && pathname.startsWith(href)) ||
+              (href !== "/home" && !href.startsWith("/grupos/") && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1.5 transition-colors sm:px-1 ${
+                  isActive ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"
+                }`}
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.348.223-.646.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.881 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                <svg
+                  className={`h-5 w-5 shrink-0 ${isActive ? "stroke-[1.75]" : "stroke-[1.5]"}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {icon}
                 </svg>
-                <span className="whitespace-nowrap text-[10px] font-medium">Iglesia</span>
-              </a>
-            ) : null}
-          </div>
+                <span
+                  className={`max-w-full truncate text-center text-[10px] leading-tight sm:text-[11px] ${isActive ? "font-semibold" : "font-medium"}`}
+                >
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+          {leader && !groupLeaderOnly ? (
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1.5 text-emerald-700 dark:text-emerald-400 sm:px-1"
+            >
+              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.348.223-.646.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.881 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+              </svg>
+              <span className="max-w-full truncate text-center text-[10px] font-medium leading-tight sm:text-[11px]">Iglesia</span>
+            </a>
+          ) : null}
         </div>
       </nav>
     </>

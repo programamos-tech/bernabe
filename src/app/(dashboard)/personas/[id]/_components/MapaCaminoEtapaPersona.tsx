@@ -67,14 +67,13 @@ export function MapaCaminoEtapaPersona({
   const notaPart = notaParticipacionSinFecha(participacionEnGrupo);
 
   return (
-    <div className="rounded-2xl border border-gray-200/60 bg-white/50 px-4 py-4 dark:border-white/[0.08] dark:bg-white/[0.03] sm:px-5 sm:py-5">
+    <div className="w-full rounded-2xl border border-gray-200/60 bg-white/50 px-4 py-4 dark:border-white/[0.08] dark:bg-white/[0.03] sm:px-5 sm:py-5">
       <span className={`pointer-events-none fixed left-0 top-0 -z-[1] h-px w-px overflow-hidden opacity-0 ${_TW_REF_MAPA_LIDER}`} aria-hidden />
       <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Camino de etapas</h2>
 
-      {/* Una sola línea continua entre centro del 1.º y del último nodo; los círculos van encima (evita cortes entre columnas). */}
-      <div className="mt-5 overflow-x-auto px-1 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="relative flex min-w-[min(100%,820px)] flex-col">
-          <div className="relative flex h-10 w-full shrink-0 items-center">
+      <div className="mt-5 w-full overflow-x-auto px-0 py-2 [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+        <div className="relative flex w-full flex-col">
+          <div className="relative flex h-9 w-full shrink-0 items-center lg:h-10">
             {n > 1 ? (
               <>
                 <div
@@ -108,7 +107,7 @@ export function MapaCaminoEtapaPersona({
               return (
                 <div key={etapa} className="relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center">
                   <div
-                    className="relative flex h-10 w-10 shrink-0 items-center justify-center"
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center lg:h-10 lg:w-10"
                     aria-current={actual ? "step" : undefined}
                     aria-label={
                       actual
@@ -123,10 +122,10 @@ export function MapaCaminoEtapaPersona({
                       />
                     ) : null}
                     <div
-                      className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${outerClass} ${actual ? "ring-2 ring-white/80 ring-offset-2 ring-offset-white shadow-sm dark:ring-white/35 dark:ring-offset-[#0c0c0c]" : ""}`}
+                      className={`relative z-[1] flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition lg:h-8 lg:w-8 ${outerClass} ${actual ? "ring-2 ring-white/80 ring-offset-2 ring-offset-white shadow-sm dark:ring-white/35 dark:ring-offset-[#0c0c0c]" : ""}`}
                     >
                       <span
-                        className={`h-2.5 w-2.5 rounded-full ${etapaDotClass[etapa]} ${actual ? "scale-110 shadow-md" : ""} ${hecho && !actual ? "opacity-90" : ""}`}
+                        className={`h-2 w-2 rounded-full lg:h-2.5 lg:w-2.5 ${etapaDotClass[etapa]} ${actual ? "scale-110 shadow-md" : ""} ${hecho && !actual ? "opacity-90" : ""}`}
                       />
                     </div>
                   </div>
@@ -147,7 +146,7 @@ export function MapaCaminoEtapaPersona({
               return (
                 <div key={`label-${etapa}`} className="flex min-w-0 flex-1 flex-col items-center">
                   <p
-                    className={`mt-2 max-w-[5.25rem] text-center text-[10px] font-medium leading-tight sm:max-w-none sm:text-[11px] ${labelClass}`}
+                    className={`mt-2 line-clamp-2 max-w-[4.75rem] px-0.5 text-center text-[9px] font-medium leading-[1.2] sm:max-w-[5.25rem] sm:text-[10px] lg:line-clamp-none lg:max-w-none lg:text-[11px] ${labelClass}`}
                   >
                     {etapa === "bautizado" ? etiquetaEtapaBautismo : ETAPA_LABELS[etapa]}
                   </p>
@@ -160,8 +159,8 @@ export function MapaCaminoEtapaPersona({
             {pasos.map((etapa) => {
               const hitosAqui = hitos.filter((h) => h.etapaAncla === etapa);
               return (
-                <div key={`hitos-${etapa}`} className="flex min-w-0 flex-1 flex-col items-center">
-                  <div className="mt-2 w-full max-w-[6.5rem] flex-1 px-0.5 sm:max-w-none">
+                <div key={`hitos-${etapa}`} className="hidden min-w-0 flex-1 flex-col items-center lg:flex">
+                  <div className="mt-2 w-full max-w-[6.5rem] flex-1 px-0.5 lg:max-w-none">
                     {hitosAqui.length > 0 ? (
                       <ul className="space-y-2 border-t border-gray-200/40 pt-2 text-left dark:border-white/[0.06]">
                         {hitosAqui.map((h) => (
@@ -182,6 +181,22 @@ export function MapaCaminoEtapaPersona({
               );
             })}
           </div>
+
+          {hitos.length > 0 ? (
+            <div className="mt-4 border-t border-gray-200/40 pt-3 dark:border-white/[0.06] lg:hidden">
+              <ul className="space-y-2">
+                {hitos.map((h) => (
+                  <li key={`${h.iso}-${h.titulo}-compact`} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="text-[10px] font-medium tabular-nums text-gray-500 dark:text-gray-400">
+                      {formatHistorialFecha(h.iso)}
+                    </span>
+                    <span className="text-[11px] font-semibold text-gray-800 dark:text-gray-200">{h.titulo}</span>
+                    <span className="w-full text-[10px] leading-snug text-gray-500 dark:text-gray-400 sm:w-auto">{h.descripcion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
 

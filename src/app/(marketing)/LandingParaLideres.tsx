@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
 import { UserAvatar } from "@/components/UserAvatar";
 
 const ROLES: {
@@ -49,14 +47,14 @@ export function ParaLideresSection() {
           </p>
           <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             Una plataforma sencilla para quienes{" "}
-            <span className="text-sky-700 dark:text-sky-300">pastorean personas</span>, en cada rol de la iglesia
+            <span className="text-sky-700 dark:text-sky-300">cuidan personas</span>, en cada rol de la iglesia
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
             Bernabé está pensado para que{" "}
-            <strong className="font-medium text-gray-900 dark:text-gray-200">cada líder</strong> lleve el seguimiento de
-            sus ovejas con claridad: el pastor de jóvenes, quien dirige alabanza, quien acompaña una comunidad, y así
-            sucesivamente. El acceso individual es gratuito; cuando la iglesia entera camina junta, el sostenimiento se
-            platica con <strong className="font-medium text-gray-900 dark:text-gray-200">precio justo y sin culpa</strong>.
+            <strong className="font-medium text-gray-900 dark:text-gray-200">cada líder</strong> lleve el cuidado de
+            sus personas con claridad: quien dirige jóvenes, alabanza, una comunidad, y así sucesivamente. El acceso
+            individual es gratuito; cuando la iglesia entera camina junta, el sostenimiento se platica con{" "}
+            <strong className="font-medium text-gray-900 dark:text-gray-200">precio justo y sin culpa</strong>.
           </p>
         </div>
 
@@ -73,26 +71,6 @@ export function ParaLideresSection() {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-sky-200/60 bg-sky-50/50 p-6 text-center dark:border-sky-500/20 dark:bg-sky-950/25 sm:p-8">
-          <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
-            Si eres líder, puedes empezar gratis y sumar a otros cuando toque. Si representas a una iglesia, revisa la{" "}
-            <a href="#propuesta" className="font-semibold text-sky-800 underline-offset-2 hover:underline dark:text-sky-300">
-              propuesta de acceso
-            </a>{" "}
-            o escríbenos: el objetivo sigue siendo{" "}
-            <strong className="text-gray-900 dark:text-white">seguimiento pastoral</strong>, con transparencia en lo que
-            sostiene el servicio.
-          </p>
-          <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <Link href="/register" className={`${btnPrimary} w-full sm:w-auto`}>
-              Crear cuenta
-            </Link>
-            <Link href="/login" className={`${btnSecondary} w-full sm:w-auto`}>
-              Ya tengo cuenta
-            </Link>
-          </div>
         </div>
       </div>
     </section>

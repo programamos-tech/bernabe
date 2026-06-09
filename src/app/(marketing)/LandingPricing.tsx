@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
+import { btnPrimaryFull, btnSecondaryFull, marketingCta } from "@/app/(marketing)/landing-shared";
 
 /** Formato de moneda en pesos colombianos (COP). */
 function formatCop(value: number): string {
@@ -66,15 +66,15 @@ export function PricingSection() {
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">15 días gratis</p>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">Sin tarjeta para empezar.</p>
             <ul className="mt-4 flex flex-1 flex-col gap-2.5">
-              <PricingCheck>Acceso completo a Bernabé Personas durante la prueba</PricingCheck>
+              <PricingCheck>Acceso completo a Bernabé durante la prueba</PricingCheck>
               <PricingCheck>Grupos ilimitados</PricingCheck>
               <PricingCheck>Registro de asistencia y reuniones</PricingCheck>
-              <PricingCheck>Seguimiento pastoral y estados</PricingCheck>
-              <PricingCheck>Roles para pastores y líderes</PricingCheck>
+              <PricingCheck>Seguimiento de personas y estados</PricingCheck>
+              <PricingCheck>Roles para líderes</PricingCheck>
             </ul>
             <p className="mt-4 text-xs text-gray-500 dark:text-gray-500">Al terminar, eliges un plan de pago o un plan a medida.</p>
-            <Link href="/register" className={`${btnPrimary} mt-6 w-full`}>
-              Empezar prueba
+            <Link href="/register" className={`${btnPrimaryFull} mt-6`}>
+              {marketingCta.start}
             </Link>
           </div>
 
@@ -94,11 +94,11 @@ export function PricingSection() {
               </PricingCheck>
               <PricingCheck>Grupos ilimitados</PricingCheck>
               <PricingCheck>Registro de asistencia y reuniones</PricingCheck>
-              <PricingCheck>Seguimiento pastoral y estados</PricingCheck>
-              <PricingCheck>Roles para pastores y líderes</PricingCheck>
+              <PricingCheck>Seguimiento de personas y estados</PricingCheck>
+              <PricingCheck>Roles para líderes</PricingCheck>
             </ul>
-            <Link href="/register" className={`${btnSecondary} mt-6 w-full`}>
-              Elegir al registrarte
+            <Link href="/register" className={`${btnSecondaryFull} mt-6`}>
+              {marketingCta.start}
             </Link>
           </div>
 
@@ -121,11 +121,11 @@ export function PricingSection() {
               </PricingCheck>
               <PricingCheck>Grupos ilimitados</PricingCheck>
               <PricingCheck>Registro de asistencia y reuniones</PricingCheck>
-              <PricingCheck>Seguimiento pastoral y estados</PricingCheck>
-              <PricingCheck>Roles para pastores y líderes</PricingCheck>
+              <PricingCheck>Seguimiento de personas y estados</PricingCheck>
+              <PricingCheck>Roles para líderes</PricingCheck>
             </ul>
-            <Link href="/register" className={`${btnPrimary} mt-6 w-full`}>
-              Elegir al registrarte
+            <Link href="/register" className={`${btnPrimaryFull} mt-6`}>
+              {marketingCta.start}
             </Link>
           </div>
 
@@ -139,8 +139,11 @@ export function PricingSection() {
               <PricingCheck>Facturación y documentación a convenir</PricingCheck>
               <PricingCheck>Soporte y acompañamiento dedicado</PricingCheck>
             </ul>
-            <a href="mailto:hola@bernabe.app?subject=Licencia%20Bernab%C3%A9%20%28m%C3%A1s%20de%20300%20personas%29" className={`${btnSecondary} mt-6 w-full`}>
-              Hablar con nosotros
+            <a
+              href="mailto:hola@bernabe.app?subject=Licencia%20Bernab%C3%A9%20%28m%C3%A1s%20de%20300%20personas%29"
+              className={`${btnSecondaryFull} mt-6`}
+            >
+              {marketingCta.contactChurch}
             </a>
           </div>
         </div>

@@ -15,7 +15,7 @@ export function AuthHero() {
       <div className={styles.heroOverlay} />
       <div className={styles.heroContent}>
         <h1 className={styles.logo}>
-          Bernabé
+          Berea
         </h1>
         <p className={styles.tagline}>
           Organiza los servidores de tu iglesia sin caos.

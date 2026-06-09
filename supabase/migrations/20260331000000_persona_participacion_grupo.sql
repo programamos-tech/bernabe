@@ -12,25 +12,36 @@ DO $$
 DECLARE
   conname text;
 BEGIN
-  SELECT c.conname INTO conname
-  FROM pg_constraint c
-  JOIN pg_class t ON c.conrelid = t.oid
-  JOIN pg_namespace n ON t.relnamespace = n.oid
-  WHERE n.nspname = 'public'
-    AND t.relname = 'personas'
-    AND c.contype = 'c'
-    AND pg_get_constraintdef(c.oid) LIKE '%estado%'
-    AND pg_get_constraintdef(c.oid) LIKE '%Activo%'
-    AND pg_get_constraintdef(c.oid) LIKE '%Visitante%'
-  LIMIT 1;
-  IF conname IS NOT NULL THEN
-    EXECUTE format('ALTER TABLE public.personas DROP CONSTRAINT %I', conname);
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'personas'
+      AND column_name = 'estado'
+  ) THEN
+    SELECT c.conname INTO conname
+    FROM pg_constraint c
+    JOIN pg_class t ON c.conrelid = t.oid
+    JOIN pg_namespace n ON t.relnamespace = n.oid
+    WHERE n.nspname = 'public'
+      AND t.relname = 'personas'
+      AND c.contype = 'c'
+      AND pg_get_constraintdef(c.oid) LIKE '%estado%'
+      AND pg_get_constraintdef(c.oid) LIKE '%Activo%'
+      AND pg_get_constraintdef(c.oid) LIKE '%Visitante%'
+    LIMIT 1;
+    IF conname IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.personas DROP CONSTRAINT %I', conname);
+    END IF;
+
+    ALTER TABLE public.personas
+      DROP CONSTRAINT IF EXISTS personas_estado_check;
+
+    ALTER TABLE public.personas
+      ADD CONSTRAINT personas_estado_check
+      CHECK (estado IN ('Activo', 'Visitante', 'Inactivo', 'En seguimiento', 'En servicio'));
   END IF;
 END $$;
-
-ALTER TABLE public.personas
-  ADD CONSTRAINT personas_estado_check
-  CHECK (estado IN ('Activo', 'Visitante', 'Inactivo', 'En seguimiento', 'En servicio'));
 
 ALTER TABLE public.personas
   DROP CONSTRAINT IF EXISTS personas_participacion_en_grupo_check;

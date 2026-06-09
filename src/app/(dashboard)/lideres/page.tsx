@@ -2,18 +2,31 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
 import { UserAvatar } from "@/components/UserAvatar";
+import { tipoLabelGrupo } from "@/lib/grupo-tipo";
 import { createClient } from "@/lib/supabase/client";
 
 type RolLider = "Pastor" | "Líder de grupo" | "Coordinador" | "Mentor" | "Diácono";
 type EstadoLider = "Activo" | "En formación" | "Descanso";
 
 const FILTER_ESTADOS: { value: EstadoLider | "Todos"; label: string }[] = [
-  { value: "Todos", label: "Todos" },
+  { value: "Todos", label: "Todos los estados" },
   { value: "Activo", label: "Activos" },
   { value: "En formación", label: "En formación" },
   { value: "Descanso", label: "Descanso" },
 ];
+
+interface GrupoAsignado {
+  id: string;
+  nombre: string;
+  tipo: string;
+  dia: string | null;
+  hora: string | null;
+  ubicacion: string | null;
+  activo: boolean;
+  miembrosCount: number;
+}
 
 interface Lider {
   id: string;
@@ -27,6 +40,7 @@ interface Lider {
   rolEtiqueta: string | null;
   rolEstilo: RolLider;
   grupoAsignado: string | null;
+  grupo: GrupoAsignado | null;
   miembrosACargo: number;
   estado: EstadoLider;
   fechaInicio: string | null;
@@ -89,6 +103,135 @@ function EstadoPill({ estado }: { estado: EstadoLider }) {
   );
 }
 
+function LiderCardGrupo({ grupo, miembros, fallbackNombre }: { grupo: GrupoAsignado | null; miembros: number; fallbackNombre: string | null }) {
+  if (!grupo && !fallbackNombre) {
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400">Sin grupo asignado</p>
+    );
+  }
+
+  const horario = [grupo?.dia, grupo?.hora].filter(Boolean).join(" · ");
+  const nombre = grupo?.nombre ?? fallbackNombre ?? "Grupo";
+
+  const inner = (
+    <div className="flex gap-3">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-b from-gray-100/90 to-gray-100/45 dark:from-white/[0.08] dark:to-white/[0.03]">
+        <GrupoAvatarCluster nombreGrupo={nombre} sizeCenter={40} sizeSide={26} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{nombre}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {grupo ? (
+            <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-white/10 dark:text-gray-300">
+              {tipoLabelGrupo(grupo.tipo)}
+            </span>
+          ) : null}
+          {grupo ? (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                grupo.activo
+                  ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                  : "bg-gray-500/10 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${grupo.activo ? "bg-emerald-400/80" : "bg-gray-400"}`} />
+              {grupo.activo ? "Activo" : "Inactivo"}
+            </span>
+          ) : null}
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">{miembros}</span> miembros
+          </span>
+        </div>
+        {horario ? (
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {horario}
+          </p>
+        ) : null}
+        {grupo?.ubicacion ? (
+          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-gray-500 dark:text-gray-400" title={grupo.ubicacion}>
+            <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            {grupo.ubicacion}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  if (grupo) {
+    return (
+      <Link
+        href={`/grupos/${grupo.id}`}
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-[2] block rounded-xl bg-white/50 p-3 transition hover:bg-white/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className="rounded-xl bg-white/50 p-3 dark:bg-white/[0.04]">{inner}</div>;
+}
+
+function LiderCard({ lider }: { lider: Lider }) {
+  const detailHref = lider.personaId
+    ? `/personas/${lider.personaId}?lider=${lider.id}`
+    : `/lideres/${lider.id}`;
+
+  return (
+    <div className="group relative cursor-pointer rounded-2xl bg-gray-100/60 p-4 transition hover:bg-gray-100/80 dark:bg-white/[0.05] dark:hover:bg-white/[0.08] md:flex md:h-full md:flex-col">
+      <div className="flex items-start gap-3">
+        <UserAvatar seed={lider.nombre} size={44} />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-gray-900 transition group-hover:text-gray-600 dark:text-white dark:group-hover:text-gray-300">
+            {lider.nombre}
+          </p>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{lider.telefono || "—"}</p>
+          {lider.cedula ? <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{lider.cedula}</p> : null}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {lider.rolEtiqueta ? (
+              <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${rolStyles[lider.rolEstilo]}`}>
+                {lider.rolEtiqueta}
+              </span>
+            ) : null}
+            <EstadoPill estado={lider.estado} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-gray-200/50 pt-4 dark:border-white/[0.06] md:mt-auto">
+        <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Grupo a cargo</p>
+        <LiderCardGrupo grupo={lider.grupo} miembros={lider.miembrosACargo} fallbackNombre={lider.grupoAsignado} />
+      </div>
+
+      <div className="relative z-[2] mt-3 flex items-center justify-end gap-1">
+        <Link
+          href={detailHref}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded-full p-2 text-gray-400 transition hover:bg-white/80 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200"
+          title="Ver perfil"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </Link>
+      </div>
+
+      <Link
+        href={detailHref}
+        className="absolute inset-0 z-[1] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/80 dark:focus-visible:ring-white/25"
+        aria-label={`Ver perfil de ${lider.nombre}`}
+      />
+    </div>
+  );
+}
+
 export default function Page() {
   const [lideres, setLideres] = useState<Lider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,30 +285,56 @@ export default function Page() {
 
       const leaderIds = rows.map((r) => r.id);
       const miembrosPorLider = new Map<string, number>();
+      const grupoPorLider = new Map<string, GrupoAsignado>();
 
       if (leaderIds.length > 0) {
-        const { data: gruposRows } = await supabase.from("grupos").select("id, lider_id").in("lider_id", leaderIds);
-        const grupos = gruposRows ?? [];
+        const { data: gruposRows } = await supabase
+          .from("grupos")
+          .select("id, lider_id, nombre, tipo, dia, hora, ubicacion, activo, miembros_count")
+          .in("lider_id", leaderIds);
+        const grupos = (gruposRows ?? []) as {
+          id: string;
+          lider_id: string | null;
+          nombre: string;
+          tipo: string;
+          dia: string | null;
+          hora: string | null;
+          ubicacion: string | null;
+          activo: boolean;
+          miembros_count: number;
+        }[];
         const grupoIds = grupos.map((g) => g.id);
+        const countByGrupoId = new Map<string, number>();
         if (grupoIds.length > 0) {
           const { data: personasRows } = await supabase.from("personas").select("grupo_id").in("grupo_id", grupoIds);
-          const countByGrupoId = new Map<string, number>();
           for (const p of personasRows ?? []) {
             if (p.grupo_id) {
               countByGrupoId.set(p.grupo_id, (countByGrupoId.get(p.grupo_id) ?? 0) + 1);
             }
           }
-          for (const g of grupos) {
-            if (g.lider_id) {
-              miembrosPorLider.set(g.lider_id, countByGrupoId.get(g.id) ?? 0);
-            }
-          }
+        }
+        for (const g of grupos) {
+          if (!g.lider_id) continue;
+          const miembrosReales = countByGrupoId.get(g.id);
+          const miembros = miembrosReales != null && miembrosReales > 0 ? miembrosReales : g.miembros_count ?? 0;
+          miembrosPorLider.set(g.lider_id, miembros);
+          grupoPorLider.set(g.lider_id, {
+            id: g.id,
+            nombre: g.nombre,
+            tipo: g.tipo,
+            dia: g.dia,
+            hora: g.hora,
+            ubicacion: g.ubicacion,
+            activo: g.activo,
+            miembrosCount: miembros,
+          });
         }
       }
 
       setLideres(
         rows.map((row) => {
           const { etiqueta, estilo } = rolVistaDesdeOrg(row, orgPastor);
+          const grupo = grupoPorLider.get(row.id) ?? null;
           return {
             id: row.id,
             nombre: row.nombre ?? "",
@@ -175,8 +344,9 @@ export default function Page() {
             rol: (row.rol as RolLider) ?? null,
             rolEtiqueta: etiqueta,
             rolEstilo: estilo,
-            grupoAsignado: row.grupo_asignado ?? null,
-            miembrosACargo: miembrosPorLider.get(row.id) ?? 0,
+            grupoAsignado: row.grupo_asignado ?? grupo?.nombre ?? null,
+            grupo,
+            miembrosACargo: miembrosPorLider.get(row.id) ?? grupo?.miembrosCount ?? 0,
             estado: (row.estado as EstadoLider) ?? "Activo",
             fechaInicio: row.fecha_inicio_liderazgo ?? null,
             personaId: row.persona_id ?? null,
@@ -192,79 +362,95 @@ export default function Page() {
     return lideres.filter((l) => {
       if (filterEstado !== "Todos" && l.estado !== filterEstado) return false;
       if (!q) return true;
-      const blob = `${l.nombre} ${l.telefono} ${l.cedula ?? ""} ${l.grupoAsignado ?? ""} ${l.rolEtiqueta ?? ""}`.toLowerCase();
+      const blob = [
+        l.nombre,
+        l.telefono,
+        l.cedula ?? "",
+        l.grupoAsignado ?? "",
+        l.grupo?.nombre ?? "",
+        l.grupo?.tipo ? tipoLabelGrupo(l.grupo.tipo) : "",
+        l.grupo?.dia ?? "",
+        l.grupo?.hora ?? "",
+        l.grupo?.ubicacion ?? "",
+        l.rolEtiqueta ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
       return blob.includes(q);
     });
   }, [lideres, filterEstado, search]);
 
-  const totalLideres = lideres.length;
-  const lideresActivos = lideres.filter((l) => l.estado === "Activo").length;
-  const enFormacion = lideres.filter((l) => l.estado === "En formación").length;
-
-  const searchInputClass =
-    "w-full rounded-full border border-gray-200/80 bg-gray-100/80 py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15 md:w-64";
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full min-w-0 py-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="min-h-[calc(100vh-4rem)] w-full min-w-0">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between md:mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight">Líderes</h1>
+          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Líderes</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
-            Seguimiento y gestión del equipo de liderazgo.
+            Seguimiento del equipo de liderazgo. Cada líder debe estar vinculado a un miembro en Personas.
           </p>
         </div>
         <Link
-          href="/lideres/nuevo"
+          href="/personas"
           className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100 sm:w-auto"
         >
           <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Nuevo líder
+          Promover desde Personas
         </Link>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl bg-gray-100/40 p-5 dark:bg-white/[0.04]">
-          <div className="flex items-center gap-3">
-            <svg className="h-6 w-6 shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-              />
-            </svg>
-            <div>
-              <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{totalLideres}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total líderes</p>
-            </div>
-          </div>
+      <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-nowrap sm:items-center md:mb-5">
+        <div className="relative min-w-0 flex-1">
+          <svg
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <label htmlFor="lideres-buscar" className="sr-only">
+            Buscar líder
+          </label>
+          <input
+            id="lideres-buscar"
+            type="search"
+            placeholder="Buscar por nombre, teléfono o grupo…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"
+            className="w-full rounded-full bg-gray-100/80 py-2.5 pl-11 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-white/15"
+          />
         </div>
-        <div className="rounded-3xl bg-gray-100/40 p-5 dark:bg-white/[0.04]">
-          <div className="flex items-center gap-3">
-            <svg className="h-6 w-6 shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{lideresActivos}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Activos</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-3xl bg-gray-100/40 p-5 dark:bg-white/[0.04]">
-          <div className="flex items-center gap-3">
-            <svg className="h-6 w-6 shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"
-              />
-            </svg>
-            <div>
-              <p className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{enFormacion}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">En formación</p>
-            </div>
-          </div>
+        <div className="relative w-full shrink-0 sm:w-44 md:w-48">
+          <label htmlFor="lideres-filtro-estado" className="sr-only">
+            Filtrar por estado
+          </label>
+          <select
+            id="lideres-filtro-estado"
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value as EstadoLider | "Todos")}
+            className="w-full cursor-pointer appearance-none rounded-full bg-gray-100/80 py-2.5 pl-4 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300/40 dark:bg-white/[0.06] dark:text-white dark:focus:ring-white/15"
+          >
+            {FILTER_ESTADOS.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </div>
 
@@ -278,51 +464,6 @@ export default function Page() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        </div>
-      ) : null}
-
-      {!loading && lideres.length > 0 ? (
-        <div className="mb-6 flex min-w-0 flex-col gap-3 md:flex-row md:flex-nowrap md:items-center">
-          <div className="scrollbar-brand flex shrink-0 flex-wrap items-center gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] md:flex-1">
-            {FILTER_ESTADOS.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilterEstado(value)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
-                  filterEstado === value
-                    ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                    : "bg-gray-100/90 text-gray-700 hover:bg-gray-200/80 dark:bg-white/[0.08] dark:text-gray-200 dark:hover:bg-white/[0.12]"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="relative min-w-0 md:shrink-0">
-            <svg
-              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <label htmlFor="lideres-buscar" className="sr-only">
-              Buscar líder
-            </label>
-            <input
-              id="lideres-buscar"
-              type="search"
-              placeholder="Buscar líder…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              autoComplete="off"
-              className={searchInputClass}
-            />
-          </div>
         </div>
       ) : null}
 
@@ -341,121 +482,62 @@ export default function Page() {
         </div>
       ) : null}
 
-      <div className="space-y-3 md:hidden">
-        {!loading &&
-          filtered.map((lider) => (
-            <div key={lider.id} className="rounded-3xl bg-gray-100/40 p-4 dark:bg-white/[0.04]">
-              <div className="flex items-start gap-3">
-                <UserAvatar seed={lider.nombre} size={48} />
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/lideres/${lider.id}`}
-                    className="font-medium text-gray-900 transition hover:text-gray-600 dark:text-white dark:hover:text-gray-300"
-                  >
-                    {lider.nombre}
-                  </Link>
-                  {lider.cedula ? <p className="text-xs text-gray-500 dark:text-gray-400">Doc. ID: {lider.cedula}</p> : null}
-                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{lider.telefono}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {lider.rolEtiqueta ? (
-                      <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${rolStyles[lider.rolEstilo]}`}>
-                        {lider.rolEtiqueta}
-                      </span>
-                    ) : null}
-                    <EstadoPill estado={lider.estado} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-200/60 pt-3 dark:border-white/10">
-                <div className="flex min-w-0 flex-1 items-start gap-1.5">
-                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-                    />
-                  </svg>
-                  <span className="break-words text-xs leading-snug text-gray-600 dark:text-gray-300">{lider.grupoAsignado ?? "—"}</span>
-                </div>
-                <div className="shrink-0 text-xs">
-                  <span className="font-semibold text-gray-900 dark:text-white">{lider.miembrosACargo}</span>
-                  <span className="ml-1 text-gray-400">personas</span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-end gap-1">
-                <button
-                  type="button"
-                  className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                  </svg>
-                </button>
-                <Link
-                  href={`/lideres/${lider.id}`}
-                  className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          ))}
-      </div>
+      {!loading && lideres.length > 0 && filtered.length > 0 ? (
+        <div className="lg:hidden">
+          <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+            {filtered.map((lider) => (
+              <LiderCard key={lider.id} lider={lider} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {!loading && lideres.length > 0 && filtered.length > 0 ? (
-        <div className="hidden min-w-0 overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] md:block">
+        <div className="hidden min-w-0 overflow-hidden rounded-3xl bg-gray-100/40 dark:bg-white/[0.04] lg:block">
           <div className="min-w-0 overflow-x-hidden">
             <table className="w-full min-w-0 table-fixed">
               <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "26%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "28%" }} />
+                <col style={{ width: "13%" }} />
                 <col style={{ width: "10%" }} />
               </colgroup>
               <thead>
                 <tr className="border-b border-gray-200/60 dark:border-white/10">
-                  <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
+                  <th className="py-3 pl-4 pr-2 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
                     Líder
                   </th>
-                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
-                    Documento ID
+                  <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
+                    Documento
                   </th>
-                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">Rol</th>
-                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
-                    Grupo asignado
+                  <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
+                    Rol
                   </th>
-                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">
+                  <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
+                    Grupo
+                  </th>
+                  <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
                     Miembros
                   </th>
-                  <th className="px-3 py-4 text-left text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400 lg:px-6">Estado</th>
-                  <th className="px-2 py-4 lg:px-3" aria-label="Acciones" />
+                  <th className="py-3 pl-2 pr-4 text-left text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 dark:text-gray-400">
+                    Estado
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200/50 dark:divide-white/10">
                 {filtered.map((lider) => (
                   <tr key={lider.id} className="transition-colors hover:bg-gray-200/30 dark:hover:bg-white/[0.05]">
-                    <td className="align-top px-4 py-4 lg:px-6">
-                      <Link href={`/lideres/${lider.id}`} className="group flex min-w-0 items-center gap-3">
+                    <td className="align-top py-3 pl-4 pr-2">
+                      <Link
+                        href={
+                          lider.personaId
+                            ? `/personas/${lider.personaId}?lider=${lider.id}`
+                            : `/lideres/${lider.id}`
+                        }
+                        className="group flex min-w-0 items-center gap-2.5"
+                      >
                         <UserAvatar seed={lider.nombre} size={44} />
                         <div className="min-w-0">
                           <div className="break-words font-medium leading-snug text-gray-900 transition group-hover:text-gray-600 dark:text-white dark:group-hover:text-gray-300">
@@ -465,8 +547,10 @@ export default function Page() {
                         </div>
                       </Link>
                     </td>
-                    <td className="break-words px-3 py-4 align-top text-sm text-gray-600 dark:text-gray-400 lg:px-6">{lider.cedula ?? "—"}</td>
-                    <td className="px-3 py-4 align-top lg:px-6">
+                    <td className="break-words px-2 py-3 align-top text-sm tabular-nums text-gray-600 dark:text-gray-400">
+                      {lider.cedula ?? "—"}
+                    </td>
+                    <td className="px-2 py-3 align-top">
                       {lider.rolEtiqueta ? (
                         <span
                           className={`inline-flex max-w-full rounded-full px-2 py-1 text-[11px] font-medium leading-snug sm:px-3 sm:text-xs ${rolStyles[lider.rolEstilo]}`}
@@ -477,8 +561,8 @@ export default function Page() {
                         "—"
                       )}
                     </td>
-                    <td className="min-w-0 px-3 py-4 align-top lg:px-6">
-                      <div className="flex min-w-0 items-start gap-2">
+                    <td className="min-w-0 px-2 py-3 align-top">
+                      <div className="flex min-w-0 items-start gap-1.5">
                         <svg className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path
                             strokeLinecap="round"
@@ -489,48 +573,12 @@ export default function Page() {
                         <span className="break-words leading-snug text-gray-700 dark:text-gray-300">{lider.grupoAsignado ?? "—"}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-4 align-top lg:px-6">
+                    <td className="whitespace-nowrap px-2 py-3 align-top">
                       <span className="font-semibold text-gray-900 dark:text-white">{lider.miembrosACargo}</span>
                       <span className="ml-1 text-sm text-gray-400">personas</span>
                     </td>
-                    <td className="px-3 py-4 align-top lg:px-6">
+                    <td className="py-3 pl-2 pr-4 align-top">
                       <EstadoPill estado={lider.estado} />
-                    </td>
-                    <td className="px-1 py-4 align-top lg:px-2">
-                      <div className="flex flex-wrap items-center justify-end gap-0.5">
-                        <button
-                          type="button"
-                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                          title="Enviar mensaje"
-                        >
-                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                          title="WhatsApp"
-                        >
-                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                          </svg>
-                        </button>
-                        <Link
-                          href={`/lideres/${lider.id}`}
-                          className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:hover:bg-white/[0.08] dark:hover:text-white"
-                          title="Ver perfil"
-                        >
-                          <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </Link>
-                      </div>
                     </td>
                   </tr>
                 ))}
@@ -541,11 +589,12 @@ export default function Page() {
       ) : null}
 
       {!loading && lideres.length > 0 && filtered.length > 0 ? (
-        <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
           ¿Quieres promover a alguien a líder?{" "}
-          <Link href="/lideres/nuevo" className="font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white">
-            Agregar nuevo líder
-          </Link>
+          <Link href="/personas" className="font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white">
+            Busca al miembro en Personas
+          </Link>{" "}
+          y usa «Promover a líder» en su ficha.
         </p>
       ) : null}
     </div>

@@ -2,12 +2,12 @@ import Link from "next/link";
 import { MarketingSiteHeader } from "@/app/(marketing)/MarketingSiteHeader";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ARTICULOS_COMUNIDAD_MOCK, CATEGORIAS_LIDERAZGO } from "@/lib/comunidad-articulos-mock";
-import { btnPrimary, btnSecondary } from "@/app/(marketing)/landing-shared";
+import { btnPrimaryFull, btnSecondaryFull, marketingCta } from "@/app/(marketing)/landing-shared";
 
 export const metadata = {
-  title: "Recursos para pastores y líderes | Bernabé Personas",
+  title: "Recursos para líderes de iglesia | Bernabé",
   description:
-    "Artículos y reflexiones gratuitas sobre liderazgo, discipulado y pastoreo en la iglesia local. Bernabé Personas ordena el cuidado de las personas; estos textos fortalecen a quienes dirigen.",
+    "Artículos y reflexiones gratuitas sobre liderazgo, discipulado y cuidado de personas en la iglesia local. Bernabé apoya el seguimiento claro; estos textos fortalecen a quienes acompañan.",
 };
 
 export default function RecursosPage() {
@@ -20,11 +20,12 @@ export default function RecursosPage() {
             Gratis, sin cuenta
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Recursos para <span className="text-sky-700 dark:text-sky-300">pastores y líderes</span>
+            Recursos para <span className="text-sky-700 dark:text-sky-300">líderes de iglesia</span>
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-            Bernabé Personas ayuda a tu iglesia a cuidar a quienes asisten —miembros, visitantes, grupos y líderes— con seguimiento claro. Estos recursos
-            complementan ese trabajo: contenido pensado para quienes pastorean y equipan en lo local. Leé y compartí sin iniciar sesión.
+            Bernabé te ayuda a cuidar a quienes asisten —miembros, visitantes, grupos y líderes— con seguimiento claro.
+            Estos recursos complementan ese trabajo: contenido pensado para quienes acompañan en lo local. Leé y compartí
+            sin iniciar sesión.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {CATEGORIAS_LIDERAZGO.map((cat) => (
@@ -80,16 +81,16 @@ export default function RecursosPage() {
         </div>
 
         <div className="mx-auto mt-16 max-w-xl rounded-2xl border border-gray-200/80 bg-gray-50/80 p-8 text-center dark:border-white/[0.08] dark:bg-white/[0.04]">
-          <p className="text-base font-medium text-gray-900 dark:text-white">¿Quieres llevar el seguimiento de tus personas?</p>
+          <p className="text-base font-medium text-gray-900 dark:text-white">¿Quieres cuidar con seguimiento claro?</p>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Con una cuenta accedes a personas, grupos, asistencia y, dentro de la app, la comunidad con interacciones.
+            Con una cuenta registras a cada persona, ves su grupo y el último contacto.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/register" className={btnPrimary}>
-              Crear cuenta
+            <Link href="/register" className={btnPrimaryFull}>
+              {marketingCta.start}
             </Link>
-            <Link href="/" className={btnSecondary}>
-              Volver al inicio
+            <Link href="/" className={btnSecondaryFull}>
+              {marketingCta.backHome}
             </Link>
           </div>
         </div>

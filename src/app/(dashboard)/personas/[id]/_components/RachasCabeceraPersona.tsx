@@ -51,7 +51,7 @@ export function RachasCabeceraPersona({
       );
 
     return (
-      <div className="flex flex-col gap-0.5 text-xs leading-snug sm:text-right">
+      <div className="grid grid-cols-1 gap-2 text-xs leading-snug sm:grid-cols-2 lg:grid-cols-1 lg:gap-0.5 lg:text-right">
         <p className="text-gray-500 dark:text-gray-400">{lineAsist}</p>
         <p className="text-gray-500 dark:text-gray-400">{lineSeg}</p>
       </div>

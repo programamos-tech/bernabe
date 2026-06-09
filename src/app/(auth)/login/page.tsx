@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserAvatar } from "@/components/UserAvatar";
+import { btnPrimaryForm, marketingCta } from "@/app/(marketing)/landing-shared";
+import { BernabeLogo } from "@/components/BernabeLogo";
+import { AuthHeroGrupoCluster } from "@/components/AuthHeroGrupoCluster";
+import { defaultPathForGroupLeader, resolveDashboardLeaderScope } from "@/lib/auth/dashboard-leader-scope";
 import { createClient } from "@/lib/supabase/client";
 import { translateSupabaseAuthMessage } from "@/lib/supabase-auth-messages";
 
@@ -12,40 +15,20 @@ const inputClass =
 
 function Logo() {
   return (
-    <Link
-      href="/"
-      className="group inline-flex max-w-full items-center gap-2 self-start leading-none sm:gap-2.5"
-      aria-label="Bernabé, inicio. Que ninguna persona se pierda."
-    >
-      <div className="shrink-0" aria-hidden>
-        <UserAvatar
-          seed="bernabe-nav-logo"
-          sexo="femenino"
-          size={40}
-          className="!ring-0 shadow-none"
-        />
-      </div>
-      <span className="flex min-w-0 flex-col gap-0.5 text-left">
-        <span className="font-logo text-2xl leading-none text-gray-900 dark:text-white sm:text-3xl">Bernabé</span>
-        <span className="max-w-[14rem] text-[9px] font-medium leading-tight tracking-wide text-gray-500 dark:text-gray-400 sm:max-w-none sm:text-[10px]">
-          Que ninguna persona se pierda
-        </span>
-      </span>
-    </Link>
+    <div className="py-1 sm:py-2">
+      <Link
+        href="/"
+        className="group inline-flex shrink-0 items-center leading-none transition-opacity hover:opacity-90"
+        aria-label="Bernabé — inicio"
+      >
+        <BernabeLogo variant="auth" />
+      </Link>
+    </div>
   );
 }
 
-function LoginHeroAvatar() {
-  return (
-    <div className="flex justify-center">
-      <UserAvatar
-        seed="bernabe-login-panel"
-        sexo="femenino"
-        size={112}
-        className="!ring-0 shadow-none"
-      />
-    </div>
-  );
+function LoginHeroGrupo() {
+  return <AuthHeroGrupoCluster />;
 }
 
 export default function LoginPage() {
@@ -90,7 +73,8 @@ export default function LoginPage() {
       if (!prof?.organization_id) {
         router.push("/onboarding");
       } else {
-        router.push("/home");
+        const scope = await resolveDashboardLeaderScope(supabase, user);
+        router.push(scope.isGroupLeaderOnly ? defaultPathForGroupLeader(scope) : "/home");
       }
       setIsLoading(false);
       router.refresh();
@@ -106,8 +90,10 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-10">
             <Logo />
-            <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Bienvenido de nuevo</h1>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Ingresa a tu cuenta para continuar</p>
+            <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:mt-9">
+              Bienvenido de nuevo
+            </h1>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">Retoma el cuidado de las personas de tu iglesia</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -144,11 +130,7 @@ export default function LoginPage() {
               <input type="password" id="password" name="password" required placeholder="••••••••" className={inputClass} />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:focus:ring-white/30 dark:focus:ring-offset-[#111111]"
-            >
+            <button type="submit" disabled={isLoading} className={btnPrimaryForm}>
               {isLoading ? (
                 <>
                   <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -162,15 +144,15 @@ export default function LoginPage() {
                   Ingresando...
                 </>
               ) : (
-                "Iniciar sesión"
+                marketingCta.login
               )}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-gray-500 dark:text-gray-400">
+          <p className="mt-8 text-left text-gray-500 dark:text-gray-400">
             ¿No tienes cuenta?{" "}
             <Link href="/register" className="font-semibold text-gray-800 underline-offset-4 hover:underline dark:text-gray-200">
-              Regístrate gratis
+              {marketingCta.start}
             </Link>
           </p>
         </div>
@@ -179,16 +161,13 @@ export default function LoginPage() {
       <div className="hidden flex-1 flex-col items-center justify-center p-10 lg:flex lg:rounded-l-[2rem] lg:bg-gray-100/60 dark:lg:bg-white/[0.04] xl:rounded-l-3xl xl:p-14">
         <div className="w-full max-w-md text-center">
           <div className="mb-2 rounded-3xl bg-white/70 px-6 py-10 shadow-sm shadow-black/[0.04] dark:bg-white/[0.06] dark:shadow-none">
-            <LoginHeroAvatar />
+            <LoginHeroGrupo />
           </div>
-          <p className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-4 py-1.5 text-xs font-semibold text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/35 dark:text-emerald-100">
-            Gratis para líderes y para iglesias
-          </p>
           <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
             Cuida a cada persona de tu iglesia
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            Organiza grupos, da seguimiento y asegúrate de que nadie se quede sin atención.
+            Cuida con seguimiento claro: conoce a cada persona, su etapa y cuándo fue el último contacto.
           </p>
         </div>
       </div>

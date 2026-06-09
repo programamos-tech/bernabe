@@ -29,7 +29,7 @@ function FilaRecomendada({ a }: { a: ArticuloComunidadMock }) {
           <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#0ca6b2]/15 text-[#0d5c62] dark:text-[#5fd4df] border border-[#0ca6b2]/30">
             {a.categoria}
           </span>
-          <p className="font-logo-soft text-sm font-normal text-[#18301d] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0ca6b2] transition-colors mt-1">
+          <p className="text-sm font-normal text-[#18301d] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0ca6b2] transition-colors mt-1">
             {a.titulo}
           </p>
           <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">{a.excerpt}</p>
@@ -81,7 +81,7 @@ export default function ArticuloComunidadPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl leading-tight font-logo-soft font-normal text-[#18301d] dark:text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl leading-tight font-normal text-[#18301d] dark:text-white tracking-tight">
                 {articulo.titulo}
               </h1>
             </header>
@@ -106,7 +106,7 @@ export default function ArticuloComunidadPage({ params }: PageProps) {
                 <div className="px-4 py-2.5 border-b border-gray-100 dark:border-[#2a2a2a]">
                   <h2
                     id="recomendados-heading"
-                    className="text-sm font-medium text-[#18301d] dark:text-white font-logo-soft tracking-tight"
+                    className="text-sm font-medium text-[#18301d] dark:text-white tracking-tight"
                   >
                     Artículos recomendados
                   </h2>

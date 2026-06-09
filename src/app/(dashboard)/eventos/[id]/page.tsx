@@ -155,7 +155,7 @@ export default function Page() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       <div className="w-full pt-8">
-        <div className="relative mb-8 rounded-3xl bg-gray-100/50 dark:bg-white/[0.04] p-5 md:p-6">
+        <div className="relative mb-5 rounded-3xl bg-gray-100/50 dark:bg-white/[0.04] p-5 md:p-6">
           <Link
             href="/eventos"
             className="absolute left-4 top-4 z-10 rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white md:left-5 md:top-5"
