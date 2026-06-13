@@ -146,7 +146,7 @@ function OnboardingBrand({
   tone?: "dark" | "light";
 }) {
   const sizeClass = compact
-    ? "!text-[2rem] sm:!text-[2.375rem]"
+    ? "!text-[1.75rem] sm:!text-[2.375rem]"
     : "!text-[2.5rem] sm:!text-[3.25rem]";
 
   return (
@@ -353,7 +353,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-neutral-950">
+    <div className="flex min-h-dvh bg-gray-50 dark:bg-neutral-950">
       {/* Sidebar */}
       <div className="hidden flex-col bg-neutral-950 p-8 dark:bg-black lg:flex lg:w-96">
         <OnboardingBrand />
@@ -432,33 +432,36 @@ export default function OnboardingPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col lg:min-h-screen">
         {/* Mobile header */}
-        <div className="border-b border-gray-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 lg:hidden">
-          <OnboardingBrand compact tone="light" />
-          <div className="mt-4 flex items-center gap-2">
+        <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/95 lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <OnboardingBrand compact tone="light" />
+            <span className="shrink-0 text-xs font-semibold tabular-nums text-gray-500 dark:text-gray-400">
+              Paso {step} de 4
+            </span>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5">
             {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
-                className={`h-1.5 flex-1 rounded-full transition-all ${
+                className={`h-1 flex-1 rounded-full transition-all ${
                   step >= s ? "bg-gray-900 dark:bg-white" : "bg-gray-200 dark:bg-neutral-700"
                 }`}
               />
             ))}
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Paso {step} de 4
-          </p>
         </div>
 
-        {/* Form content */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-          <div className="w-full max-w-xl">
+        <div className="flex min-h-0 flex-1 flex-col">
+          {/* Form content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center lg:p-12">
+            <div className="mx-auto w-full max-w-xl">
             {/* Step 1: Church Info */}
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl lg:text-3xl">
                     ¿Cómo llamas a tu rebaño?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -510,7 +513,7 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         País *
@@ -539,7 +542,7 @@ export default function OnboardingPage() {
                         disabled={!pais}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <option value="">{pais ? "Selecciona una ciudad" : "Primero selecciona un país"}</option>
+                        <option value="">{pais ? "Selecciona una ciudad" : "Elige país primero"}</option>
                         {ciudadesDisponibles.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}
@@ -646,7 +649,7 @@ export default function OnboardingPage() {
                     <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                       ¿Cuál es el tamaño de tu congregación? *
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {tamanosIglesia.map((t) => (
                         <button
                           key={t.value}
@@ -858,21 +861,30 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Navigation buttons */}
-            <div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6 dark:border-neutral-800">
+            {errorMessage && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-500 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+                {errorMessage}
+              </div>
+            )}
+            </div>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="shrink-0 border-t border-gray-200 bg-gray-50/95 px-4 py-4 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-950/95 sm:px-6 lg:bg-transparent lg:px-12 lg:py-6 lg:backdrop-blur-none">
+            <div className="mx-auto flex w-full max-w-xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
               {step > 1 ? (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center gap-2 px-6 py-3 font-medium text-gray-600 transition hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                  className="flex w-full items-center justify-center gap-2 px-4 py-3 font-medium text-gray-600 transition hover:text-gray-900 sm:w-auto sm:justify-start sm:px-6 dark:text-gray-300 dark:hover:text-white"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                   Anterior
                 </button>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
 
               {step < 4 ? (
@@ -880,10 +892,10 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={nextStep}
                   disabled={!canProceed()}
-                  className="flex items-center gap-2 rounded-full bg-gray-900 px-8 py-3 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-6 py-3.5 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-8 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
                 >
                   Continuar
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -892,20 +904,24 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!canProceed() || isSubmitting}
-                  className="flex items-center gap-2 rounded-full bg-gray-900 px-8 py-3 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gray-900 px-6 py-3.5 font-semibold text-white shadow-md shadow-black/10 transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-8 dark:bg-white dark:text-gray-900 dark:shadow-none dark:hover:bg-gray-100"
                 >
                   {isSubmitting ? (
                     <>
-                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Configurando...
                     </>
                   ) : (
                     <>
                       Comenzar a usar Bernabé
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </>
@@ -913,12 +929,6 @@ export default function OnboardingPage() {
                 </button>
               )}
             </div>
-
-            {errorMessage && (
-              <div className="mt-4 text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3">
-                {errorMessage}
-              </div>
-            )}
           </div>
         </div>
       </div>
