@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardNotifications } from "@/modules/dashboard/components/DashboardNotifications";
 
 const BASE_NAV = [
-  { href: "/home", label: "Mi iglesia" },
+  { href: "/home", label: "Mi rebaño" },
   { href: "/personas", label: "Personas" },
   { href: "/grupos", label: "Grupos" },
   { href: "/eventos", label: "Eventos", churchOnly: true as const },
@@ -106,7 +106,7 @@ export function DashboardNavbar() {
       return true;
     }).map((item) => ({
       href: item.href,
-      label: item.href === "/home" ? (leader ? "Mi rebaño" : "Mi iglesia") : item.label,
+      label: item.href === "/home" ? "Mi rebaño" : item.label,
     }));
   }, [groupLeaderOnly, leader, miGrupoHref]);
 
@@ -188,19 +188,6 @@ export function DashboardNavbar() {
             <BernabeLogo variant="header" />
           </Link>
 
-          {leader && !groupLeaderOnly ? (
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden shrink-0 items-center rounded-full border border-emerald-200/90 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-100/90 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60 lg:inline-flex xl:px-3 xl:text-xs"
-              title="Contactar por WhatsApp"
-            >
-              <span className="hidden xl:inline">Me interesa para mi iglesia</span>
-              <span className="xl:hidden">WhatsApp</span>
-            </a>
-          ) : null}
-
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:gap-2 lg:flex">
             {navItems.map(({ href, label }) => {
               const isActive =
@@ -230,7 +217,7 @@ export function DashboardNavbar() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex rounded-md p-2 text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40 lg:hidden"
-                aria-label="Me interesa para mi iglesia (WhatsApp)"
+                aria-label="Contactar por WhatsApp"
                 title="WhatsApp"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

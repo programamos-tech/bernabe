@@ -198,8 +198,8 @@ function HeroSection() {
               Cuida sin perder de vista a nadie.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
-              Para líderes de iglesia: cada persona que acompañas, con seguimiento claro en un solo lugar, desde el
-              celular o la computadora.
+              Para líderes que pastorean ovejas: cada persona que acompañas, con seguimiento claro en un solo lugar,
+              desde el celular o la computadora.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link href="/register" className={btnPrimaryFull}>
@@ -236,8 +236,8 @@ function CTASection() {
           ¿Quieres que <span className="text-sky-700 dark:text-sky-300">ninguna persona se pierda</span> en tu ministerio?
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-          Empieza a registrar a quienes cuidas con seguimiento sencillo, persona por persona. Si varios líderes
-          acompañan la misma congregación, puedes invitarlos cuando esté listo.
+          Empieza a registrar a quienes pastoreas con seguimiento sencillo, oveja por oveja. Si varios líderes
+          acompañan el mismo rebaño, puedes invitarlos cuando esté listo.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href="/register" className={btnPrimaryFull}>
@@ -248,7 +248,7 @@ function CTASection() {
           </a>
         </div>
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          ¿Dudas o sugerencias para equipos de iglesia?{" "}
+          ¿Dudas o sugerencias para líderes?{" "}
           <a
             href="mailto:andrewjruss7@gmail.com?subject=Bernab%C3%A9%20%28cuidado%20y%20seguimiento%29"
             className="font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"

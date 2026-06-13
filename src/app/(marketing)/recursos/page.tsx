@@ -5,9 +5,9 @@ import { ARTICULOS_COMUNIDAD_MOCK, CATEGORIAS_LIDERAZGO } from "@/lib/comunidad-
 import { btnPrimaryFull, btnSecondaryFull, marketingCta } from "@/app/(marketing)/landing-shared";
 
 export const metadata = {
-  title: "Recursos para líderes de iglesia | Bernabé",
+  title: "Recursos para líderes | Bernabé",
   description:
-    "Artículos y reflexiones gratuitas sobre liderazgo, discipulado y cuidado de personas en la iglesia local. Bernabé apoya el seguimiento claro; estos textos fortalecen a quienes acompañan.",
+    "Artículos y reflexiones gratuitas sobre liderazgo, discipulado y cuidado de ovejas. Bernabé apoya el seguimiento claro; estos textos fortalecen a quienes pastorean.",
 };
 
 export default function RecursosPage() {
@@ -20,11 +20,11 @@ export default function RecursosPage() {
             Gratis, sin cuenta
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Recursos para <span className="text-sky-700 dark:text-sky-300">líderes de iglesia</span>
+            Recursos para <span className="text-sky-700 dark:text-sky-300">líderes</span>
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-            Bernabé te ayuda a cuidar a quienes asisten —miembros, visitantes, grupos y líderes— con seguimiento claro.
-            Estos recursos complementan ese trabajo: contenido pensado para quienes acompañan en lo local. Leé y compartí
+            Bernabé te ayuda a llevar el seguimiento de tus ovejas —visitantes, grupos y etapas— con claridad.
+            Estos recursos complementan ese trabajo: contenido pensado para quienes pastorean. Leé y compartí
             sin iniciar sesión.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">

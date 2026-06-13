@@ -66,7 +66,7 @@ function RolChip({
 export function HomePersonasResumen({
   data,
   loading,
-  title = "Personas en la iglesia",
+  title = "Personas en tu rebaño",
 }: {
   data: PersonasResumenData | null;
   loading: boolean;

@@ -36,7 +36,7 @@ export default function RegisterPage() {
   const handleStartMvp = async () => {
     setErrorMessage(null);
     if (!churchName.trim()) {
-      setErrorMessage("Indica el nombre de tu iglesia.");
+      setErrorMessage("Indica cómo llamas a tu rebaño o ministerio.");
       return;
     }
     setIsLoading(true);
@@ -66,22 +66,22 @@ export default function RegisterPage() {
           <div className="mb-8">
             <Logo />
             <p className="mt-8 text-sm text-gray-500 dark:text-gray-400 sm:mt-9">
-              Crea tu espacio para cuidar con claridad: cada persona, su grupo y el próximo paso de acompañamiento en un
-              solo lugar.
+              Plataforma para líderes: registra a tus ovejas, su grupo y el próximo paso de acompañamiento en un solo
+              lugar.
             </p>
           </div>
 
           <div className="space-y-4">
             <div>
               <label htmlFor="churchName" className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-gray-200">
-                Nombre de tu iglesia *
+                Nombre de tu rebaño o ministerio *
               </label>
               <input
                 type="text"
                 id="churchName"
                 name="churchName"
                 required
-                placeholder="Ej: Iglesia Vida Nueva"
+                placeholder="Ej: Jóvenes Norte · Mi célula"
                 value={churchName}
                 onChange={(e) => setChurchName(e.target.value)}
                 className={inputClass}
@@ -142,10 +142,10 @@ export default function RegisterPage() {
             <AuthHeroGrupoCluster />
           </div>
           <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-            Cuida a cada persona de tu iglesia
+            Lleva el seguimiento de cada oveja
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            Cuida con seguimiento claro: conoce a cada persona, su etapa y cuándo fue el último contacto.
+            Para líderes: conoce la etapa de quien pastoreas, su grupo y cuándo fue el último contacto.
           </p>
         </div>
       </div>

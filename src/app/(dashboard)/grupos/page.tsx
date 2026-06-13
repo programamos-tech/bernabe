@@ -129,7 +129,7 @@ export default function Page() {
         <div className="min-w-0">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Grupos</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
-            Comunidades de conexión y crecimiento de la iglesia.
+            Comunidades de conexión y crecimiento en tu rebaño.
           </p>
         </div>
         {atGrupoCap ? (

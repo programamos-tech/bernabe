@@ -14,11 +14,9 @@ export function AuthHero() {
       />
       <div className={styles.heroOverlay} />
       <div className={styles.heroContent}>
-        <h1 className={styles.logo}>
-          Berea
-        </h1>
+        <h1 className={styles.logo}>Bernabé</h1>
         <p className={styles.tagline}>
-          Organiza los servidores de tu iglesia sin caos.
+          Seguimiento pastoral para líderes que cuidan sus ovejas.
         </p>
       </div>
     </section>

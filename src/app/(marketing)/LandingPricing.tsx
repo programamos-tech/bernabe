@@ -52,7 +52,7 @@ export function PricingSection() {
             Licencias
           </p>
           <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Licencias para el cuidado de tu <span className="text-emerald-700 dark:text-emerald-400">gente en la iglesia</span>
+            Licencias para el cuidado de tus <span className="text-emerald-700 dark:text-emerald-400">ovejas</span>
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
             Empiezas con 15 días con todo habilitado para acompañar miembros, visitantes, grupos y líderes. Los precios están en{" "}

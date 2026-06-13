@@ -93,14 +93,14 @@ export default function LoginPage() {
             <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:mt-9">
               Bienvenido de nuevo
             </h1>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Retoma el cuidado de las personas de tu iglesia</p>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">Retoma el seguimiento de las ovejas que pastoreas</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {showVerifyEmailHint && (
               <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-3 text-sm text-emerald-900 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-                Te enviamos un correo de verificación. Ábrelo y confirma tu cuenta; luego inicia sesión aquí para continuar con el
-                registro de tu iglesia.
+                Te enviamos un correo de verificación. Ábrelo y confirma tu cuenta; luego inicia sesión aquí para continuar con la
+                configuración de tu espacio.
               </div>
             )}
             {error && (
@@ -164,10 +164,10 @@ export default function LoginPage() {
             <LoginHeroGrupo />
           </div>
           <h2 className="mt-6 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-            Cuida a cada persona de tu iglesia
+            Lleva el seguimiento de cada oveja
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            Cuida con seguimiento claro: conoce a cada persona, su etapa y cuándo fue el último contacto.
+            Para líderes: conoce la etapa de quien pastoreas, su grupo y cuándo fue el último contacto.
           </p>
         </div>
       </div>

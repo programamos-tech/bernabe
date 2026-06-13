@@ -82,7 +82,7 @@ export default function CuentaClient({
     },
     {
       id: "iglesia",
-      label: "Mi iglesia",
+      label: "Mi rebaño",
       icon: (
         <path
           strokeLinecap="round"
@@ -121,7 +121,7 @@ export default function CuentaClient({
         <div className="mb-3 md:mb-4">
           <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Mi cuenta</h1>
           <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-2xl leading-snug">
-            Administra tu perfil y la configuración de tu iglesia.
+            Administra tu perfil y la configuración de tu rebaño.
           </p>
         </div>
 
@@ -202,7 +202,7 @@ export default function CuentaClient({
                       <input type="tel" defaultValue={usuario?.telefono ?? ""} className={inputClass} />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Rol en la iglesia</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Rol como líder</label>
                       <select defaultValue={usuario?.rolLabel ?? "Miembro"} className={inputClass}>
                         <option value="Pastor principal">Pastor principal</option>
                         <option value="Co-pastor">Co-pastor</option>
@@ -225,7 +225,7 @@ export default function CuentaClient({
             {activeTab === "iglesia" && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Información de la iglesia</h3>
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Información de tu rebaño</h3>
 
                   <div className="mb-6 grid grid-cols-3 gap-3 sm:gap-4">
                     <div className="rounded-3xl bg-white/60 p-4 text-center dark:bg-white/[0.06]">
@@ -244,7 +244,7 @@ export default function CuentaClient({
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de la iglesia</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de tu rebaño</label>
                       <input type="text" defaultValue={iglesia?.nombre ?? ""} className={inputClass} />
                     </div>
                     <div>

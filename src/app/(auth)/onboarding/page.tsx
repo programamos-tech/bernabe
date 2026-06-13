@@ -288,7 +288,7 @@ export default function OnboardingPage() {
         .single();
 
       if (orgErr) throw orgErr;
-      if (!org?.id) throw new Error("No se pudo crear la iglesia.");
+      if (!org?.id) throw new Error("No se pudo crear tu espacio.");
 
       const { error: profileErr } = await supabase
         .from("profiles")
@@ -325,7 +325,7 @@ export default function OnboardingPage() {
       }
       router.push("/home");
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Error creando la iglesia.");
+      setErrorMessage(err instanceof Error ? err.message : "Error al configurar tu espacio.");
       setIsSubmitting(false);
     }
   };
@@ -359,7 +359,7 @@ export default function OnboardingPage() {
         <OnboardingBrand />
 
         <div className="flex-1">
-          <h2 className="mb-2 text-xl font-semibold text-white">Configura tu iglesia</h2>
+          <h2 className="mb-2 text-xl font-semibold text-white">Configura tu espacio de líder</h2>
           <p className="mb-8 text-sm text-gray-400">Solo te tomará unos minutos tener todo listo.</p>
 
           <div className="space-y-5">
@@ -367,14 +367,14 @@ export default function OnboardingPage() {
               [
                 {
                   num: 1 as const,
-                  title: "Información de la iglesia",
+                  title: "Tu rebaño",
                   desc: "Nombre y ubicación",
-                  seed: "onboarding·paso·iglesia",
+                  seed: "onboarding·paso·rebaño",
                   sexo: "femenino" as const,
                 },
                 {
                   num: 2 as const,
-                  title: "Datos del pastor",
+                  title: "Tus datos como líder",
                   desc: "Contacto principal",
                   seed: "onboarding·paso·pastor",
                   sexo: "masculino" as const,
@@ -459,10 +459,10 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    ¿Cómo se llama tu iglesia?
+                    ¿Cómo llamas a tu rebaño?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Cuéntanos sobre tu comunidad de fe.
+                    El nombre con el que identificas a quienes pastoreas (ministerio, célula, grupo…).
                   </p>
                 </div>
 
@@ -471,7 +471,7 @@ export default function OnboardingPage() {
                     {nombreIglesia ? (
                       <>
                         <p className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          Tu iglesia
+                          Tu rebaño
                         </p>
                         <div className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white">
                           {nombreIglesia}
@@ -481,13 +481,13 @@ export default function OnboardingPage() {
                     ) : (
                       <>
                         <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                          Nombre de la iglesia *
+                          Nombre de tu rebaño o ministerio *
                         </label>
                         <input
                           type="text"
                           value={nombreIglesia}
                           onChange={(e) => setNombreIglesia(e.target.value)}
-                          placeholder="Ej: Iglesia Vida Nueva"
+                          placeholder="Ej: Jóvenes Norte · Mi célula"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 transition"
                         />
                       </>
@@ -558,7 +558,7 @@ export default function OnboardingPage() {
                     ¿Quién administrará Bernabé?
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Datos de quien administra la iglesia en Bernabé.
+                    Datos tuyos como líder en Bernabé.
                   </p>
                 </div>
 
@@ -609,7 +609,7 @@ export default function OnboardingPage() {
                     <p className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                       {isAnonymous
                         ? "Opcional mientras pruebas sin cuenta. Si lo pones aquí, puede ser el mismo que uses después para iniciar sesión."
-                        : "Es el correo de tu cuenta y de contacto para la iglesia."}
+                        : "Es el correo de tu cuenta y de contacto como líder."}
                     </p>
                   </div>
 
@@ -634,7 +634,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-                    Cuéntanos sobre tu iglesia
+                    Cuéntanos sobre tu rebaño
                   </h1>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Esto nos ayuda a configurar mejor tu experiencia.

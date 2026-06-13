@@ -16,11 +16,11 @@ function stepsForLeader(leader: boolean): TourStep[] {
   const base: TourStep[] = [
     {
       title: "¡Listo, ya tienes tu espacio!",
-      body: "Este es tu inicio en Berea: un resumen de personas, grupos y actividad. Te mostramos en qué orden conviene empezar.",
+      body: "Este es tu inicio en Bernabé: un resumen de tus ovejas, grupos y actividad. Te mostramos en qué orden conviene empezar.",
     },
     {
       title: "1. Crea tu primer grupo",
-      body: "Ahí organizas células, jóvenes, parejas o el nombre que uses en tu iglesia. Sin grupos, las personas pueden quedar como visitantes sin núcleo.",
+      body: "Ahí organizas células, jóvenes, parejas o el nombre que uses con tus ovejas. Sin grupos, pueden quedar como visitantes sin núcleo.",
       ctaHref: "/grupos/nuevo",
       ctaLabel: "Ir a crear grupo",
     },
@@ -50,7 +50,7 @@ function stepsForLeader(leader: boolean): TourStep[] {
     ...base,
     {
       title: "5. Líderes y eventos",
-      body: "Con plan iglesia también tienes Líderes (equipo y permisos) y Eventos para actividades más grandes. Explóralo cuando ya tengas personas y grupos.",
+      body: "Con el plan completo también tienes Líderes (equipo y permisos) y Eventos para actividades más grandes. Explóralo cuando ya tengas ovejas y grupos.",
       ctaHref: "/lideres",
       ctaLabel: "Ver Líderes",
     },

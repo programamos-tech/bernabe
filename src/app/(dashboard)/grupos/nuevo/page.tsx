@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { GrupoAvatarCluster } from "@/components/GrupoAvatarCluster";
+import { UserAvatar } from "@/components/UserAvatar";
 import { TimePicker } from "@/components/ui/TimePicker";
 import { useDashboardOrgPlan } from "@/contexts/DashboardOrgPlanContext";
 import { createClient } from "@/lib/supabase/client";
+import { fechaHoyYYYYMMDD } from "@/lib/fecha-hoy-local";
+import { tipoLabelGrupo } from "@/lib/grupo-tipo";
+import { ETAPA_LABELS, parseEtapaDb } from "@/lib/persona-etapa";
+import { parsePersonaSexo } from "@/lib/persona-sexo";
 import { isLeaderIndividualPlan, LEADER_INDIVIDUAL_MAX_GRUPOS } from "@/lib/organization-plan";
+import { BTN_FICHA_PRIMARIO } from "@/app/(dashboard)/personas/[id]/_lib/persona-detail-buttons";
 
 type TipoGrupo = "parejas" | "jovenes" | "teens" | "hombres" | "mujeres" | "general";
 
@@ -30,38 +36,98 @@ const diasSemana = [
   "Domingos",
 ];
 
-const imagenesDisponibles = [
-  { src: "/parejados.jpg", label: "Parejas" },
-  { src: "/fiesta.jpg", label: "Jóvenes" },
-  { src: "/hombre.jpg", label: "Hombres" },
-  { src: "/mesaycena.jpg", label: "Reunión" },
-];
+const GRUPO_FORM_CONTROL_CLASS =
+  "w-full min-w-0 rounded-xl border border-gray-200/80 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300/40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-gray-500 dark:focus:border-white/30 dark:focus:ring-white/15 dark:[color-scheme:dark]";
 
-interface LiderOption {
+interface PersonaSinGrupo {
   id: string;
   nombre: string;
+  sexo: string | null;
+  etapa: string | null;
+}
+
+async function resolveLiderIdPropio(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+  const { data: propio } = await supabase
+    .from("lideres")
+    .select("id")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  if (propio?.id) return propio.id as string;
+
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("organization_id, full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!prof?.organization_id) return null;
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("onboarding_user_id, pastor_name")
+    .eq("id", prof.organization_id)
+    .maybeSingle();
+  if (org?.onboarding_user_id !== userId) return null;
+
+  const { data: lideresOrg } = await supabase
+    .from("lideres")
+    .select("id, nombre")
+    .eq("organization_id", prof.organization_id);
+
+  const rows = (lideresOrg ?? []) as { id: string; nombre: string }[];
+  const porNombre =
+    rows.find(
+      (l) =>
+        prof.full_name?.trim() &&
+        l.nombre.trim().toLowerCase() === prof.full_name.trim().toLowerCase(),
+    ) ??
+    rows.find(
+      (l) =>
+        org.pastor_name?.trim() &&
+        l.nombre.trim().toLowerCase() === org.pastor_name.trim().toLowerCase(),
+    );
+  return porNombre?.id ?? null;
 }
 
 export default function Page() {
   const orgPlan = useDashboardOrgPlan();
   const leaderFree = isLeaderIndividualPlan(orgPlan);
   const router = useRouter();
-  const [lideres, setLideres] = useState<LiderOption[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gruposCount, setGruposCount] = useState<number | null>(null);
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState<TipoGrupo>("general");
   const [hora, setHora] = useState<string | null>(null);
-  const [imagenSeleccionada, setImagenSeleccionada] = useState("/fiesta.jpg");
+  const [liderIdPropio, setLiderIdPropio] = useState<string | null>(null);
+  const [personasSinGrupo, setPersonasSinGrupo] = useState<PersonaSinGrupo[]>([]);
+  const [personasLoading, setPersonasLoading] = useState(true);
+  const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
+  const [busquedaPersonas, setBusquedaPersonas] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("lideres")
-      .select("id, nombre")
-      .order("nombre")
-      .then(({ data }) => setLideres((data as LiderOption[]) ?? []));
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const liderId = await resolveLiderIdPropio(supabase, user.id);
+        setLiderIdPropio(liderId);
+      }
+
+      setPersonasLoading(true);
+      const { data: personasData, error: personasErr } = await supabase
+        .from("personas")
+        .select("id, nombre, sexo, etapa")
+        .is("grupo_id", null)
+        .order("nombre");
+
+      if (!personasErr) {
+        setPersonasSinGrupo((personasData as PersonaSinGrupo[]) ?? []);
+      }
+      setPersonasLoading(false);
+    })();
   }, []);
 
   useEffect(() => {
@@ -70,8 +136,8 @@ export default function Page() {
     void supabase
       .from("grupos")
       .select("id", { count: "exact", head: true })
-      .then(({ count, error }) => {
-        if (!error) setGruposCount(count ?? 0);
+      .then(({ count, error: countErr }) => {
+        if (!countErr) setGruposCount(count ?? 0);
       });
   }, [leaderFree]);
 
@@ -85,7 +151,6 @@ export default function Page() {
     const descripcionVal = (formData.get("descripcion") as string)?.trim() || null;
     const diaVal = (formData.get("dia") as string)?.trim() || null;
     const ubicacionVal = (formData.get("ubicacion") as string)?.trim() || null;
-    const liderIdVal = (formData.get("lider") as string)?.trim() || null;
 
     if (!nombreVal) {
       setError("El nombre del grupo es obligatorio.");
@@ -95,7 +160,10 @@ export default function Page() {
 
     try {
       const supabase = createClient();
-      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
       if (userErr || !user) {
         setError("Debes iniciar sesión para crear un grupo.");
         setIsSubmitting(false);
@@ -108,42 +176,62 @@ export default function Page() {
         .single();
       const organizationId = profile?.organization_id;
       if (!organizationId) {
-        setError("No tienes una iglesia asignada. Completa el onboarding primero.");
+        setError("Completa el onboarding para configurar tu espacio de líder.");
         setIsSubmitting(false);
         return;
       }
 
       if (leaderFree) {
-        const { count, error: cErr } = await supabase
-          .from("grupos")
-          .select("id", { count: "exact", head: true });
+        const { count, error: cErr } = await supabase.from("grupos").select("id", { count: "exact", head: true });
         if (cErr) throw cErr;
         const n = count ?? 0;
         setGruposCount(n);
         if (n >= LEADER_INDIVIDUAL_MAX_GRUPOS) {
           setError(
-            `En el plan gratuito de líder puedes crear hasta ${LEADER_INDIVIDUAL_MAX_GRUPOS} grupos. Para tu iglesia completa, escríbenos por WhatsApp («Me interesa para mi iglesia»).`
+            `En el plan gratuito de líder puedes crear hasta ${LEADER_INDIVIDUAL_MAX_GRUPOS} grupos. Para más capacidad, escríbenos por WhatsApp.`,
           );
           setIsSubmitting(false);
           return;
         }
       }
 
-      const { error: insertErr } = await supabase.from("grupos").insert({
-        organization_id: organizationId,
-        nombre: nombreVal,
-        tipo,
-        descripcion: descripcionVal,
-        dia: diaVal,
-        hora: hora || null,
-        ubicacion: ubicacionVal,
-        imagen: imagenSeleccionada || null,
-        lider_id: liderIdVal || null,
-        activo: true,
-      });
+      const { data: nuevoGrupo, error: insertErr } = await supabase
+        .from("grupos")
+        .insert({
+          organization_id: organizationId,
+          nombre: nombreVal,
+          tipo,
+          descripcion: descripcionVal,
+          dia: diaVal,
+          hora: hora || null,
+          ubicacion: ubicacionVal,
+          imagen: null,
+          lider_id: liderIdPropio,
+          activo: true,
+        })
+        .select("id")
+        .single();
 
       if (insertErr) throw insertErr;
-      router.push("/grupos");
+
+      if (nuevoGrupo?.id && personasSeleccionadas.length > 0) {
+        const hoy = fechaHoyYYYYMMDD();
+        const { error: assignErr } = await supabase
+          .from("personas")
+          .update({
+            grupo_id: nuevoGrupo.id,
+            etapa: "nuevo_creyente",
+            participacion_en_grupo: "miembro",
+            fecha_ingreso_grupo: hoy,
+            co_lider_desde: null,
+          })
+          .in("id", personasSeleccionadas)
+          .is("grupo_id", null);
+
+        if (assignErr) throw assignErr;
+      }
+
+      router.push(nuevoGrupo?.id ? `/grupos/${nuevoGrupo.id}` : "/grupos");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al crear el grupo. Intenta de nuevo.");
@@ -151,306 +239,319 @@ export default function Page() {
     }
   };
 
-  const atGrupoCap =
-    leaderFree && gruposCount !== null && gruposCount >= LEADER_INDIVIDUAL_MAX_GRUPOS;
+  const atGrupoCap = leaderFree && gruposCount !== null && gruposCount >= LEADER_INDIVIDUAL_MAX_GRUPOS;
+  const nombreDisplay = nombre.trim() || "Nombre del grupo";
+
+  const personasFiltradas = useMemo(() => {
+    const q = busquedaPersonas.trim().toLowerCase();
+    if (!q) return personasSinGrupo;
+    return personasSinGrupo.filter((p) => p.nombre.toLowerCase().includes(q));
+  }, [busquedaPersonas, personasSinGrupo]);
+
+  const togglePersona = (personaId: string) => {
+    setPersonasSeleccionadas((prev) =>
+      prev.includes(personaId) ? prev.filter((id) => id !== personaId) : [...prev, personaId],
+    );
+  };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="relative h-48 md:h-56">
-        <Image
-          src={imagenSeleccionada}
-          alt="Imagen del grupo"
-          fill
-          className="object-cover object-top"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-        <div className="absolute inset-0 flex flex-col justify-end pb-6 pt-4">
-            <div className="flex w-full items-end justify-between gap-4">
-              <div>
-                <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-[#0ca6b2] text-white mb-3">
-                  Nuevo grupo
-                </span>
-                <h1 className="text-3xl font-bold text-white">
-                  {nombre || "Nombre del grupo"}
-                </h1>
-              </div>
-              <Link 
-                href="/grupos" 
-                className="p-3 rounded-xl bg-white/10 text-white hover:bg-white/20 transition backdrop-blur-sm" 
-                title="Volver a grupos"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </Link>
+    <div className="w-full min-h-[calc(100vh-4rem)]">
+      <div className="relative mb-5 rounded-3xl bg-gray-100/50 p-5 dark:bg-white/[0.04] md:p-6">
+        <Link
+          href="/grupos"
+          className="absolute right-4 top-4 rounded-full p-2.5 text-gray-500 transition hover:bg-gray-200/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+          title="Volver a grupos"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </Link>
+
+        <div className="flex flex-col gap-5 pr-12 sm:flex-row sm:items-center">
+          <div className="shrink-0">
+            <GrupoAvatarCluster nombreGrupo={nombreDisplay} sizeCenter={80} sizeSide={48} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-gray-700 shadow-sm shadow-black/[0.04] dark:bg-white/10 dark:text-gray-300 dark:shadow-none">
+                {tipoLabelGrupo(tipo)}
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-900 dark:text-emerald-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80 dark:bg-emerald-400/55" />
+                Nuevo grupo
+              </span>
             </div>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-2xl">
+              {nombreDisplay}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Define la información básica, el horario de reunión y agrega personas si ya las tienes registradas.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <form onSubmit={handleSubmit} className="py-6">
-          {leaderFree ? (
-            <div className="mb-6 rounded-2xl border border-sky-200/80 bg-sky-50/90 px-4 py-3 text-sm text-sky-950 dark:border-sky-800/40 dark:bg-sky-950/30 dark:text-sky-100">
-              <p className="font-semibold">Líder individual — hasta {LEADER_INDIVIDUAL_MAX_GRUPOS} grupos</p>
-              {gruposCount !== null ? (
-                <p className="mt-1 text-xs font-semibold tabular-nums">
-                  Grupos creados: {gruposCount} / {LEADER_INDIVIDUAL_MAX_GRUPOS}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Main Column */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Información básica */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Información del grupo</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField icon="group" label="Nombre del grupo" required>
-                    <input
-                      type="text"
-                      name="nombre"
-                      required
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Ej: Jóvenes Adultos"
-                      className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
-                    />
-                  </FormField>
+      <form onSubmit={handleSubmit}>
+        {error ? (
+          <div className="mb-6 rounded-2xl bg-red-50/90 p-4 text-sm text-red-800 dark:bg-red-950/30 dark:text-red-200">
+            {error}
+          </div>
+        ) : null}
 
-                  <FormField icon="tag" label="Tipo de grupo" required>
-                    <select
-                      name="tipo"
-                      required
-                      value={tipo}
-                      onChange={(e) => setTipo(e.target.value as TipoGrupo)}
-                      className="w-full bg-transparent text-[#18301d] dark:text-white focus:outline-none cursor-pointer"
-                    >
-                      {tiposGrupo.map((t) => (
-                        <option key={t.value} value={t.value} className="dark:bg-[#252525]">
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-
-                  <div className="sm:col-span-2">
-                    <FormField icon="description" label="Descripción">
-                      <input
-                        type="text"
-                        name="descripcion"
-                        placeholder="Ej: Jóvenes adultos de 18 a 30 años creciendo en fe"
-                        className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </div>
-
-              {/* Horario y ubicación */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Horario y ubicación</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField icon="calendar" label="Día de reunión" required>
-                    <select
-                      name="dia"
-                      required
-                      className="w-full bg-transparent text-[#18301d] dark:text-white focus:outline-none cursor-pointer"
-                    >
-                      <option value="" className="dark:bg-[#252525]">Seleccionar día...</option>
-                      {diasSemana.map((dia) => (
-                        <option key={dia} value={dia} className="dark:bg-[#252525]">
-                          {dia}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-
-                  <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      Hora <span className="text-[#e64b27]">*</span>
-                    </label>
-                    <TimePicker
-                      id="hora"
-                      name="hora"
-                      value={hora}
-                      onChange={setHora}
-                      placeholder="Seleccionar hora"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <FormField icon="location" label="Ubicación" required>
-                      <input
-                        type="text"
-                        name="ubicacion"
-                        required
-                        placeholder="Ej: Salón principal, Auditorio juvenil, Casa del líder"
-                        className="w-full bg-transparent text-[#18301d] dark:text-white placeholder:text-gray-400 focus:outline-none"
-                      />
-                    </FormField>
-                  </div>
-                </div>
-              </div>
-
-              {/* Imagen */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h2 className="text-lg font-semibold text-[#18301d] dark:text-white mb-4">Imagen del grupo</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {imagenesDisponibles.map((img) => (
-                    <button
-                      key={img.src}
-                      type="button"
-                      onClick={() => setImagenSeleccionada(img.src)}
-                      className={`relative aspect-video rounded-xl overflow-hidden border-2 transition ${
-                        imagenSeleccionada === img.src
-                          ? "border-[#0ca6b2] ring-2 ring-[#0ca6b2]/30"
-                          : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
-                    >
-                      <Image src={img.src} alt={img.label} fill className="object-cover object-top" />
-                      {imagenSeleccionada === img.src && (
-                        <div className="absolute inset-0 bg-[#0ca6b2]/20 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                  Selecciona una imagen representativa para el grupo
-                </p>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Asignar líder */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Asignar líder</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-[#252525] cursor-pointer hover:bg-gray-100 dark:hover:bg-[#333] transition">
-                    <input type="radio" name="lider" value="" defaultChecked className="w-4 h-4 text-[#0ca6b2] focus:ring-[#0ca6b2]" />
-                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sin asignar por ahora</span>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Información del grupo</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Nombre, tipo y una breve descripción para identificarlo en la lista.
+              </p>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1.5">
+                  <label htmlFor="grupo-nombre" className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Nombre del grupo <span className="text-red-500">*</span>
                   </label>
-                  {lideres.map((lider) => (
-                    <label key={lider.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-[#252525] cursor-pointer hover:bg-gray-100 dark:hover:bg-[#333] transition">
-                      <input type="radio" name="lider" value={lider.id} className="w-4 h-4 text-[#0ca6b2] focus:ring-[#0ca6b2]" />
-                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                      </svg>
-                      <span className="text-sm font-medium text-[#18301d] dark:text-white">{lider.nombre}</span>
-                    </label>
-                  ))}
-                  {lideres.length === 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Crea líderes en la sección Líderes para asignarlos aquí.
-                    </p>
-                  )}
+                  <input
+                    id="grupo-nombre"
+                    type="text"
+                    name="nombre"
+                    required
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Ej: Jóvenes Adultos"
+                    className={GRUPO_FORM_CONTROL_CLASS}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="min-w-0 space-y-1.5">
+                  <label htmlFor="grupo-tipo" className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Tipo de grupo <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="grupo-tipo"
+                    name="tipo"
+                    required
+                    value={tipo}
+                    onChange={(e) => setTipo(e.target.value as TipoGrupo)}
+                    className={GRUPO_FORM_CONTROL_CLASS}
+                  >
+                    {tiposGrupo.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="grupo-desc" className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Descripción
+                  </label>
+                  <textarea
+                    id="grupo-desc"
+                    name="descripcion"
+                    rows={3}
+                    placeholder="Ej: Jóvenes adultos de 18 a 30 años creciendo en fe"
+                    className={`${GRUPO_FORM_CONTROL_CLASS} min-h-[5rem] resize-y leading-relaxed`}
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Info */}
-              <div className="bg-[#0ca6b2]/10 dark:bg-[#0ca6b2]/20 rounded-2xl p-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0ca6b2]/20 dark:bg-[#0ca6b2]/30 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-[#0ca6b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-[#0ca6b2]">
-                      El grupo se creará activo
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Podrás agregar miembros después de crear el grupo.
-                    </p>
-                  </div>
+            <div className="rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Horario y ubicación</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Día, hora y lugar donde se reúne el grupo habitualmente.
+              </p>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="grupo-dia" className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Día de reunión <span className="text-red-500">*</span>
+                  </label>
+                  <select id="grupo-dia" name="dia" required className={GRUPO_FORM_CONTROL_CLASS}>
+                    <option value="">Seleccionar día…</option>
+                    {diasSemana.map((dia) => (
+                      <option key={dia} value={dia}>
+                        {dia}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#2a2a2a] p-6">
-                <div className="space-y-3">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || atGrupoCap}
-                    className="w-full px-6 py-3 bg-[#0ca6b2] text-white font-semibold rounded-xl hover:bg-[#0a8f99] focus:outline-none focus:ring-2 focus:ring-[#0ca6b2] focus:ring-offset-2 dark:focus:ring-offset-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 shadow-lg shadow-[#0ca6b2]/25"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Creando grupo...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Crear grupo
-                      </>
-                    )}
-                  </button>
-                  <Link
-                    href="/grupos"
-                    className="w-full px-6 py-3 border border-gray-200 dark:border-[#333] text-gray-600 dark:text-gray-400 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-[#252525] transition flex items-center justify-center gap-2"
-                  >
-                    Cancelar
-                  </Link>
+                <div className="space-y-1.5">
+                  <span className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Hora <span className="text-red-500">*</span>
+                  </span>
+                  <TimePicker id="grupo-hora" name="hora" value={hora} onChange={setHora} placeholder="Seleccionar hora" />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="grupo-ubic" className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Ubicación <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="grupo-ubic"
+                    type="text"
+                    name="ubicacion"
+                    required
+                    placeholder="Ej: Salón principal, Auditorio juvenil, Casa del líder"
+                    className={GRUPO_FORM_CONTROL_CLASS}
+                  />
                 </div>
               </div>
             </div>
           </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-gray-200/50 bg-gray-50/40 p-5 dark:border-white/[0.06] dark:bg-white/[0.02] sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Personas en el grupo
+                  </h3>
+                  <p className="mt-1 text-xs leading-snug text-gray-500 dark:text-gray-500">
+                    Opcional. Solo aparecen quienes aún no tienen grupo. Tú quedarás como líder al crearlo.
+                  </p>
+                </div>
+                {personasSeleccionadas.length > 0 ? (
+                  <span className="rounded-full bg-gray-900/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-gray-800 dark:bg-white/10 dark:text-gray-200">
+                    {personasSeleccionadas.length} seleccionada{personasSeleccionadas.length === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-4">
+                <label htmlFor="buscar-personas-grupo" className="sr-only">
+                  Buscar personas
+                </label>
+                <input
+                  id="buscar-personas-grupo"
+                  type="search"
+                  value={busquedaPersonas}
+                  onChange={(e) => setBusquedaPersonas(e.target.value)}
+                  placeholder="Buscar por nombre…"
+                  className={GRUPO_FORM_CONTROL_CLASS}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div className="mt-3 max-h-[min(28rem,55vh)] space-y-2 overflow-y-auto pr-1 [-webkit-overflow-scrolling:touch]">
+                {personasLoading ? (
+                  <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Cargando personas…</p>
+                ) : personasFiltradas.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300/70 bg-white/50 px-4 py-6 text-center dark:border-white/10 dark:bg-white/[0.03]">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {personasSinGrupo.length === 0
+                        ? "No hay personas sin grupo todavía."
+                        : "Ninguna persona coincide con la búsqueda."}
+                    </p>
+                    {personasSinGrupo.length === 0 ? (
+                      <Link
+                        href="/personas/nuevo"
+                        className="mt-3 inline-block text-sm font-medium text-gray-900 underline-offset-4 hover:underline dark:text-white"
+                      >
+                        Registrar persona
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : (
+                  personasFiltradas.map((persona) => {
+                    const selected = personasSeleccionadas.includes(persona.id);
+                    const etapaLabel = ETAPA_LABELS[parseEtapaDb(persona.etapa)];
+                    return (
+                      <button
+                        key={persona.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={selected}
+                        onClick={() => togglePersona(persona.id)}
+                        className={`relative flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 pr-12 text-left transition outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-neutral-400 dark:focus-visible:ring-offset-[#0c0c0c] ${
+                          selected
+                            ? "border-neutral-400 bg-white/80 shadow-[0_0_0_1px_rgba(115,115,115,0.35)] dark:border-neutral-500 dark:bg-white/[0.06]"
+                            : "border-gray-200/60 bg-white/60 hover:border-gray-300/80 hover:bg-white/80 dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                        }`}
+                      >
+                        <UserAvatar seed={persona.nombre} sexo={parsePersonaSexo(persona.sexo)} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{persona.nombre}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{etapaLabel}</p>
+                        </div>
+                        <span
+                          aria-hidden
+                          className={`absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full transition ${
+                            selected
+                              ? "bg-neutral-600 text-white shadow-md dark:bg-neutral-500"
+                              : "border border-gray-300/80 bg-white/60 dark:border-white/20 dark:bg-white/[0.04]"
+                          }`}
+                        >
+                          {selected ? (
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200/50 bg-gray-50/50 p-5 dark:bg-white/[0.05]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-200/80 dark:bg-white/[0.1]">
+                  <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">El grupo se creará activo</p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Tú serás el líder. Las personas que elijas entrarán al núcleo; luego podrás agregar más desde la ficha.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200/50 bg-gray-50/40 p-6 dark:border-white/[0.06] dark:bg-white/[0.02]">
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || atGrupoCap}
+                  className={`flex w-full items-center justify-center gap-2 !rounded-full px-6 py-3 ${BTN_FICHA_PRIMARIO}`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Creando grupo…
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Crear grupo
+                    </>
+                  )}
+                </button>
+                <Link
+                  href="/grupos"
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300/70 px-6 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-200/50 dark:border-white/15 dark:text-gray-200 dark:hover:bg-white/[0.08]"
+                >
+                  Cancelar
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </form>
-    </div>
-  );
-}
-
-function FormField({ 
-  icon, 
-  label, 
-  required = false,
-  children 
-}: { 
-  icon: string; 
-  label: string; 
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  const icons: Record<string, JSX.Element> = {
-    group: <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />,
-    tag: <><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" /></>,
-    description: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />,
-    calendar: <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />,
-    clock: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
-    location: <><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></>,
-  };
-
-  return (
-    <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-[#252525] focus-within:ring-2 focus-within:ring-[#0ca6b2] transition">
-      <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        {icons[icon]}
-      </svg>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">
-          {label} {required && <span className="text-[#e64b27]">*</span>}
-        </p>
-        {children}
-      </div>
     </div>
   );
 }

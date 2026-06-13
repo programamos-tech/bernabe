@@ -24,6 +24,7 @@ import {
   type InformacionPersonalRegistroSetters,
   type InformacionPersonalRegistroState,
 } from "../_components/InformacionPersonalRegistroModal";
+import { BTN_FICHA_PRIMARIO } from "../[id]/_lib/persona-detail-buttons";
 import { BTN_COMPLETAR_DATOS_CARD, IconoEditarDatos } from "../_components/CompletarDatosButton";
 import {
   labelAcercamientoResumen,
@@ -302,7 +303,7 @@ export default function NuevaPersonaClient({
         setPersonasEnOrg(n);
         if (n >= LEADER_INDIVIDUAL_MAX_PERSONAS) {
           setError(
-            `En el plan gratuito de líder alcanzaste el máximo de ${LEADER_INDIVIDUAL_MAX_PERSONAS} personas. Escríbenos por WhatsApp desde el menú «Me interesa para mi iglesia» para coordinar tu iglesia con precio justo.`
+            `En el plan gratuito de líder alcanzaste el máximo de ${LEADER_INDIVIDUAL_MAX_PERSONAS} personas. Escríbenos por WhatsApp para ampliar tu espacio con precio justo.`
           );
           setIsSubmitting(false);
           return;
@@ -349,7 +350,7 @@ export default function NuevaPersonaClient({
       if (insertErr) {
         if (insertErr.code === "23505") {
           setError(
-            "Ya existe una persona con ese documento de identidad en tu iglesia. Revisa el número o busca en el listado."
+            "Ya existe una persona con ese documento en tu rebaño. Revisa el número o busca en el listado."
           );
           setIsSubmitting(false);
           return;
@@ -407,7 +408,7 @@ export default function NuevaPersonaClient({
           <p className="font-semibold">Líder individual — gratis</p>
           <p className="mt-1 leading-snug text-sky-900/90 dark:text-sky-200/90">
             Hasta {LEADER_INDIVIDUAL_MAX_PERSONAS} personas y hasta 3 grupos. Los módulos Líderes y Eventos no aplican en
-            este plan. Si tu iglesia necesita el producto completo, usa «Me interesa para mi iglesia» (WhatsApp) en la barra
+            este plan. Si necesitas el producto completo para tu rebaño, contáctanos por WhatsApp en la barra
             superior.
           </p>
           {personasEnOrg !== null ? (
@@ -533,7 +534,7 @@ export default function NuevaPersonaClient({
                         Etapa del proceso y camino espiritual
                       </h2>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Bautismo y cómo llegó a la iglesia. Sin grupo queda como visitante; con grupo, como nuevo creyente en
+                        Bautismo y cómo llegó a tu ministerio. Sin grupo queda como visitante; con grupo, como nuevo creyente en
                         célula.
                       </p>
                     </div>
@@ -747,9 +748,9 @@ export default function NuevaPersonaClient({
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Registro en la iglesia</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Registro en tu rebaño</p>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Sin grupo queda como visitante; con grupo, como nuevo creyente en el núcleo. Luego podrás ajustar etapa y
+                    Sin grupo queda como visitante; con grupo, como nuevo creyente en célula. Luego podrás ajustar etapa y
                     participación desde la ficha.
                   </p>
                 </div>
@@ -761,7 +762,7 @@ export default function NuevaPersonaClient({
                 <button
                   type="submit"
                   disabled={isSubmitting || atPersonaCap}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-300/90 bg-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-500 dark:text-neutral-950 dark:hover:bg-neutral-400"
+                  className={`flex w-full items-center justify-center gap-2 !rounded-full px-6 py-3 ${BTN_FICHA_PRIMARIO}`}
                 >
                   {isSubmitting ? (
                     <>

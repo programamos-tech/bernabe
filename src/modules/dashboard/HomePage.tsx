@@ -249,7 +249,7 @@ export function HomePage() {
           <HomePersonasResumen
             data={personasResumen}
             loading={isLoading}
-            title={leaderFree ? "Personas en tu rebaño" : "Personas en la iglesia"}
+            title="Personas en tu rebaño"
           />
 
           <HomeAsistenciaComparativa semanas={semanasChart} loading={isLoading} />

@@ -5,7 +5,7 @@ export const marketingCta = {
   login: "Iniciar sesión",
   hasAccount: "Ya tengo cuenta",
   resources: "Ver recursos",
-  contactChurch: "Hablar por mi iglesia",
+  contactChurch: "Hablar con Andrew",
   backHome: "Volver al inicio",
 } as const;
 

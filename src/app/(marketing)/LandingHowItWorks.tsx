@@ -13,7 +13,7 @@ function LandingStepCuentaPreview() {
     >
       <div>
         <h2 className="text-sm font-medium text-gray-900 dark:text-white font-logo-soft tracking-tight">Mi cuenta</h2>
-        <p className="text-[9px] font-normal text-gray-600 dark:text-gray-400">Administra tu perfil y la configuración de tu iglesia.</p>
+        <p className="text-[9px] font-normal text-gray-600 dark:text-gray-400">Administra tu perfil y tu rebaño.</p>
       </div>
       <div className="rounded-2xl bg-gray-100/80 p-2.5 dark:bg-white/[0.04]">
         <div className="flex items-center gap-2">
@@ -32,7 +32,7 @@ function LandingStepCuentaPreview() {
       </div>
       <div className="scrollbar-brand -mx-0.5 flex gap-2 overflow-x-auto border-b border-gray-200 pb-1.5 text-[9px] font-medium text-gray-500 dark:border-white/10">
         <span className="shrink-0 border-b-2 border-gray-900 pb-1 text-gray-900 dark:border-white dark:text-white">Mi perfil</span>
-        <span className="shrink-0 pb-1 text-gray-400 dark:text-gray-500">Mi iglesia</span>
+        <span className="shrink-0 pb-1 text-gray-400 dark:text-gray-500">Mi rebaño</span>
         <span className="shrink-0 pb-1 text-gray-400 dark:text-gray-500">Seguridad</span>
       </div>
       <div>

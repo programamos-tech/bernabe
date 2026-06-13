@@ -18,9 +18,9 @@ const youngSerif = Young_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Bernabé – Cuida a las personas de tu iglesia",
+  title: "Bernabé – Seguimiento pastoral para líderes",
   description:
-    "Acompaña a cada miembro, visitante y líder con seguimiento claro: personas vistas, grupos con contexto y próximos pasos de cuidado.",
+    "Plataforma para líderes que quieren llevar el cuidado de sus ovejas con claridad: etapa, grupo y último contacto en un solo lugar.",
 };
 
 export default function RootLayout({
