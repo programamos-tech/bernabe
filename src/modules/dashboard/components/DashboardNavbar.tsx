@@ -49,7 +49,7 @@ const MOBILE_ICONS: Record<string, JSX.Element> = {
 };
 
 /** Pestañas principales en la barra inferior móvil/tablet. */
-const MOBILE_TAB_HREFS = ["/home", "/personas", "/grupos", "/calendario"] as const;
+const MOBILE_TAB_HREFS = ["/home", "/personas", "/grupos", "/comunidad", "/calendario"] as const;
 
 function navHrefIsActive(pathname: string, href: string): boolean {
   if (pathname === href) return true;

@@ -2,4 +2,4 @@
 export const FEATURE_EVENTOS_VISIBLE = false;
 
 /** Módulo Comunidad visible en nav. Rutas /comunidad siguen activas. */
-export const FEATURE_COMUNIDAD_VISIBLE = false;
+export const FEATURE_COMUNIDAD_VISIBLE = true;

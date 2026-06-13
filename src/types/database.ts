@@ -253,6 +253,42 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["persona_asistencia"]["Insert"]>;
       };
+      victorias_compartidas: {
+        Row: {
+          id: string;
+          profile_id: string;
+          organization_id: string;
+          tipo: string;
+          titulo: string;
+          metric_value: number | null;
+          emoji: string;
+          autor_nombre: string;
+          autor_ubicacion: string | null;
+          autor_avatar_seed: string | null;
+          periodo_desde: string | null;
+          periodo_hasta: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["victorias_compartidas"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["victorias_compartidas"]["Insert"]>;
+      };
+      victoria_reacciones: {
+        Row: {
+          id: string;
+          victoria_id: string;
+          profile_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["victoria_reacciones"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["victoria_reacciones"]["Insert"]>;
+      };
     };
     Functions: {
       ultima_asistencia_por_persona_grupo: {

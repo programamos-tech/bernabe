@@ -1,316 +1,334 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
-import { ensureAuthenticatedOrRedirectToRegister } from "@/lib/auth/ensure-authenticated-client";
+import { BTN_FICHA_PRIMARIO } from "@/app/(dashboard)/personas/[id]/_lib/persona-detail-buttons";
 import { createClient } from "@/lib/supabase/client";
 import {
-  ARTICULOS_COMUNIDAD_MOCK,
-  TEMAS_COMUNIDAD_MOCK,
-  type ArticuloComunidadMock,
-} from "@/lib/comunidad-articulos-mock";
+  compartirVictoria,
+  fetchVictoriaSugerencias,
+  fetchVictoriasFeed,
+  formatVictoriaRelativa,
+  PLANTILLAS_VICTORIA_MANUAL,
+  REACCION_LABELS,
+  REACCION_TIPOS,
+  toggleVictoriaReaccion,
+  type ReaccionTipo,
+  type VictoriaFeedItem,
+  type VictoriaSugerencia,
+} from "@/lib/comunidad-victorias";
 
-function ArticuloCard({
-  articulo,
-  extraLikes,
-  guardado,
-  onToggleLike,
-  onToggleSave,
-  onComentar,
+function VictoriaSugeridaCard({
+  sugerencia,
+  compartiendo,
+  onCompartir,
+  onDescartar,
 }: {
-  articulo: ArticuloComunidadMock;
-  extraLikes: 0 | 1;
-  guardado: boolean;
-  onToggleLike: () => void;
-  onToggleSave: () => void;
-  onComentar: () => void;
+  sugerencia: VictoriaSugerencia;
+  compartiendo: boolean;
+  onCompartir: () => void;
+  onDescartar: () => void;
 }) {
-  const likesMostrados = articulo.likes + extraLikes;
-
-  const href = `/comunidad/${articulo.id}`;
-
   return (
-    <article className="group bg-white dark:bg-[#141414] rounded-xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden hover:border-gray-200 dark:hover:border-[#3a3a3a] transition-colors">
-      <Link
-        href={href}
-        className="block p-3.5 sm:p-4 rounded-t-xl rounded-b-none outline-none focus-visible:ring-2 focus-visible:ring-[#0ca6b2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#141414] hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors"
-      >
-        <div className="flex items-start gap-2.5 mb-2">
-          <UserAvatar seed={articulo.autor} size={32} className="mt-0.5" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <p className="text-sm font-medium text-[#18301d] dark:text-white truncate">{articulo.autor}</p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                {articulo.fechaRelativa}
-                <span className="mx-1">·</span>
-                {articulo.tiempoLecturaMin} min
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#0ca6b2]/15 text-[#0d5c62] dark:text-[#5fd4df] border border-[#0ca6b2]/30"
-                title="Eje del contenido"
-              >
-                {articulo.categoria}
-              </span>
-              {articulo.etiquetas.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-[#252525] text-gray-600 dark:text-gray-300"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-base sm:text-lg font-normal text-[#18301d] dark:text-white leading-snug tracking-tight mb-1.5 group-hover:underline underline-offset-2">
-          {articulo.titulo}
-        </h2>
-
-        <p className="text-gray-600 dark:text-gray-400 text-sm leading-snug line-clamp-2">{articulo.excerpt}</p>
-      </Link>
-
-      <div className="px-3.5 sm:px-4 py-2 border-t border-gray-100 dark:border-[#2a2a2a] flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-0.5 sm:gap-2">
-          <button
-            type="button"
-            onClick={onToggleLike}
-            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#e64b27] transition-colors"
-            aria-pressed={extraLikes === 1}
-            aria-label="Me gusta"
-          >
-            <svg className="w-4 h-4" fill={extraLikes === 1 ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
-            <span className="text-xs tabular-nums">{likesMostrados}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onComentar}
-            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#0ca6b2] transition-colors"
-            aria-label="Comentar"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
-              />
-            </svg>
-            <span className="text-xs">
-              Comentar
-              {articulo.comentarios > 0 ? (
-                <span className="text-gray-400 dark:text-gray-500"> · {articulo.comentarios}</span>
-              ) : null}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors"
-            aria-label="Compartir"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"
-              />
-            </svg>
-            <span className="text-xs hidden sm:inline">Compartir</span>
-          </button>
-        </div>
-
+    <div className="shrink-0 w-[min(100%,280px)] snap-start rounded-xl border border-gray-200 bg-gray-50 p-3.5 dark:border-[#2a2a2a] dark:bg-[#1a1a1a]">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        Tu victoria esta semana
+      </p>
+      <p className="mt-1.5 text-sm font-medium text-[#18301d] dark:text-white leading-snug">{sugerencia.titulo}</p>
+      <div className="mt-3 flex gap-2">
         <button
           type="button"
-          onClick={onToggleSave}
-          className={`flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors ${
-            guardado
-              ? "text-[#0ca6b2] bg-[#0ca6b2]/10"
-              : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525] hover:text-[#18301d] dark:hover:text-white"
-          }`}
-          aria-pressed={guardado}
-          aria-label={guardado ? "Quitar de guardados" : "Guardar"}
+          disabled={compartiendo}
+          onClick={onCompartir}
+          className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-60 ${BTN_FICHA_PRIMARIO}`}
         >
-          <svg className="w-4 h-4" fill={guardado ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
-            />
-          </svg>
-          <span className="text-xs font-medium">{guardado ? "Guardado" : "Guardar"}</span>
+          {compartiendo ? "Compartiendo…" : "Compartir"}
         </button>
+        <button
+          type="button"
+          disabled={compartiendo}
+          onClick={onDescartar}
+          className="rounded-lg px-3 py-2 text-xs font-medium text-gray-600 hover:bg-white/60 dark:text-gray-300 dark:hover:bg-white/5 transition"
+        >
+          Ahora no
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function VictoriaFeedCard({
+  item,
+  onReaccion,
+  reaccionando,
+}: {
+  item: VictoriaFeedItem;
+  onReaccion: (tipo: ReaccionTipo) => void;
+  reaccionando: string | null;
+}) {
+  const totalReacciones = REACCION_TIPOS.reduce((n, t) => n + item.reacciones[t], 0);
+
+  return (
+    <article className="rounded-xl border border-gray-100 bg-white dark:border-[#2a2a2a] dark:bg-[#141414] overflow-hidden">
+      <div className="p-3.5 sm:p-4">
+        <div className="flex items-start gap-2.5">
+          <UserAvatar seed={item.autorAvatarSeed} size={40} className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="text-sm font-medium text-[#18301d] dark:text-white">{item.autorNombre}</p>
+              {item.autorCiudad ? (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">{item.autorCiudad}</p>
+              ) : null}
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">{formatVictoriaRelativa(item.createdAt)}</p>
+            </div>
+            <p className="mt-2 text-sm sm:text-base text-[#18301d] dark:text-white leading-snug">{item.titulo}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-3.5 sm:px-4 py-2 border-t border-gray-100 dark:border-[#2a2a2a] flex flex-wrap items-center gap-1.5">
+        {REACCION_TIPOS.map((tipo) => {
+          const count = item.reacciones[tipo];
+          const activa = item.misReacciones.includes(tipo);
+          const busy = reaccionando === `${item.id}:${tipo}`;
+          return (
+            <button
+              key={tipo}
+              type="button"
+              disabled={!!reaccionando}
+              onClick={() => onReaccion(tipo)}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                activa
+                  ? "bg-gray-900/10 text-gray-900 ring-1 ring-gray-900/20 dark:bg-white/10 dark:text-white dark:ring-white/20"
+                  : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-[#252525]"
+              } ${busy ? "opacity-60" : ""}`}
+              aria-pressed={activa}
+            >
+              {REACCION_LABELS[tipo]}
+              {count > 0 ? <span className="tabular-nums text-gray-500 dark:text-gray-400">{count}</span> : null}
+            </button>
+          );
+        })}
+        {totalReacciones === 0 ? (
+          <span className="ml-auto text-[11px] text-gray-400 dark:text-gray-500">Animá a un líder</span>
+        ) : null}
       </div>
     </article>
   );
 }
 
-export default function Page() {
-  const router = useRouter();
-  const [userSeed, setUserSeed] = useState<string>("Usuario");
-  const [extraLikesPorId, setExtraLikesPorId] = useState<Record<string, 0 | 1>>({});
-  const [guardados, setGuardados] = useState<Record<string, boolean>>({});
+export default function ComunidadVictoriasPage() {
+  const [sugerencias, setSugerencias] = useState<VictoriaSugerencia[]>([]);
+  const [feed, setFeed] = useState<VictoriaFeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [compartiendoTipo, setCompartiendoTipo] = useState<string | null>(null);
+  const [reaccionando, setReaccionando] = useState<string | null>(null);
+  const [manualTexto, setManualTexto] = useState("");
+  const [manualAbierto, setManualAbierto] = useState(false);
+  const [userAvatarSeed, setUserAvatarSeed] = useState("Usuario");
+  const [error, setError] = useState<string | null>(null);
+
+  const recargar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [sug, items] = await Promise.all([fetchVictoriaSugerencias(), fetchVictoriasFeed()]);
+      setSugerencias(sug);
+      setFeed(items);
+    } catch {
+      setError("No pudimos cargar la comunidad. Intentá de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void recargar();
+  }, [recargar]);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserSeed(user?.email ?? user?.user_metadata?.full_name ?? "Usuario");
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const name = profile?.full_name ?? meta.full_name ?? meta.name ?? user.email?.split("@")[0] ?? "Usuario";
+      setUserAvatarSeed(user.email ?? name);
     });
   }, []);
 
-  const toggleLike = useCallback(
-    async (id: string) => {
-      if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
-      setExtraLikesPorId((prev) => ({
-        ...prev,
-        [id]: prev[id] === 1 ? 0 : 1,
-      }));
-    },
-    [router]
-  );
+  const handleCompartirSugerencia = async (s: VictoriaSugerencia) => {
+    setCompartiendoTipo(s.tipo);
+    setError(null);
+    const res = await compartirVictoria({
+      tipo: s.tipo,
+      titulo: s.titulo,
+      metricValue: s.metricValue,
+    });
+    setCompartiendoTipo(null);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    setSugerencias((prev) => prev.filter((x) => x.tipo !== s.tipo));
+    await recargar();
+  };
 
-  const toggleSave = useCallback(
-    async (id: string) => {
-      if (!(await ensureAuthenticatedOrRedirectToRegister(router.push))) return;
-      setGuardados((prev) => ({ ...prev, [id]: !prev[id] }));
-    },
-    [router]
-  );
+  const handleCompartirManual = async () => {
+    const titulo = manualTexto.trim();
+    if (!titulo) return;
+    setCompartiendoTipo("manual");
+    setError(null);
+    const res = await compartirVictoria({ tipo: "manual", titulo });
+    setCompartiendoTipo(null);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    setManualTexto("");
+    setManualAbierto(false);
+    await recargar();
+  };
 
-  const comentar = useCallback(async () => {
-    await ensureAuthenticatedOrRedirectToRegister(router.push);
-  }, [router]);
+  const handleReaccion = async (victoriaId: string, tipo: ReaccionTipo) => {
+    const key = `${victoriaId}:${tipo}`;
+    setReaccionando(key);
+    await toggleVictoriaReaccion(victoriaId, tipo);
+    setReaccionando(null);
+    await recargar();
+  };
 
-  const destacados = useMemo(() => ARTICULOS_COMUNIDAD_MOCK.slice(0, 3), []);
+  const descartarSugerencia = (tipo: string) => {
+    setSugerencias((prev) => prev.filter((s) => s.tipo !== tipo));
+  };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-6">
-        <div className="mb-3 md:mb-4">
-          <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Comunidad</h1>
-          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 max-w-xl leading-snug">
-            Para líderes: liderazgo, discipulado, apoyo mutuo y guía de personas.
-          </p>
-        </div>
+    <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-6 max-w-2xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-xl md:text-2xl font-medium text-[#18301d] dark:text-white tracking-tight">Comunidad</h1>
+        <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400 leading-snug">
+          Victorias de líderes que pastorean con fidelidad. Celebrá y animá a quienes cuidan su rebaño.
+        </p>
+      </div>
 
-        <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
-          <div className="lg:col-span-2 space-y-3">
-            <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-100 dark:border-[#2a2a2a] p-3">
-              <div className="flex gap-2.5 items-center">
-                <UserAvatar seed={userSeed} size={36} />
-                <button
-                  type="button"
-                  onClick={() => void comentar()}
-                  className="flex-1 text-left px-3 py-2 bg-gray-50 dark:bg-[#252525] rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition text-sm"
-                >
-                  Escribí para otros líderes: discipulado, apoyo, guía pastoral…
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5 mt-2 pt-2 border-t border-gray-100 dark:border-[#2a2a2a]">
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mr-1 shrink-0">
-                  Enfocar en
-                </span>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252525]"
-                >
-                  Liderazgo
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252525]"
-                >
-                  Discipulado
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252525]"
-                >
-                  Apoyo a líderes
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#252525]"
-                >
-                  Guiar personas
-                </button>
-              </div>
-            </div>
+      {error ? (
+        <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+          {error}
+        </p>
+      ) : null}
 
-            {ARTICULOS_COMUNIDAD_MOCK.map((articulo) => (
-              <ArticuloCard
-                key={articulo.id}
-                articulo={articulo}
-                extraLikes={(extraLikesPorId[articulo.id] ?? 0) as 0 | 1}
-                guardado={!!guardados[articulo.id]}
-                onToggleLike={() => void toggleLike(articulo.id)}
-                onToggleSave={() => void toggleSave(articulo.id)}
-                onComentar={() => void comentar()}
+      {sugerencias.length > 0 ? (
+        <section className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            Listas para compartir
+          </h2>
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 -mx-1 px-1 scrollbar-thin">
+            {sugerencias.map((s) => (
+              <VictoriaSugeridaCard
+                key={s.tipo}
+                sugerencia={s}
+                compartiendo={compartiendoTipo === s.tipo}
+                onCompartir={() => void handleCompartirSugerencia(s)}
+                onDescartar={() => descartarSugerencia(s.tipo)}
               />
             ))}
           </div>
+        </section>
+      ) : null}
 
-          <aside className="space-y-3 lg:sticky lg:top-16 self-start">
-            <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-gray-100 dark:border-[#2a2a2a]">
-                <h3 className="text-sm font-medium text-[#18301d] dark:text-white">Temas de liderazgo</h3>
-              </div>
-              <ul className="p-2 space-y-0.5">
-                {TEMAS_COMUNIDAD_MOCK.map((t) => (
-                  <li key={t.etiqueta}>
+      <section className="mb-4">
+        <div className="rounded-xl border border-gray-100 bg-white dark:border-[#2a2a2a] dark:bg-[#141414] p-3">
+          <div className="flex gap-2.5 items-start">
+            <UserAvatar seed={userAvatarSeed} size={36} className="shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              {!manualAbierto ? (
+                <button
+                  type="button"
+                  onClick={() => setManualAbierto(true)}
+                  className="w-full text-left px-3 py-2.5 bg-gray-50 dark:bg-[#252525] rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition text-sm"
+                >
+                  Compartí una victoria con otros líderes…
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    value={manualTexto}
+                    onChange={(e) => setManualTexto(e.target.value.slice(0, 200))}
+                    rows={3}
+                    placeholder="Ej.: Esta semana pastoreé con fidelidad…"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300/40 dark:border-white/10 dark:bg-[#252525] dark:text-white dark:placeholder:text-gray-500 resize-none"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    {PLANTILLAS_VICTORIA_MANUAL.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setManualTexto(t)}
+                        className="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50 dark:border-[#333] dark:text-gray-300 dark:hover:bg-[#252525] transition text-left max-w-full truncate"
+                      >
+                        {t.length > 42 ? `${t.slice(0, 42)}…` : t}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
                     <button
                       type="button"
-                      className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#252525] transition"
+                      disabled={!manualTexto.trim() || compartiendoTipo === "manual"}
+                      onClick={() => void handleCompartirManual()}
+                      className={`rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50 ${BTN_FICHA_PRIMARIO}`}
                     >
-                      <span>{t.etiqueta}</span>
-                      <span className="text-xs text-gray-400 tabular-nums">{t.count}</span>
+                      {compartiendoTipo === "manual" ? "Compartiendo…" : "Compartir victoria"}
                     </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-100 dark:border-[#2a2a2a] overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-gray-100 dark:border-[#2a2a2a]">
-                <h3 className="text-sm font-medium text-[#18301d] dark:text-white">Lecturas destacadas</h3>
-              </div>
-              <ul className="divide-y divide-gray-100 dark:divide-[#2a2a2a]">
-                {destacados.map((a, i) => (
-                  <li key={a.id}>
-                    <Link
-                      href={`/comunidad/${a.id}`}
-                      className="block w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-[#252525] transition"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualAbierto(false);
+                        setManualTexto("");
+                      }}
+                      className="rounded-lg px-3 py-2 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#252525]"
                     >
-                      <span className="text-[11px] font-medium text-[#0ca6b2]">{i + 1}</span>
-                      <p className="mt-0.5 font-normal text-xs text-[#18301d] dark:text-white leading-snug line-clamp-2">{a.titulo}</p>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{a.autor}</p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            <div className="rounded-xl border border-dashed border-gray-200 dark:border-[#333] p-3 text-xs text-gray-600 dark:text-gray-400">
-              <p className="font-medium text-[#18301d] dark:text-white mb-1">Eventos de la iglesia</p>
-              <p className="leading-snug">
-                Próximos eventos, reuniones y novedades las encontrás en{" "}
-                <Link href="/home" className="text-[#0ca6b2] font-medium hover:underline">
-                  Mi iglesia
-                </Link>
-                .
-              </p>
-            </div>
-          </aside>
+          </div>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Victorias recientes
+        </h2>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-28 rounded-xl border border-gray-100 bg-white animate-pulse dark:border-[#2a2a2a] dark:bg-[#141414]"
+              />
+            ))}
+          </div>
+        ) : feed.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 dark:border-[#333] p-8 text-center">
+            <p className="text-sm font-medium text-[#18301d] dark:text-white">Aún no hay victorias compartidas</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+              Sé el primero en celebrar tu trabajo pastoral con otros líderes de Bernabé.
+            </p>
+          </div>
+        ) : (
+          feed.map((item) => (
+            <VictoriaFeedCard
+              key={item.id}
+              item={item}
+              reaccionando={reaccionando}
+              onReaccion={(tipo) => void handleReaccion(item.id, tipo)}
+            />
+          ))
+        )}
+      </section>
     </div>
   );
 }
